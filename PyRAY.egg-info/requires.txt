@@ -1,7 +1,4 @@
-matplotlib
 numpy
-scipy
-PyIRI
 
 [doc]
 extras_require

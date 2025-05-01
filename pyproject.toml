@@ -9,9 +9,11 @@ description = "Python HF Raytracing for Ionosphere"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {file = "LICENSE"}
+
 authors = [
     {name = "Victoriya Forsythe", email = "victoriya.v.makarevich.civ@us.navy.mil"},
 ]
+
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Topic :: Scientific/Engineering :: Physics",
@@ -29,6 +31,7 @@ classifiers = [
   "Operating System :: MacOS :: MacOS X",
   "Operating System :: Microsoft :: Windows"
 ]
+
 keywords = [
   "ionosphere",
   "raytracing",
@@ -49,6 +52,7 @@ test = [
   "pytest",
   "pytest-cov",
 ]
+
 doc = [
   "extras_require",
   "ipython",
