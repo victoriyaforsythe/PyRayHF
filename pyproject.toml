@@ -35,10 +35,7 @@ keywords = [
   "modelling"
 ]
 dependencies = [
-  "matplotlib",
-  "numpy",
-  "scipy",
-  "PyIRI"
+  "numpy"
 ]
 
 [project.optional-dependencies]
