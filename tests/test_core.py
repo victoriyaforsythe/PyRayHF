@@ -4,7 +4,6 @@
 
 import unittest
 import numpy as np
-import PyRAY
 from PyRAY.library import den2freq  # replace with actual import path
 
 
