@@ -4,7 +4,7 @@
 
 import numpy as np
 import unittest
-from PyRAY.library import den2freq  # replace with actual import path
+from PyRAY.library import den2freq
 
 
 class TestDen2Freq(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestDen2Freq(unittest.TestCase):
         self.assertGreater(freq, 0)
 
     def test_array_input(self):
-        """Test that an array of densities returns an array of positive frequencies with the same shape."""
+        """Test that an array of dens returns an array of positive freq."""
         density = np.array([1e10, 1e11, 1e12])
         freq = den2freq(density)
         self.assertTrue(np.all(freq > 0))
