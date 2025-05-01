@@ -50,6 +50,11 @@ def den2freq(density):
     """
     # Declaring constants
     cp, _ = constants()
+
+    # Test for negative input
+    if np.any(np.asarray(density) < 0):
+        raise ValueError("Density must be non-negative")
+
     frequency = np.sqrt(density) * cp
     return frequency
 
