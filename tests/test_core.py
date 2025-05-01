@@ -2,28 +2,33 @@
 # --------------------------------------------------------
 """Unit tests for PyRAY.library functions."""
 
-import unittest
 import numpy as np
+import unittest
 from PyRAY.library import den2freq  # replace with actual import path
 
 
 class TestDen2Freq(unittest.TestCase):
+    """Unit tests for the `den2freq` function."""
+
     def test_scalar_input(self):
-        # Known density and expected frequency (using constant cp)
+        """Test that a scalar density returns a positive scalar frequency."""
         density = 1e12
         freq = den2freq(density)
         self.assertIsInstance(freq, float)
         self.assertGreater(freq, 0)
 
     def test_array_input(self):
+        """Test that an array of densities returns an array of positive frequencies with the same shape."""
         density = np.array([1e10, 1e11, 1e12])
         freq = den2freq(density)
         self.assertTrue(np.all(freq > 0))
         self.assertEqual(freq.shape, density.shape)
 
     def test_zero_density(self):
+        """Test that zero density returns zero frequency."""
         self.assertEqual(den2freq(0), 0.0)
 
     def test_negative_density(self):
+        """Test that negative density raises a ValueError."""
         with self.assertRaises(ValueError):
             den2freq(-1e10)
