@@ -8,8 +8,8 @@
 
 """
 
-from PyRAY import logger
 import numpy as np
+from PyRAY import logger
 
 
 def constants():
@@ -334,8 +334,7 @@ def vertical_to_magnetic_angle(inclination_deg):
 
 def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
                               n_points=2000):
-    """Calculate virtual height from ionosonde frequency and ionosphere
-    profile.
+    """Calculate virtual height from ionosonde freq and ion profile.
 
     Parameters
     ----------
