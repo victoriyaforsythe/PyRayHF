@@ -3,9 +3,8 @@
 """Unit tests for PyRAY.library functions."""
 
 import numpy as np
-import unittest
 from PyRAY.library import den2freq
-
+import unittest
 
 class TestDen2Freq(unittest.TestCase):
     """Unit tests for the `den2freq` function."""
