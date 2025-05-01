@@ -20,6 +20,7 @@ def constants():
     -----
     This function provides constants used in virtual height calculations.
     """
+
     # Constant to convert density to frequency (MHz)
     cp = 8.97866275
     # Proton gyrofrequency constant (Hz/T)
@@ -40,6 +41,7 @@ def den2freq(density):
     frequency : float or array-like
         Plasma frequency in Hz.
     """
+
     # Declaring constants
     cp, _ = constants()
     frequency = np.sqrt(density) * cp
@@ -59,6 +61,7 @@ def freq2den(frequency):
     density : float or array-like
         Plasma density in m^-3.
     """
+
     # Declaring constants
     cp, _ = constants()
     density = (frequency / cp)**2
@@ -126,6 +129,7 @@ def find_mu_mup(X, Y, bpsi, mode):
     mup : array-like
         Group refractive index μ′.
     """
+
     # Compute transverse and longitudinal components of Y
     YT = Y * np.sin(np.deg2rad(bpsi))
     YL = Y * np.cos(np.deg2rad(bpsi))
@@ -193,6 +197,7 @@ def find_vh(X, Y, bpsi, dh, alt_min, mode):
     vh : array-like
         Virtual height in km.
     """
+
     # Find the phase refractive index μ and the group refractive index μ′ for
     # ordinary (O) and extraordinary (X) modes of signal propagation
     _, mup = find_mu_mup(X, Y, bpsi, mode)
@@ -203,7 +208,7 @@ def find_vh(X, Y, bpsi, dh, alt_min, mode):
 
 
 def smooth_nonuniform_grid(start, end, n_points, sharpness):
-    """Generate smooth non-uniform grid from `start` to `end`.
+    """Generate smooth non-uniform grid from start to end.
 
     Parameters
     ----------
@@ -218,6 +223,7 @@ def smooth_nonuniform_grid(start, end, n_points, sharpness):
     x : ndarray
         Non-uniformly spaced grid.
     """
+
     # Uniform grid [0, 1]
     u = np.linspace(0.0, 1.0, n_points)
 
@@ -315,6 +321,7 @@ def vertical_to_magnetic_angle(inclination_deg):
     vertical_angle : float or ndarray
         Angle between vertical and magnetic field in degrees.
     """
+
     vertical_angle = 90.0 - np.abs(inclination_deg)
     return vertical_angle
 
@@ -346,6 +353,7 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     vh : ndarray
         Virtual height in km.
     """
+
     # Check that input arrays have the same size
     if (den.shape != bmag.shape != bpsi.sahpe != alt.shape):
         logger.error("Error: freq, den, bmag, bpsi, alt should have same size")
