@@ -26,6 +26,7 @@ def constants():
     Notes
     -----
     This function provides constants used in virtual height calculations.
+
     """
     # Constant to convert density to frequency (MHz)
     cp = 8.97866275
@@ -46,6 +47,7 @@ def den2freq(density):
     -------
     frequency : float or array-like
         Plasma frequency in Hz.
+
     """
     # Declaring constants
     cp, _ = constants()
@@ -65,6 +67,7 @@ def freq2den(frequency):
     -------
     density : float or array-like
         Plasma density in m^-3.
+
     """
     # Declaring constants
     cp, _ = constants()
@@ -86,6 +89,7 @@ def find_X(n_e, f):
     -------
     X : float or array-like
         Ratio (f_N / f)^2.
+
     """
     X = (den2freq(n_e))**2 / f**(2)
     return X
@@ -105,6 +109,7 @@ def find_Y(f, b):
     -------
     Y : array-like
         Electron gyrofrequency / ionosonde frequency.
+
     """
     _, g_p = constants()
     Y = g_p * b / f
@@ -131,6 +136,7 @@ def find_mu_mup(X, Y, bpsi, mode):
         Phase refractive index μ.
     mup : array-like
         Group refractive index μ′.
+
     """
     # Compute transverse and longitudinal components of Y
     YT = Y * np.sin(np.deg2rad(bpsi))
@@ -198,6 +204,7 @@ def find_vh(X, Y, bpsi, dh, alt_min, mode):
     -------
     vh : array-like
         Virtual height in km.
+
     """
     # Find the phase refractive index μ and the group refractive index μ′ for
     # ordinary (O) and extraordinary (X) modes of signal propagation
@@ -223,6 +230,7 @@ def smooth_nonuniform_grid(start, end, n_points, sharpness):
     -------
     x : ndarray
         Non-uniformly spaced grid.
+
     """
     # Uniform grid [0, 1]
     u = np.linspace(0.0, 1.0, n_points)
@@ -256,6 +264,7 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
     Returns
     -------
     Tuple of regridded arrays.
+
     """
     # Create non-regular grid that has low resolution near zero and hight
     # resolution near one
@@ -318,6 +327,7 @@ def vertical_to_magnetic_angle(inclination_deg):
     -------
     vertical_angle : float or ndarray
         Angle between vertical and magnetic field in degrees.
+
     """
     vertical_angle = 90.0 - np.abs(inclination_deg)
     return vertical_angle
@@ -349,6 +359,7 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     -------
     vh : ndarray
         Virtual height in km.
+
     """
     # Check that input arrays have the same size
     if (den.shape != bmag.shape != bpsi.sahpe != alt.shape):
