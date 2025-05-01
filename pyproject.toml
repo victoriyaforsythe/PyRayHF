@@ -67,3 +67,6 @@ Documentation = "https://PyRAY.readthedocs.io/en/latest/"
 Source = "https://github.com/victoriyaforsythe/PyRAY"
 
 [tool.coverage.report]
+
+- name: Install dependencies
+  run: pip install -r requirements.txt

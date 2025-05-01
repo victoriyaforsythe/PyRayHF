@@ -1,0 +1,56 @@
+name: Pytest with Flake8
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: ["3.10", "3.11"]
+        numpy_ver: ["latest"]
+        test_config: ["latest"]
+        include:
+          - python-version: "3.9"
+            numpy_ver: "1.21"
+            os: ubuntu-latest
+            test_config: "NEP29"
+
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }} with numpy ${{ matrix.numpy_ver }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install NEP29 dependencies
+      if: ${{ matrix.test_config == 'NEP29'}}
+      run: |
+        pip install numpy==${{ matrix.numpy_ver }}
+        pip install --upgrade-strategy only-if-needed .[test]
+
+    - name: Install standard dependencies
+      if: ${{ matrix.test_config == 'latest'}}
+      run: |
+        pip install .[test]
+
+    - name: Test PEP8 compliance
+      run: flake8 . --count --select=D,E,F,H,W --show-source --statistics
+
+    - name: Evaluate complexity
+      run: flake8 . --count --exit-zero --max-complexity=10 --statistics
+
+    - name: Test import success
+      run: python -c "import PyRAY; print(PyRAY.__version__)"
+
+    - name: Test with pytest
+      run: pytest --cov=PyRAY
+
+    # Coveralls temporarily disabled
+    - name: Skip Coveralls
+      run: echo "Coveralls upload is disabled for now."
