@@ -2,8 +2,8 @@
 # --------------------------------------------------------
 """Unit tests for PyRAY.library functions."""
 
-import unittest
 import numpy as np
+import unittest
 from PyRAY.library import den2freq
 
 
