@@ -1,0 +1,148 @@
+Metadata-Version: 2.1
+Name: PyRAY
+Version: 0.0.1
+Summary: Python HF Raytracing for Ionosphere
+Author-email: Victoriya Forsythe <victoriya.v.makarevich.civ@us.navy.mil>
+License: MIT License
+        
+        Copyright (c) 2023 victoriyaforsythe
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Documentation, https://PyRAY.readthedocs.io/en/latest/
+Project-URL: Source, https://github.com/victoriyaforsythe/PyRAY
+Keywords: ionosphere,raytracing,modelling
+Classifier: Development Status :: 3 - Alpha
+Classifier: Topic :: Scientific/Engineering :: Physics
+Classifier: Topic :: Scientific/Engineering :: Atmospheric Science
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: matplotlib
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: PyIRI
+Provides-Extra: test
+Requires-Dist: coveralls; extra == "test"
+Requires-Dist: flake8; extra == "test"
+Requires-Dist: flake8-docstrings; extra == "test"
+Requires-Dist: hacking>=1.0; extra == "test"
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pytest-cov; extra == "test"
+Provides-Extra: doc
+Requires-Dist: extras_require; extra == "doc"
+Requires-Dist: ipython; extra == "doc"
+Requires-Dist: myst_parser; extra == "doc"
+Requires-Dist: numpydoc; extra == "doc"
+Requires-Dist: sphinx; extra == "doc"
+Requires-Dist: sphinx_rtd_theme; extra == "doc"
+
+<img width="200" height="200" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/PyRAY_logo.png" alt="Black circle with manta ray flying through the ionosphere" title="PyRAY Logo" style="float:left;">
+
+
+# PyRAY (Python HF Ray Tracer for the Ionosphere)
+[![PyRAY Package latest release](https://img.shields.io/pypi/v/PyRAY.svg)](https://pypi.org/project/PyRAY/)
+[![Build Status](https://github.com/victoriyaforsythe/PyRAY/actions/workflows/main.yml/badge.svg)](https://github.com/victoriyaforsythe/PyRAY/actions/workflows/main.yml)
+[![Documentation Status](https://readthedocs.org/projects/PyRAY/badge/?version=latest)](https://PyRAY.readthedocs.io/en/latest/?badge=latest)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8235173.svg)](https://doi.org/10.5281/zenodo.8235173)
+
+PyRAY is a Python-based software package for analytic HF raytracing through the ionosphere.
+
+For a given electron density profile and the magnetic field it calculates virtual heights for the upward-propagating HF rays in ordinary (O) and extraodinary (X) modes.
+
+A key advantage of PyRAY is its efficiency: it calculater the virtual heigh simultaneousely for all given ionosonde freqeuncies.
+
+
+# Installation
+
+PyRAY can be installed from PyPI, which will handle all dependencies:
+
+```
+pip install PyRAY
+```
+
+Alternatively, you can clone and install it from GitHub:
+
+```
+git clone https://github.com/victoriyaforsythe/PyRAY.git
+cd PyRAY
+python -m build .
+pip install .
+```
+
+See the documentation for details about the required dependencies.
+
+# Example Workflow
+
+1. Provide input arrays for one vertical ionospheric profile, where $den$, $bmag$, $bpsi$, and $alt$ are the arrays of the same length, referring to electron density in m$^{-3}$, strength of the magnetic field in Tesla, angle of the magnetic field to the vertical in degrees, altitude in km.
+Provide the array of frequencies $freq$ at which you would like to sample this profile, that will be the frequencies of the HF sounder.
+
+Below are the input arrays generated by PyIRI in Example_Generate_Input_Arrays.
+
+![Inputs](docs/figures/Input_Arrays.png)
+
+2. Compute virtual height for the ordinary 'O' propagation mode. A low number
+of vertical grid points is sufficient for O-mode (e.g., 200).
+
+```
+mode = 'O'
+n_points = 200
+vh_O = PyRAY.library.virtical_forward_operator(input_arrays['freq'],
+                                            input_arrays['den'],
+                                            input_arrays['bmag'],
+                                            input_arrays['bpsi'],
+                                            input_arrays['alt'],
+                                            mode,
+                                            n_points)
+```
+
+3. Compute virtual height for the extraordinary 'X' propagation mode.
+A high number of vertical grid points is recommended for X-mode (e.g., 20000),
+since the result may be noisy at low resolution.
+
+```
+mode = 'X'
+n_points = 20000
+vh_X = PyRAY.library.virtical_forward_operator(input_arrays['freq'],
+                                            input_arrays['den'],
+                                            input_arrays['bmag'],
+                                            input_arrays['bpsi'],
+                                            input_arrays['alt'],
+                                            mode,
+                                            n_points)
+```
+
+![Residuals](docs/figures/Run_Vertical_PyRAY.png)
+
+
+# Learn More
+
+See the [tutorials](https://github.com/victoriyaforsythe/PyRAY/tree/main/docs/tutorials) folder for mode detailed examples.

@@ -1,0 +1,4 @@
+History
+=======
+
+.. mdinclude:: ../CHANGELOG.md

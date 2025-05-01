@@ -1,0 +1,17 @@
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+LICENSE
+MANIFEST.in
+README.md
+pyproject.toml
+setup.cfg
+PyRAY/__init__.py
+PyRAY/library.py
+PyRAY.egg-info/PKG-INFO
+PyRAY.egg-info/SOURCES.txt
+PyRAY.egg-info/dependency_links.txt
+PyRAY.egg-info/requires.txt
+PyRAY.egg-info/top_level.txt
+PyRAY/input_arrays_example/Example_input.p
+tests/test_core.py
