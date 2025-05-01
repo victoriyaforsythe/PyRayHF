@@ -28,9 +28,3 @@ class TestDen2Freq(unittest.TestCase):
     def test_negative_density(self):
         with self.assertRaises(ValueError):
             den2freq(-1e10)
-
-if __name__ == '__main__':
-    unittest.main()
-
-if np.any(np.array(density) < 0):
-    raise ValueError("Density must be non-negative.")
