@@ -66,11 +66,5 @@ doc = [
 Documentation = "https://PyRAY.readthedocs.io/en/latest/"
 Source = "https://github.com/victoriyaforsythe/PyRAY"
 
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "if __name__ == .__main__.:"
-]
-
 - name: Install dependencies
   run: pip install -r requirements.txt
