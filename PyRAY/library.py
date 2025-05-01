@@ -1,8 +1,5 @@
 import numpy as np
-from scipy.interpolate import interp1d
 
-import PyIRI
-import PyIRI.main_library as ml
 from PyRAY import logger
 
 
@@ -307,7 +304,6 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
             critical_height_2d, new_ind_2d, ind_grid)
 
 
-
 def vertical_to_magnetic_angle(inclination_deg):
     """Calculate angle between vertical and magnetic field vector.
 
@@ -367,7 +363,7 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
 
     # Select ionosonde frequency with this criteria
     freq_lim = freq[ind] * 1e6
-    
+
     # Make empty array to collect virtual height of the same size as input
     # frequency array
     vh = np.zeros((freq.size)) + np.nan
@@ -376,18 +372,18 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     # reflective height for each ionosonde frequency
     # Frequency needs to be converted to MHz from Hz
     (freq_mod,
-    den_mod,
-    bmag_mod,
-    bpsi_mod,
-    dh_2d,
-    critical_height_2d,
-    new_ind_2d,
-    ind_grid) = regrid_to_nonuniform_grid(freq_lim,
-                                          den,
-                                          bmag,
-                                          bpsi,
-                                          alt,
-                                          n_points)
+     den_mod,
+     bmag_mod,
+     bpsi_mod,
+     dh_2d,
+     critical_height_2d,
+     new_ind_2d,
+     ind_grid) = regrid_to_nonuniform_grid(freq_lim,
+                                           den,
+                                           bmag,
+                                           bpsi,
+                                           alt,
+                                           n_points)
 
     # Find the ratio of the square of the plasma frequency f_N to the square of
     # the ionosonde frequency f.
