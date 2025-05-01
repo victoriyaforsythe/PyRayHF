@@ -34,8 +34,10 @@ keywords = [
   "raytracing",
   "modelling"
 ]
+
 dependencies = [
-  "numpy"
+    "numpy",
+    "pytest"
 ]
 
 [project.optional-dependencies]
