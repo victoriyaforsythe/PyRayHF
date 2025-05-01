@@ -1,6 +1,8 @@
+"""Core computational functions for plasma and ionospheric modeling."""
 import numpy as np
 
 from PyRAY import logger
+
 
 def constants():
     """Define constants for virtual height calculation.
@@ -62,8 +64,7 @@ def freq2den(frequency):
 
 
 def find_X(n_e, f):
-    """Calculate X: the square of the plasma frequency over the square of the
-    ionosonde frequency.
+    """Calculate the square of the plasma freq over the square of the ion freq.
 
     Parameters
     ----------
