@@ -1,7 +1,8 @@
 import numpy as np
+from scipy.interpolate import interp1d
+
 import PyIRI
 import PyIRI.main_library as ml
-from scipy.interpolate import interp1d
 from PyRAY import logger
 
 
@@ -65,7 +66,8 @@ def freq2den(frequency):
 
 
 def find_X(n_e, f):
-    """Calculate X: the square of the plasma frequency over the square of the ionosonde frequency.
+    """Calculate X: the square of the plasma frequency over the square of the
+    ionosonde frequency.
 
     Parameters
     ----------
@@ -153,7 +155,8 @@ def find_mu_mup(X, Y, bpsi, mode):
     dbetadX = -YL**2 * Xm1 / beta
     dDdX = -1. + modeMult * dbetadX
 
-    dalphadY = (YT**3 * np.sin(np.deg2rad(bpsi))) + (2. * YL * Xm1**2 * np.cos(np.deg2rad(bpsi)))
+    dalphadY = ((YT**3 * np.sin(np.deg2rad(bpsi)))
+                + (2. * YL * Xm1**2 * np.cos(np.deg2rad(bpsi))))
     dbetadY = 0.5 * dalphadY / beta
     dDdY = -YT * np.sin(np.deg2rad(bpsi)) + modeMult * dbetadY
 
@@ -276,10 +279,12 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
 
     # Make arrays 2-D
     multiplier_2d = np.full((N_freq, N_grid), multiplier)
-    critical_height_2d = np.transpose(np.full((N_grid, N_freq), critical_height))
+    critical_height_2d = np.transpose(np.full((N_grid, N_freq),
+                                              critical_height))
     new_alt_2d = multiplier_2d * (critical_height_2d - aalt[0]) + aalt[0]
 
-    dh_2d = np.concatenate((np.diff(new_alt_2d, axis=1), np.full((N_freq, 1), dh)), axis=1)
+    dh_2d = np.concatenate((np.diff(new_alt_2d, axis=1), np.full((N_freq, 1),
+                                                                 dh)), axis=1)
 
     new_ind_2d = np.full((N_freq, N_grid), ind_grid)
 
@@ -292,7 +297,8 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
     bpsi_mod = np.reshape(np.interp(new_alt_1d, aalt, bpsi), new_alt_2d.shape)
     ionosonde_freq_mod = np.transpose(np.full((N_grid, N_freq), f))
 
-    return ionosonde_freq_mod, den_mod, bmag_mod, bpsi_mod, dh_2d, critical_height_2d, new_ind_2d, ind_grid
+    return (ionosonde_freq_mod, den_mod, bmag_mod, bpsi_mod, dh_2d,
+            critical_height_2d, new_ind_2d, ind_grid)
 
 
 
@@ -313,8 +319,10 @@ def vertical_to_magnetic_angle(inclination_deg):
     return vertical_angle
 
 
-def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O', n_points=2000):
-    """Calculate virtual height from ionosonde frequency and ionosphere profile.
+def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
+                              n_points=2000):
+    """Calculate virtual height from ionosonde frequency and ionosphere
+    profile.
 
     Parameters
     ----------
@@ -338,6 +346,10 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O', n_points=200
     vh : ndarray
         Virtual height in km.
     """
+    # Check that input arrays have the same size
+    if (den.shape != bmag.shape != bpsi.sahpe != alt.shape):
+        logger.error("Error: freq, den, bmag, bpsi, alt should have same size")
+
     # Limit the ionosonde frequency array up tp the ionospheric critical
     # frequency foF2 and convert form MHz to Hz.
     foF2 = np.max(den2freq(den))
