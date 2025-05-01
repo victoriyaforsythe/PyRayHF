@@ -1,4 +1,13 @@
-"""Core computational functions for plasma and ionospheric modeling."""
+#!/usr/bin/env python
+# --------------------------------------------------------
+# Distribution statement A. Approved for public release.
+# Distribution is unlimited.
+# This work was supported by the Office of Naval Research.
+# --------------------------------------------------------
+"""This library contains components for PyRAY software.
+
+"""
+
 import numpy as np
 
 from PyRAY import logger
