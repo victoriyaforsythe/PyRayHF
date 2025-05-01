@@ -6,6 +6,7 @@ import numpy as np
 from PyRAY.library import den2freq
 import unittest
 
+
 class TestDen2Freq(unittest.TestCase):
     """Unit tests for the `den2freq` function."""
 
