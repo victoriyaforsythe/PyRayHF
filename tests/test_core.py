@@ -2,16 +2,33 @@
 # --------------------------------------------------------
 """Unit tests for PyRAY.library functions."""
 
+import unittest
 import numpy as np
+import PyRAY
+from PyRAY.library import den2freq  # replace with actual import path
 
-from PyRAY.library import freq2den
-from PyRAY.library import nearest_element
 
+class TestDen2Freq(unittest.TestCase):
+    def test_scalar_input(self):
+        # Known density and expected frequency (using constant cp)
+        density = 1e12
+        freq = den2freq(density)
+        self.assertIsInstance(freq, float)
+        self.assertGreater(freq, 0)
 
-# def test_nearest_element_basic():
-#     """Test nearest_element basic."""
-#     arr = np.array([1, 3, 5, 7, 9])
-#     val = 6
-#     # 5 is closest to 6, at index 2
-#     assert nearest_element(arr, val) == 2
+    def test_array_input(self):
+        density = np.array([1e10, 1e11, 1e12])
+        freq = den2freq(density)
+        self.assertTrue(np.all(freq > 0))
+        self.assertEqual(freq.shape, density.shape)
 
+    def test_zero_density(self):
+        self.assertEqual(den2freq(0), 0.0)
+
+    def test_negative_density(self):
+        with self.assertRaises(ValueError):
+            den2freq(-1e10)
+
+if __name__ == '__main__':
+    unittest.main()if np.any(np.array(density) < 0):
+    raise ValueError("Density must be non-negative.")
