@@ -8,9 +8,8 @@
 
 """
 
-import numpy as np
-
 from PyRAY import logger
+import numpy as np
 
 
 def constants():
