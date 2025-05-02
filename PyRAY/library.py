@@ -161,7 +161,11 @@ def find_mu_mup(X, Y, bpsi, mode):
 
     # Appleton-Hartree denominator and mu
     D = Xm1 - 0.5 * YT**2 + modeMult * beta
-    mu = np.sqrt(1. - X * Xm1 / D)
+
+    # Select > 0 part
+    under_sqrt = 1. - X * Xm1 / D
+    safe_data = np.where(under_sqrt >= 0, under_sqrt, 0)
+    mu = np.sqrt(safe_data)
 
     # Apply physical constraints on refractive index
     mu[np.where(mu < 0.)] = 0.
