@@ -59,7 +59,7 @@ zenodo = json.loads(open('../.zenodo.json').read())
 author = ', '.join([creator['name'] for creator in zenodo['creators']])
 manual_copyright = ', '.join(['2025', author])
 category = 'Space Physics'
-description = 'Python implementation for the ionospheric model validation.'
+description = 'Python HF Raytracing Tool for the Ionosphere.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
