@@ -11,3 +11,6 @@ Python code example and Jupyter notebook are available.
 
 .. toctree::
    docs/examples/Example_Run_Vertical_PyRAY.rst
+
+.. toctree::
+   docs/examples/Example_How_PyRAY_Works.rst
