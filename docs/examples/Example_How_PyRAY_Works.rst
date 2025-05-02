@@ -1,78 +1,53 @@
 Example: How PyRAY Works
 ========================
 
-In the presence of the Earth's magnetic field (but neglecting collisions), the **virtual height** is computed using the **group refractive index** :math:`n_g(h, f)` from the Appleton-Hartree dispersion relation.
 
-The virtual height :math:`h_v(f)` is given by:
+This section describes how to calculate the **virtual height** using only the magnetic field and the refractive index in a cold magnetoplasma.
 
-.. math::
 
-   h_v(f) = \int_0^{h_r} n_g(h, f) \, \mathrm{d}h
+Let:
 
-Intermediate Quantities
-------------------------
+- ``X = (f_p / f)^2`` — ratio of plasma frequency squared to wave frequency squared  
+- ``Y = f_c / f`` — ratio of gyrofrequency to wave frequency  
+- ``μ`` — refractive index  
+- ``μ'`` — group refractive index  
+- ``Ψ`` — angle between wave vector and magnetic field  
 
-We define the following dimensionless parameters:
+Then, the **group refractive index** μ′ is calculated from:
 
-- Plasma-to-wave frequency ratio:
+μ' = d(fμ) / df``
 
-  .. math::
+The virtual height h' is then given by:
 
-     X(h) = \frac{f_p(h)^2}{f^2}
+h' = ∫ μ' dh``
 
-- Gyro-to-wave frequency ratio:
-
-  .. math::
-
-     Y = \frac{f_B}{f}
-
-- Propagation angle factor:
-
-  .. math::
-
-     \mu = \cos \Psi, \quad \mu' = \sin \Psi
-
-  where :math:`\Psi` is the angle between the wave vector and the geomagnetic field.
-
-The **Appleton-Hartree group refractive index** (for the ordinary or extraordinary mode, neglecting collisions) is then:
+LaTeX-rendered math (for Sphinx/ReadTheDocs)
+--------------------------------------------
 
 .. math::
 
-   n_g(h, f) = \left[ 1 - \frac{X(h)}{1 \pm \frac{Y \mu}{\sqrt{1 - X(h) - Y^2 \mu'^2}}} \right]^{-1/2}
-
-where:
-
-- The :math:`+` sign corresponds to the **ordinary mode**,
-- The :math:`-` sign corresponds to the **extraordinary mode**.
-
-Evaluation
-----------
-
-To compute the virtual height numerically, discretize the integral using an electron density profile :math:`n_e(h)` and compute :math:`X(h)` and :math:`n_g(h)` at each layer.
-
-The plasma frequency is:
+   X &= \left( \frac{f_p}{f} \right)^2
 
 .. math::
 
-   f_p(h) = 8.98 \times 10^{-3} \cdot \sqrt{n_e(h)} \quad \text{[MHz]}
-
-The electron gyrofrequency is:
+   Y &= \frac{f_c}{f}
 
 .. math::
 
-   f_B = \frac{e B}{2 \pi m_e} \approx 2.8 \times 10^{-3} \cdot B \quad \text{[MHz]}
-
-with :math:`B` in nanotesla (nT).
-
-Finally, compute:
+   \mu' = \frac{d(f \mu)}{df}
 
 .. math::
 
-   h_v(f) \approx \sum_i n_{g, i}(f) \cdot \Delta h_i
+   h' = \int \mu' \, dh
 
-where :math:`\Delta h_i` is the step size in altitude.
+Here:
 
+- :math:`f_p` is the plasma frequency
+- :math:`f_c` is the electron gyrofrequency
+- :math:`f` is the wave frequency
+- :math:`\Psi` is the angle between the propagation direction and the magnetic field
 
+This formulation allows computing virtual height profiles using only the magnetic field model and derived plasma parameters.
 
 
 
