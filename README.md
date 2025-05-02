@@ -1,4 +1,4 @@
-<img width="250" height="200" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/PyRAY_logo.png" alt="Black circle with manta ray flying through the ionosphere" title="PyRAY Logo" style="float:left;">
+<img width="210" height="200" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/PyRAY_logo.png" alt="Black circle with manta ray flying through the ionosphere" title="PyRAY Logo" style="float:left;">
 
 
 # PyRAY (Python HF Ray Tracer for the Ionosphere)
