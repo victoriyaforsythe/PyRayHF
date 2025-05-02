@@ -409,6 +409,7 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     aY = find_Y(regridded['freq'], regridded['bmag'])
 
     # Find virtual height
-    vh[ind] = find_vh(aX, aY, regridded['bpsi'], regridded['dist'], np.min(alt), mode)
+    vh[ind] = find_vh(aX, aY, regridded['bpsi'], regridded['dist'],
+                      np.min(alt), mode)
 
     return vh
