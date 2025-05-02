@@ -164,7 +164,7 @@ def find_mu_mup(X, Y, bpsi, mode):
 
     # Select > 0 part
     under_sqrt = 1. - X * Xm1 / D
-    under_sqrt[under_sqrt < 0] = 0
+    under_sqrt[under_sqrt < 0] = np.nan
     mu = np.sqrt(under_sqrt)
 
     # Apply physical constraints on refractive index
@@ -361,7 +361,7 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     den : array-like
         Electron density in m^-3.
     bmag : array-like
-        Magnetic field magnitude.
+        Magnetic field magnitude in Tesla.
     bpsi : array-like
         Angle to magnetic field vector.
     alt : array-like

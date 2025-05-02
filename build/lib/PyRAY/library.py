@@ -164,8 +164,8 @@ def find_mu_mup(X, Y, bpsi, mode):
 
     # Select > 0 part
     under_sqrt = 1. - X * Xm1 / D
-    safe_data = np.where(under_sqrt >= 0, under_sqrt, 0)
-    mu = np.sqrt(safe_data)
+    under_sqrt[under_sqrt < 0] = np.nan
+    mu = np.sqrt(under_sqrt)
 
     # Apply physical constraints on refractive index
     mu[np.where(mu < 0.)] = 0.
