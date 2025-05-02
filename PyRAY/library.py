@@ -267,7 +267,8 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
 
     Returns
     -------
-    Tuple of regridded arrays.
+    regridded : dict
+        Dictionary with re-gridded arrays
 
     """
     # Create non-regular grid that has low resolution near zero and hight
@@ -315,8 +316,16 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
     bpsi_mod = np.reshape(np.interp(new_alt_1d, aalt, bpsi), new_alt_2d.shape)
     ionosonde_freq_mod = np.transpose(np.full((N_grid, N_freq), f))
 
-    return (ionosonde_freq_mod, den_mod, bmag_mod, bpsi_mod, dh_2d,
-            critical_height_2d, new_ind_2d, ind_grid)
+    # Create a dictionary to hold the new re-gridded arrays
+    regridded = {'freq': ionosonde_freq_mod,
+                 'den': den_mod,
+                 'bmag': bmag_mod,
+                 'bpsi': bpsi_mod,
+                 'dist': dh_2d,
+                 'alt': new_alt_2d,
+                 'crit_height': critical_height_2d,
+                 'ind': new_ind_2d}
+    return regridded
 
 
 def vertical_to_magnetic_angle(inclination_deg):
@@ -385,28 +394,21 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     # Interpolate input arrays into a new stretched grid based on the
     # reflective height for each ionosonde frequency
     # Frequency needs to be converted to MHz from Hz
-    (freq_mod,
-     den_mod,
-     bmag_mod,
-     bpsi_mod,
-     dh_2d,
-     critical_height_2d,
-     new_ind_2d,
-     ind_grid) = regrid_to_nonuniform_grid(freq_lim,
-                                           den,
-                                           bmag,
-                                           bpsi,
-                                           alt,
-                                           n_points)
+    regridded = regrid_to_nonuniform_grid(freq_lim,
+                                          den,
+                                          bmag
+                                          bpsi,
+                                          alt,
+                                          n_points)
 
     # Find the ratio of the square of the plasma frequency f_N to the square of
     # the ionosonde frequency f.
-    aX = find_X(den_mod, freq_mod)
+    aX = find_X(regridded['den'], regridded['freq'])
 
     # Find the ratio of electron gyrofrequency and the ionosonde frequency
-    aY = find_Y(freq_mod, bmag_mod)
+    aY = find_Y(regridded['freq'], regridded['bmag'])
 
     # Find virtual height
-    vh[ind] = find_vh(aX, aY, bpsi_mod, dh_2d, np.min(alt), mode)
+    vh[ind] = find_vh(aX, aY, regridded['bpsi'], regridded['dist'], np.min(alt), mode)
 
     return vh
