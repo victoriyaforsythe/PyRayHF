@@ -396,7 +396,7 @@ def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     # Frequency needs to be converted to MHz from Hz
     regridded = regrid_to_nonuniform_grid(freq_lim,
                                           den,
-                                          bmag
+                                          bmag,
                                           bpsi,
                                           alt,
                                           n_points)
