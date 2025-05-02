@@ -54,7 +54,7 @@ The figures below show the multiplier obtained from the **stretched grid functio
 This new grid ensures fine resolution near the reflection height while minimizing unnecessary points at lower altitudes.
 
 .. image:: /docs/figures/Stretched_Grid.png
-    :width: 600px
+    :width: 800px
     :align: center
     :alt: Stretched Grid.
 
@@ -66,20 +66,20 @@ The following figures present the input data converted into 2D arrays, where the
 The first figure displays the altitude of each grid point. The subsequent figures show the interpolated plasma density, magnetic field strength, and magnetic field angle.
 
 .. image:: /docs/figures/Regridded_Input_Matrix.png
-    :width: 600px
+    :width: 800px
     :align: center
     :alt: Input Matrixes.
 
 The following figures present the computed **X**, **Y**, **Refractive Index (mu)**, and **Group Refractive Index (mu_prime)** parameters for O-mode.
 
 .. image:: /docs/figures/Intermediate_Calculations.png
-    :width: 600px
+    :width: 800px
     :align: center
     :alt: Intermediate Calculations.
 
 The group refractive index **Group Refractive Index (mu_prime)** is multiplied with a matrix that contains the distances between the grid points and summed over the second axis, obtaining the virtual height, shown with red curves on the figure below.
 
 .. image:: /docs/figures/Virtual_Height.png
-    :width: 600px
+    :width: 400px
     :align: center
     :alt: Virtual Height.
