@@ -127,7 +127,7 @@ This results in a **resampled array of altitudes**, with a fixed number of point
 The figures below show the multiplier obtained from the **stretched grid function** and the locations of the new stretched grid relative to the reflection height for each ionosonde frequency, plotted on the same x-axis as the plasma frequency.
 This new grid ensures fine resolution near the reflection height while minimizing unnecessary points at lower altitudes.
 
-<img width="700" height="700" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/Stretched_Grid.png" alt="Stretched Grid" title="Stretched Grid" style="float:center;">
+![Stretched Grid](docs/figures/Stretched_Grid.png)
 
 By repeating this process for each ionosonde frequency, we form a 2D matrix of altitudes with dimensions `[N_frequency, N_points]`.
 At this stage, we **interpolate all input parameters**—such as electron density, magnetic field strength, and angle—onto this new grid.
@@ -136,14 +136,14 @@ This ensures that every virtual height calculation uses accurately aligned input
 The following figures present the input data converted into 2D arrays, where the x-axis represents the ionosonde frequency and the y-axis corresponds to the vertical grid index, with a size of `N_points`.
 The first figure displays the altitude of each grid point. The subsequent figures show the interpolated plasma density, magnetic field strength, and magnetic field angle.
 
-<img width="700" height="700" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/Regridded_Input_Matrix.png" alt="Input Matrixes" title="Input Matrixes" style="float:center;">
+![Input Matrixes](docs/figures/Regridded_Input_Matrix.png)
 
 The following figures present the computed **X**, **Y**, **Refractive Index (mu)**, and **Group Refractive Index (mu_prime)** parameters for O-mode.
 
-<img width="700" height="700" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/Intermediate_Calculationsx.png" alt="Intermediate Calculations" title="Intermediate Calculations" style="float:center;">
+![Intermediate Calculations](docs/figures/Intermediate_Calculationsx.png)
 
 The group refractive index **Group Refractive Index (mu_prime)** is multiplied with a matrix that contains the distances between the grid points and summed over the second axis, obtaining the virtual height, shown with red curves on the figure below.
 
-<img width="700" height="700" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/Virtual_Height.png" alt="Virtual Height" title="Virtual Height" style="float:center;">
+![Virtual_Height](docs/figures/Virtual_Height.png)
 
 See the [tutorials](https://github.com/victoriyaforsythe/PyRAY/tree/main/docs/tutorials) folder for mode detailed examples.
