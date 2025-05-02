@@ -54,7 +54,7 @@ The figures below show the multiplier obtained from the **stretched grid functio
 This new grid ensures fine resolution near the reflection height while minimizing unnecessary points at lower altitudes.
 
 .. image:: /docs/figures/Stretched_Grid.png
-    :width: 800px
+    :width: 700px
     :align: center
     :alt: Stretched Grid.
 
