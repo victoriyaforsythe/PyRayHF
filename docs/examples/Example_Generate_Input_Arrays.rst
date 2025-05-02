@@ -134,6 +134,6 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
     pickle.dump(input_example, open(file_save, "wb"))
 
 .. image:: /docs/figures/Input_Arrays.png
-    :width: 600px
+    :width: 800px
     :align: center
     :alt: DP, Magnetic field strength, Magnetic field angle.
