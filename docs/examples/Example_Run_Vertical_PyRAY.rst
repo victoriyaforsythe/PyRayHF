@@ -72,6 +72,7 @@ the x-axis and virtual height on the y-axis.
     ax.plot(input_arrays['freq'], vh_X, c='blue', label='X-mode', zorder=2)
     plt.legend()
 
+
 .. image:: /docs/figures/Run_Vertical_PyRay.png
     :width: 600px
     :align: center
