@@ -46,10 +46,8 @@ Classifier: Operating System :: Microsoft :: Windows
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: matplotlib
 Requires-Dist: numpy
-Requires-Dist: scipy
-Requires-Dist: PyIRI
+Requires-Dist: pytest
 Provides-Extra: test
 Requires-Dist: coveralls; extra == "test"
 Requires-Dist: flake8; extra == "test"
