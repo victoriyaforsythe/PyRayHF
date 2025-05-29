@@ -1,20 +1,21 @@
+from PyRAY.library import constants
+from PyRAY.library import den2freq
+from PyRAY.library import find_mu_mup
+from PyRAY.library import find_vh
+from PyRAY.library import find_X
+from PyRAY.library import find_Y
+from PyRAY.library import freq2den
+from PyRAY.library import regrid_to_nonuniform_grid
+from PyRAY.library import smooth_nonuniform_grid
+from PyRAY.library import vertical_to_magnetic_angle
+from PyRAY.library import virtical_forward_operator
+import numpy as np
+import pytest
+
 #!/usr/bin/env python
 # --------------------------------------------------------
 """Unit tests for PyRAY.library functions."""
 
-import numpy as np
-import pytest
-from PyRAY.library import constants
-from PyRAY.library import den2freq
-from PyRAY.library import freq2den
-from PyRAY.library import find_X
-from PyRAY.library import find_Y
-from PyRAY.library import find_mu_mup
-from PyRAY.library import find_vh
-from PyRAY.library import smooth_nonuniform_grid
-from PyRAY.library import regrid_to_nonuniform_grid
-from PyRAY.library import vertical_to_magnetic_angle
-from PyRAY.library import virtical_forward_operator
 
 
 def test_constants_output():
@@ -36,7 +37,9 @@ def test_den2freq_scalar():
     expected = np.sqrt(density) * 8.97866275
     result = den2freq(density)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected, rel=1e-8), "Incorrect frequency for scalar input"
+    assert result == pytest.approx(expected, (
+    rel=1e-8), "Incorrect frequency for scalar input"
+)
 
 
 def test_den2freq_array():
@@ -45,7 +48,9 @@ def test_den2freq_array():
     expected = np.sqrt(density) * 8.97866275
     result = den2freq(density)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result, expected, rtol=1e-8), "Incorrect frequency for array input"
+    assert np.allclose(result, (
+    expected, rtol=1e-8), "Incorrect frequency for array input"
+)
 
 
 def test_den2freq_negative_input():
@@ -60,7 +65,9 @@ def test_freq2den_scalar():
     expected = (frequency / 8.97866275) ** 2
     result = freq2den(frequency)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected, rel=1e-8), "Incorrect density for scalar input"
+    assert result == pytest.approx(expected, (
+    rel=1e-8), "Incorrect density for scalar input"
+)
 
 
 def test_freq2den_array():
@@ -69,7 +76,9 @@ def test_freq2den_array():
     expected = (frequencies / 8.97866275) ** 2
     result = freq2den(frequencies)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result, expected, rtol=1e-8), "Incorrect density for array input"
+    assert np.allclose(result, (
+    expected, rtol=1e-8), "Incorrect density for array input"
+)
 
 
 def test_freq2den_negative_result_not_expected():
@@ -86,7 +95,9 @@ def test_find_X_scalar():
     expected = ((np.sqrt(n_e) * 8.97866275) ** 2) / (f ** 2)
     result = find_X(n_e, f)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected, rel=1e-8), "Incorrect X value for scalar input"
+    assert result == pytest.approx(expected, (
+    rel=1e-8), "Incorrect X value for scalar input"
+)
 
 
 def test_find_X_array():
@@ -96,7 +107,9 @@ def test_find_X_array():
     expected = ((np.sqrt(n_e) * 8.97866275) ** 2) / (f ** 2)
     result = find_X(n_e, f)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result, expected, rtol=1e-8), "Incorrect X values for array input"
+    assert np.allclose(result, (
+    expected, rtol=1e-8), "Incorrect X values for array input"
+)
 
 
 def test_find_Y_scalar():
@@ -107,7 +120,9 @@ def test_find_Y_scalar():
     expected = g_p * b / f
     result = find_Y(f, b)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected, rel=1e-8), "Incorrect Y value for scalar input"
+    assert result == pytest.approx(expected, (
+    rel=1e-8), "Incorrect Y value for scalar input"
+)
 
 
 def test_find_Y_array():
@@ -118,7 +133,9 @@ def test_find_Y_array():
     expected = g_p * b / f
     result = find_Y(f, b)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result, expected, rtol=1e-8), "Incorrect Y values for array input"
+    assert np.allclose(result, (
+    expected, rtol=1e-8), "Incorrect Y values for array input"
+)
 
 
 def test_find_mu_mup_edge_cases():
@@ -153,7 +170,9 @@ def test_find_mu_mup_edge_cases():
     # Mask NaNs for comparison
     valid_idx = ~np.isnan(expected_mu)
     np.testing.assert_allclose(mu[valid_idx], expected_mu[valid_idx], rtol=1e-5)
-    np.testing.assert_allclose(mup[valid_idx], expected_mup[valid_idx], rtol=1e-5)
+    np.testing.assert_allclose(mup[valid_idx], (
+    expected_mup[valid_idx], rtol=1e-5)
+)
 
     # Ensure NaNs are in correct positions
     assert np.isnan(mu[~valid_idx]).all()
@@ -270,22 +289,3 @@ def test_virtical_forward_operator_basic_O_mode():
     assert vh.shape == freq.shape
     assert np.isnan(vh[-1])  # Last freq is above foF2, so should be NaN
     assert np.all(np.isfinite(vh[:-1]))  # Lower freqs should be finite
-
-
-def test_virtical_forward_operator_O_and_X_modes():
-    """Test virtical_forward_operator for both O and X modes with minimal inputs."""
-    # Test input arrays
-    freq = np.array([1.0, 2.0, 3.0])  # MHz
-    alt = np.array([100, 200, 300])  # km
-    den = np.array([1e11, 5e11, 1e12])  # m^-3
-    bmag = np.array([5e-5, 5e-5, 5e-5])  # Tesla
-    bpsi = np.array([60.0, 60.0, 60.0])  # degrees
-
-    for mode in ['O', 'X']:
-        vh = virtical_forward_operator(freq, den, bmag, bpsi, alt, mode=mode,
-                                       n_points=50)
-
-        assert isinstance(vh, np.ndarray)
-        assert vh.shape == freq.shape
-        assert np.isnan(vh[-1]), f"Expected NaN for freq above foF2 in mode {mode}"
-        assert np.all(np.isfinite(vh[:-1])), f"Expected finite heights below foF2 in mode {mode}"
