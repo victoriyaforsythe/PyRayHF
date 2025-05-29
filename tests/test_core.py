@@ -49,7 +49,7 @@ def test_den2freq_array():
     result = den2freq(density)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result, (expected,
-                                rtol=1e-8),
+                                rtol==1e-8),
                        "Incorrect frequency for array input")
 
 
@@ -66,7 +66,7 @@ def test_freq2den_scalar():
     result = freq2den(frequency)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect density for scalar input")
 
 
@@ -78,7 +78,7 @@ def test_freq2den_array():
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result,
                        (expected,
-                        rtol=1e-8), "Incorrect density for array input")
+                        rtol==1e-8), "Incorrect density for array input")
 
 
 def test_freq2den_negative_result_not_expected():
@@ -96,7 +96,7 @@ def test_find_X_scalar():
     result = find_X(n_e, f)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect X value for scalar input")
 
 
@@ -109,7 +109,7 @@ def test_find_X_array():
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result,
                        (expected,
-                        rtol=1e-8), "Incorrect X values for array input")
+                        rtol==1e-8), "Incorrect X values for array input")
 
 
 def test_find_Y_scalar():
@@ -121,7 +121,7 @@ def test_find_Y_scalar():
     result = find_Y(f, b)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect Y value for scalar input")
 
 
@@ -135,7 +135,7 @@ def test_find_Y_array():
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result,
                        (expected,
-                        rtol=1e-8), "Incorrect Y values for array input")
+                        rtol==1e-8), "Incorrect Y values for array input")
 
 
 def test_find_mu_mup_edge_cases():
