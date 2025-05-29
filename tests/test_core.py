@@ -36,8 +36,7 @@ def test_den2freq_scalar():
     expected = np.sqrt(density) * 8.97866275
     result = den2freq(density)
     assert isinstance(result, float), "Result should be a float"
-    message = "Incorrect frequency for scalar input"
-    assert result == pytest.approx(expected, rel=1e-8), message
+    assert result == pytest.approx(expected, rel=1e-8), "Incorrect frequency for scalar input"
 
 
 def test_den2freq_array():
@@ -46,8 +45,7 @@ def test_den2freq_array():
     expected = np.sqrt(density) * 8.97866275
     result = den2freq(density)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    message = "Incorrect frequency for array input"
-    assert np.allclose(result, expected, rtol=1e-8), message
+    assert np.allclose(result, expected, rtol=1e-8), "Incorrect frequency for array input"
 
 
 def test_den2freq_negative_input():
@@ -62,8 +60,7 @@ def test_freq2den_scalar():
     expected = (frequency / 8.97866275) ** 2
     result = freq2den(frequency)
     assert isinstance(result, float), "Result should be a float"
-    message = "Incorrect density for scalar input"
-    assert result == pytest.approx(expected, rel=1e-8), message
+    assert result == pytest.approx(expected, rel=1e-8), "Incorrect density for scalar input"
 
 
 def test_freq2den_array():
@@ -72,12 +69,11 @@ def test_freq2den_array():
     expected = (frequencies / 8.97866275) ** 2
     result = freq2den(frequencies)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    message = "Incorrect density for array input"
-    assert np.allclose(result, expected, rtol=1e-8), message
+    assert np.allclose(result, expected, rtol=1e-8), "Incorrect density for array input"
 
 
 def test_freq2den_negative_result_not_expected():
-    """Test that freq2den doesn't produce negative den for valid input."""
+    """Test that freq2den doesn't produce negative densities for valid input."""
     frequencies = np.array([1.0e6, 5.0e6])
     result = freq2den(frequencies)
     assert np.all(result >= 0), "Densities must be non-negative"
@@ -90,8 +86,7 @@ def test_find_X_scalar():
     expected = ((np.sqrt(n_e) * 8.97866275) ** 2) / (f ** 2)
     result = find_X(n_e, f)
     assert isinstance(result, float), "Result should be a float"
-    message = "Incorrect X value for scalar input"
-    assert result == pytest.approx(expected, rel=1e-8), message
+    assert result == pytest.approx(expected, rel=1e-8), "Incorrect X value for scalar input"
 
 
 def test_find_X_array():
@@ -101,8 +96,7 @@ def test_find_X_array():
     expected = ((np.sqrt(n_e) * 8.97866275) ** 2) / (f ** 2)
     result = find_X(n_e, f)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    message =  "Incorrect X values for array input"
-    assert np.allclose(result, expected, rtol=1e-8), message
+    assert np.allclose(result, expected, rtol=1e-8), "Incorrect X values for array input"
 
 
 def test_find_Y_scalar():
@@ -113,8 +107,7 @@ def test_find_Y_scalar():
     expected = g_p * b / f
     result = find_Y(f, b)
     assert isinstance(result, float), "Result should be a float"
-    message = "Incorrect Y value for scalar input"
-    assert result == pytest.approx(expected, rel=1e-8), message
+    assert result == pytest.approx(expected, rel=1e-8), "Incorrect Y value for scalar input"
 
 
 def test_find_Y_array():
@@ -125,8 +118,7 @@ def test_find_Y_array():
     expected = g_p * b / f
     result = find_Y(f, b)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    message = "Incorrect Y values for array input"
-    assert np.allclose(result, expected, rtol=1e-8), message
+    assert np.allclose(result, expected, rtol=1e-8), "Incorrect Y values for array input"
 
 
 def test_find_mu_mup_edge_cases():
@@ -160,10 +152,8 @@ def test_find_mu_mup_edge_cases():
 
     # Mask NaNs for comparison
     valid_idx = ~np.isnan(expected_mu)
-    np.testing.assert_allclose(mu[valid_idx],
-                               expected_mu[valid_idx], rtol=1e-5)
-    np.testing.assert_allclose(mup[valid_idx],
-                               expected_mup[valid_idx], rtol=1e-5)
+    np.testing.assert_allclose(mu[valid_idx], expected_mu[valid_idx], rtol=1e-5)
+    np.testing.assert_allclose(mup[valid_idx], expected_mup[valid_idx], rtol=1e-5)
 
     # Ensure NaNs are in correct positions
     assert np.isnan(mu[~valid_idx]).all()
@@ -264,7 +254,7 @@ def test_vertical_to_magnetic_angle_basic_cases():
 
 
 def test_virtical_forward_operator_basic_O_mode():
-    """Test for virtical_forward_operator in 'O' mode with short arrays."""
+    """Basic test for virtical_forward_operator in 'O' mode with short arrays."""
     # Generate a simple test case with increasing density and constant B-field
     freq = np.array([1.0, 2.0, 3.0])  # MHz
     alt = np.array([100, 200, 300])  # km
@@ -283,7 +273,7 @@ def test_virtical_forward_operator_basic_O_mode():
 
 
 def test_virtical_forward_operator_O_and_X_modes():
-    """Test virtical_forward_operator for O and X modes with minimal inputs."""
+    """Test virtical_forward_operator for both O and X modes with minimal inputs."""
     # Test input arrays
     freq = np.array([1.0, 2.0, 3.0])  # MHz
     alt = np.array([100, 200, 300])  # km
@@ -297,7 +287,5 @@ def test_virtical_forward_operator_O_and_X_modes():
 
         assert isinstance(vh, np.ndarray)
         assert vh.shape == freq.shape
-        text = f"Expected NaN for freq above foF2 in mode {mode}"
-        assert np.isnan(vh[-1]), text
-        text = f"Expected finite heights below foF2 in mode {mode}"
-        assert np.all(np.isfinite(vh[:-1])), text
+        assert np.isnan(vh[-1]), f"Expected NaN for freq above foF2 in mode {mode}"
+        assert np.all(np.isfinite(vh[:-1])), f"Expected finite heights below foF2 in mode {mode}"
