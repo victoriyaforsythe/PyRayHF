@@ -38,7 +38,7 @@ def test_den2freq_scalar():
     result = den2freq(density)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect frequency for scalar input")
 
 
