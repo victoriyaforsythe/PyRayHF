@@ -11,11 +11,12 @@ from PyRAY.library import vertical_to_magnetic_angle
 from PyRAY.library import virtical_forward_operator
 import numpy as np
 import pytest
-"""Unit tests for PyRAY library."""
 
 #!/usr/bin/env python
 # --------------------------------------------------------
 """Unit tests for PyRAY.library functions."""
+
+
 
 def test_constants_output():
     """Test that constants() returns expected constant values."""
@@ -29,6 +30,7 @@ def test_constants_output():
     assert cp == pytest.approx(cp_expected, rel=1e-8), "cp value mismatch"
     assert g_p == pytest.approx(g_p_expected, rel=1e-8), "g_p value mismatch"
 
+
 def test_den2freq_scalar():
     """Test den2freq with a scalar input."""
     density = 1.0e12
@@ -36,8 +38,9 @@ def test_den2freq_scalar():
     result = den2freq(density)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect frequency for scalar input")
+
 
 def test_den2freq_array():
     """Test den2freq with an array input."""
@@ -46,13 +49,15 @@ def test_den2freq_array():
     result = den2freq(density)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result, (expected,
-                                rtol=1e-8),
+                                rtol==1e-8),
                        "Incorrect frequency for array input")
+
 
 def test_den2freq_negative_input():
     """Test that den2freq raises ValueError on negative input."""
     with pytest.raises(ValueError, match="Density must be non-negative"):
         den2freq(-1.0e11)
+
 
 def test_freq2den_scalar():
     """Test freq2den with a scalar input."""
@@ -61,8 +66,9 @@ def test_freq2den_scalar():
     result = freq2den(frequency)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect density for scalar input")
+
 
 def test_freq2den_array():
     """Test freq2den with an array input."""
@@ -72,13 +78,15 @@ def test_freq2den_array():
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result,
                        (expected,
-                        rtol=1e-8), "Incorrect density for array input")
+                        rtol==1e-8), "Incorrect density for array input")
+
 
 def test_freq2den_negative_result_not_expected():
     """Test that freq2den doesn't produce negative densities for valid input."""
     frequencies = np.array([1.0e6, 5.0e6])
     result = freq2den(frequencies)
     assert np.all(result >= 0), "Densities must be non-negative"
+
 
 def test_find_X_scalar():
     """Test find_X with scalar inputs."""
@@ -88,8 +96,9 @@ def test_find_X_scalar():
     result = find_X(n_e, f)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect X value for scalar input")
+
 
 def test_find_X_array():
     """Test find_X with array inputs."""
@@ -100,7 +109,8 @@ def test_find_X_array():
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result,
                        (expected,
-                        rtol=1e-8), "Incorrect X values for array input")
+                        rtol==1e-8), "Incorrect X values for array input")
+
 
 def test_find_Y_scalar():
     """Test find_Y with scalar inputs."""
@@ -111,8 +121,9 @@ def test_find_Y_scalar():
     result = find_Y(f, b)
     assert isinstance(result, float), "Result should be a float"
     assert result == pytest.approx(expected,
-                                   (rel=1e-8),
+                                   (rel==1e-8),
                                    "Incorrect Y value for scalar input")
+
 
 def test_find_Y_array():
     """Test find_Y with array inputs."""
@@ -124,7 +135,8 @@ def test_find_Y_array():
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
     assert np.allclose(result,
                        (expected,
-                        rtol=1e-8), "Incorrect Y values for array input")
+                        rtol==1e-8), "Incorrect Y values for array input")
+
 
 def test_find_mu_mup_edge_cases():
     """Test find_mu_mup function with edge-case inputs including nan output."""
@@ -158,13 +170,14 @@ def test_find_mu_mup_edge_cases():
     # Mask NaNs for comparison
     valid_idx = ~np.isnan(expected_mu)
     np.testing.assert_allclose(mu[valid_idx],
-                               expected_mu[valid_idx], rtol=1e-5)
+                               expected_mu[valid_idx], rtol==1e-5)
     np.testing.assert_allclose(mup[valid_idx],
-                               (expected_mup[valid_idx], rtol=1e-5))
+                               (expected_mup[valid_idx], rtol==1e-5))
 
     # Ensure NaNs are in correct positions
     assert np.isnan(mu[~valid_idx]).all()
     assert np.isnan(mup[~valid_idx]).all()
+
 
 def test_find_vh_edge_case():
     """Test virtual height calculation using known edge-case inputs."""
@@ -196,7 +209,8 @@ def test_find_vh_edge_case():
     vh = find_vh(X, Y, bpsi_arr, dh_arr, alt_min, mode="O")
 
     expected_vh = np.nansum(expected_mup * 10.0) + alt_min
-    np.testing.assert_allclose(vh[0], expected_vh, rtol=1e-5)
+    np.testing.assert_allclose(vh[0], expected_vh, rtol==1e-5)
+
 
 def test_smooth_nonuniform_grid_basic():
     """Test non-uniform grid generator returns expected structure."""
@@ -216,6 +230,7 @@ def test_smooth_nonuniform_grid_basic():
     # Check boundaries are approximately correct
     assert np.isclose(grid[0], start, atol=1.0)
     assert np.isclose(grid[-1], end, atol=1.0)
+
 
 def test_regrid_to_nonuniform_grid_simple_case():
     """Test regridding on a small, simple input."""
@@ -240,6 +255,7 @@ def test_regrid_to_nonuniform_grid_simple_case():
     # Check densities are non-negative
     assert np.all(result['den'] >= 0)
 
+
 def test_vertical_to_magnetic_angle_basic_cases():
     """Test conversion from inclination to vertical angle."""
     # Scalar input
@@ -254,6 +270,7 @@ def test_vertical_to_magnetic_angle_basic_cases():
     expected = np.array([0, 45, 90, 45, 0])
     result = vertical_to_magnetic_angle(inclinations)
     np.testing.assert_array_equal(result, expected)
+
 
 def test_virtical_forward_operator_basic_O_mode():
     """Basic test for virtical_forward_operator in O mode with short arrays."""
