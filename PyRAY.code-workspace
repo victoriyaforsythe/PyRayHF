@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "PyRAY",
+			"path": "."
+		},
+		{
+			"name": ".github",
+			"path": "../PyIRTAM/.github"
+		}
+	],
+	"settings": {}
+}
