@@ -1,21 +1,20 @@
-from PyRAY.library import constants
-from PyRAY.library import den2freq
-from PyRAY.library import find_mu_mup
-from PyRAY.library import find_vh
-from PyRAY.library import find_X
-from PyRAY.library import find_Y
-from PyRAY.library import freq2den
-from PyRAY.library import regrid_to_nonuniform_grid
-from PyRAY.library import smooth_nonuniform_grid
-from PyRAY.library import vertical_to_magnetic_angle
-from PyRAY.library import virtical_forward_operator
-import numpy as np
-import pytest
-
-#!/usr/bin/env python
+# usr/bin/env python
 # --------------------------------------------------------
 """Unit tests for PyRAY.library functions."""
 
+import numpy as np
+import pytest
+from PyRAY.library import constants
+from PyRAY.library import den2freq
+from PyRAY.library import freq2den
+from PyRAY.library import find_X
+from PyRAY.library import find_Y
+from PyRAY.library import find_mu_mup
+from PyRAY.library import find_vh
+from PyRAY.library import smooth_nonuniform_grid
+from PyRAY.library import regrid_to_nonuniform_grid
+from PyRAY.library import vertical_to_magnetic_angle
+from PyRAY.library import virtical_forward_operator
 
 
 def test_constants_output():
@@ -37,9 +36,8 @@ def test_den2freq_scalar():
     expected = np.sqrt(density) * 8.97866275
     result = den2freq(density)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected,
-                                   (rel==1e-8),
-                                   "Incorrect frequency for scalar input")
+    assert result == (pytest.approx(expected, rel=1e-8),
+                      "Incorrect frequency for scalar input")
 
 
 def test_den2freq_array():
@@ -48,9 +46,8 @@ def test_den2freq_array():
     expected = np.sqrt(density) * 8.97866275
     result = den2freq(density)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result, (expected,
-                                rtol==1e-8),
-                       "Incorrect frequency for array input")
+    a = "Incorrect frequency for array input"
+    assert np.allclose(result, expected, rtol=1e-8), a
 
 
 def test_den2freq_negative_input():
@@ -65,9 +62,8 @@ def test_freq2den_scalar():
     expected = (frequency / 8.97866275) ** 2
     result = freq2den(frequency)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected,
-                                   (rel==1e-8),
-                                   "Incorrect density for scalar input")
+    assert result == (pytest.approx(expected, rel=1e-8),
+                      "Incorrect density for scalar input")
 
 
 def test_freq2den_array():
@@ -76,9 +72,8 @@ def test_freq2den_array():
     expected = (frequencies / 8.97866275) ** 2
     result = freq2den(frequencies)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result,
-                       (expected,
-                        rtol==1e-8), "Incorrect density for array input")
+    a = "Incorrect density for array input"
+    assert np.allclose(result, expected, rtol=1e-8), a
 
 
 def test_freq2den_negative_result_not_expected():
@@ -95,9 +90,8 @@ def test_find_X_scalar():
     expected = ((np.sqrt(n_e) * 8.97866275) ** 2) / (f ** 2)
     result = find_X(n_e, f)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected,
-                                   (rel==1e-8),
-                                   "Incorrect X value for scalar input")
+    assert result == (pytest.approx(expected, rel=1e-8),
+                      "Incorrect X value for scalar input")
 
 
 def test_find_X_array():
@@ -107,9 +101,8 @@ def test_find_X_array():
     expected = ((np.sqrt(n_e) * 8.97866275) ** 2) / (f ** 2)
     result = find_X(n_e, f)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result,
-                       (expected,
-                        rtol==1e-8), "Incorrect X values for array input")
+    a = "Incorrect X values for array input"
+    assert np.allclose(result, expected, rtol=1e-8), a
 
 
 def test_find_Y_scalar():
@@ -120,9 +113,8 @@ def test_find_Y_scalar():
     expected = g_p * b / f
     result = find_Y(f, b)
     assert isinstance(result, float), "Result should be a float"
-    assert result == pytest.approx(expected,
-                                   (rel==1e-8),
-                                   "Incorrect Y value for scalar input")
+    assert result == (pytest.approx(expected, rel=1e-8),
+                      "Incorrect Y value for scalar input")
 
 
 def test_find_Y_array():
@@ -133,9 +125,8 @@ def test_find_Y_array():
     expected = g_p * b / f
     result = find_Y(f, b)
     assert isinstance(result, np.ndarray), "Result should be a NumPy array"
-    assert np.allclose(result,
-                       (expected,
-                        rtol==1e-8), "Incorrect Y values for array input")
+    a = "Incorrect Y values for array input"
+    assert np.allclose(result, expected, rtol=1e-8), a
 
 
 def test_find_mu_mup_edge_cases():
@@ -170,9 +161,9 @@ def test_find_mu_mup_edge_cases():
     # Mask NaNs for comparison
     valid_idx = ~np.isnan(expected_mu)
     np.testing.assert_allclose(mu[valid_idx],
-                               expected_mu[valid_idx], rtol==1e-5)
+                               expected_mu[valid_idx], rtol=1e-5)
     np.testing.assert_allclose(mup[valid_idx],
-                               (expected_mup[valid_idx], rtol==1e-5))
+                               expected_mup[valid_idx], rtol=1e-5)
 
     # Ensure NaNs are in correct positions
     assert np.isnan(mu[~valid_idx]).all()
@@ -209,7 +200,7 @@ def test_find_vh_edge_case():
     vh = find_vh(X, Y, bpsi_arr, dh_arr, alt_min, mode="O")
 
     expected_vh = np.nansum(expected_mup * 10.0) + alt_min
-    np.testing.assert_allclose(vh[0], expected_vh, rtol==1e-5)
+    np.testing.assert_allclose(vh[0], expected_vh, rtol=1e-5)
 
 
 def test_smooth_nonuniform_grid_basic():
