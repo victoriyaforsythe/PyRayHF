@@ -17,7 +17,6 @@ import pytest
 """Unit tests for PyRAY.library functions."""
 
 
-
 def test_constants_output():
     """Test that constants() returns expected constant values."""
     cp_expected = 8.97866275
