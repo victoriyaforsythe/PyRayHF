@@ -170,9 +170,9 @@ def test_find_mu_mup_edge_cases():
     # Mask NaNs for comparison
     valid_idx = ~np.isnan(expected_mu)
     np.testing.assert_allclose(mu[valid_idx],
-                               expected_mu[valid_idx], rtol=1e-5)
+                               expected_mu[valid_idx], rtol==1e-5)
     np.testing.assert_allclose(mup[valid_idx],
-                               (expected_mup[valid_idx], rtol=1e-5))
+                               (expected_mup[valid_idx], rtol==1e-5))
 
     # Ensure NaNs are in correct positions
     assert np.isnan(mu[~valid_idx]).all()
@@ -209,7 +209,7 @@ def test_find_vh_edge_case():
     vh = find_vh(X, Y, bpsi_arr, dh_arr, alt_min, mode="O")
 
     expected_vh = np.nansum(expected_mup * 10.0) + alt_min
-    np.testing.assert_allclose(vh[0], expected_vh, rtol=1e-5)
+    np.testing.assert_allclose(vh[0], expected_vh, rtol==1e-5)
 
 
 def test_smooth_nonuniform_grid_basic():
