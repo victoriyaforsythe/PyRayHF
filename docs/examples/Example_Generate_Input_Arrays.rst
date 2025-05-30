@@ -12,8 +12,6 @@ Example: Generate Input Arrays Using PyIRI
     import matplotlib.pyplot as plt
 
     import PyIRI
-    import PyIRI.main_library as pyiri_main
-    import PyIRI.igrf_library as igrf
     import PyRAY
 
 2. Select the day and Universal Time of interest.
@@ -37,6 +35,8 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 ::
 
     dtime_day = datetime.datetime(year, month, day)
+    # Find decimal year for IGRF input
+    decimal_year = PyIRI.main_library.decimal_year(dtime_day)
 
 5. Define geographic location (longitude, latitude in degrees)
 
@@ -55,16 +55,17 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 
 ::
 
-    _, _, _, _, _, _, edp = pyiri_main.IRI_density_1day(year,
-                                                        month,
-                                                        day,
-                                                        np.array([UT]),
-                                                        np.array([lon]),
-                                                        np.array([lat]),
-                                                        aalt,
-                                                        F107,
-                                                        PyIRI.coeff_dir,
-                                                        ccir_or_ursi=1)
+    (_, _, _, _, _, _, 
+    edp) = PyIRI.edp_update.IRI_density_1day(year,
+                                            month,
+                                            day,
+                                            np.array([UT]),
+                                            np.array([lon]),
+                                            np.array([lat]),
+                                            aalt,
+                                            F107,
+                                            PyIRI.coeff_dir,
+                                            ccir_or_ursi=1)
 
 8. Extract 1-D electron density profile
 
@@ -76,17 +77,21 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 
 ::
 
-    _, _, _, _, _, inc_min, bmag_min = igrf.inclination(PyIRI.coeff_dir,
-                                                    dtime_day,
-                                                    np.array([lon]),
-                                                    np.array([lat]),
-                                                    np.min(aalt))
+    (inc_min, _, _, _, _, _,
+    bmag_min) = PyIRI.igrf_library.inclination(PyIRI.coeff_dir,
+                                                decimal_year,
+                                                np.array([lon]),
+                                                np.array([lat]),
+                                                np.min(aalt),
+                                                only_inc=False)
 
-    _, _, _, _, _, inc_max, bmag_max = igrf.inclination(PyIRI.coeff_dir,
-                                                        dtime_day,
-                                                        np.array([lon]),
-                                                        np.array([lat]),
-                                                        np.max(aalt))
+    (inc_max, _, _, _, _, _,
+    bmag_max) = PyIRI.igrf_library.inclination(PyIRI.coeff_dir,
+                                                decimal_year,
+                                                np.array([lon]),
+                                                np.array([lat]),
+                                                np.max(aalt),
+                                                only_inc=False)
 
 10. Compute angles between the magnetic field and vertical ray.
 
@@ -113,8 +118,8 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 ::
 
     ionosonde_frequency = np.arange(1e6,
-                                PyRAY.library.den2freq(np.max(den)),
-                                0.1e6)
+                                    PyRAY.library.den2freq(np.max(den)),
+                                    0.1e6)
 
 14. Combine inputs into a dictionary.
 
