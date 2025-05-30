@@ -150,8 +150,8 @@ def test_find_vh_basic():
 
 def test_smooth_nonuniform_grid_basic():
     """Test non-uniform grid generator returns expected structure."""
-    start = 100.0
-    end = 500.0
+    start = 0.
+    end = 1.
     n_points = 10
     sharpness = 5.0
 
@@ -162,10 +162,10 @@ def test_smooth_nonuniform_grid_basic():
 
     # Ensure grid is increasing
     assert np.all(np.diff(grid) > 0)
-
+   
     # Check boundaries
-    assert np.isclose(grid[0], start, atol=1.0)  # Lower boundary
-    assert np.isclose(grid[-1], end, atol=1.0)   # Upper boundary
+    assert np.isclose(grid[0], start, atol=1e-6)  # Lower boundary
+    assert np.isclose(grid[-1], end, atol=1e-6)   # Upper boundary
 
 
 def test_regrid_to_nonuniform_grid_basic():
