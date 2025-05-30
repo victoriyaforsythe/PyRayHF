@@ -28,7 +28,7 @@ of vertical grid points is sufficient for O-mode (e.g., 200).
 
     mode = 'O'
     n_points = 200
-    vh_O = PyRayHF.library.virtical_forward_operator(input_arrays['freq'],
+    vh_O = PyRayHF.library.vertical_forward_operator(input_arrays['freq'],
                                                      input_arrays['den'],
                                                      input_arrays['bmag'],
                                                      input_arrays['bpsi'],
@@ -44,7 +44,7 @@ since the result may be noisy at low resolution.
 
     mode = 'X'
     n_points = 20000
-    vh_X = PyRayHF.library.virtical_forward_operator(input_arrays['freq'],
+    vh_X = PyRayHF.library.vertical_forward_operator(input_arrays['freq'],
                                                      input_arrays['den'],
                                                      input_arrays['bmag'],
                                                      input_arrays['bpsi'],

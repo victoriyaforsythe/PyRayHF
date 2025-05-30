@@ -350,7 +350,7 @@ def vertical_to_magnetic_angle(inclination_deg):
     return vertical_angle
 
 
-def virtical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
+def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
                               n_points=2000):
     """Calculate virtual height from ionosonde freq and ion profile.
 

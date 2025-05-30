@@ -14,7 +14,7 @@ from PyRayHF.library import freq2den
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import vertical_to_magnetic_angle
-from PyRayHF.library import virtical_forward_operator
+from PyRayHF.library import vertical_forward_operator
 
 
 def test_constants_output():
@@ -198,15 +198,15 @@ def test_vertical_to_magnetic_angle_basic():
     assert np.allclose(result_array, expected_array)
 
 
-def test_virtical_forward_operator_basic_O_mode():
-    """Basic test for virtical_forward_operator in O mode with short arrays."""
+def test_vertical_forward_operator_basic_O_mode():
+    """Basic test for vertical_forward_operator in O mode with short arrays."""
     freq = np.array([1.0, 2.0, 10.0])  # MHz (10 MHz > fof2)
     alt = np.array([100, 200, 300])
     den = np.array([1e11, 5e11, 1e12])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
 
-    vh = virtical_forward_operator(freq, den, bmag, bpsi, alt,
+    vh = vertical_forward_operator(freq, den, bmag, bpsi, alt,
                                    mode='O', n_points=50)
 
     assert isinstance(vh, np.ndarray)
