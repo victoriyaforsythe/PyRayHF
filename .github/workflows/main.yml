@@ -53,11 +53,11 @@ jobs:
     - name: Test with pytest
       run: pytest --cov=PyRAY
 
-    # - name: Publish results to coveralls
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     COVERALLS_PARALLEL: true
-    #   run: coveralls --rcfile=pyproject.toml --service=github
+    - name: Publish results to coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_PARALLEL: true
+      run: coveralls --rcfile=pyproject.toml --service=github
 
   finish:
     name: Finish Coverage Analysis
