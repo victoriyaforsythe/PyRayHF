@@ -1,4 +1,4 @@
 History
 =======
-
-:parser: myst_parser.sphinx_
+.. include:: ../CHANGELOG.md
+   :parser: myst_parser.sphinx_
