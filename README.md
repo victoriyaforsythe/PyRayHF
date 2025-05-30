@@ -6,6 +6,7 @@
 [![Build Status](https://github.com/victoriyaforsythe/PyRAY/actions/workflows/main.yml/badge.svg)](https://github.com/victoriyaforsythe/PyRAY/actions/workflows/main.yml)
 [![Documentation Status](https://readthedocs.org/projects/PyRAY/badge/?version=latest)](https://PyRAY.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8235173.svg)](https://doi.org/10.5281/zenodo.8235173)
+[![Coverage Status](https://coveralls.io/repos/github/victoriyaforsythe/PyRAY/badge.svg?branch=main)](https://coveralls.io/github/victoriyaforsythe/PyRAY?branch=main)
 
 PyRAY is a Python-based software package for analytic HF raytracing through the ionosphere.
 
