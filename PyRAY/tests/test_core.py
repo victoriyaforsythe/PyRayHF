@@ -4,15 +4,16 @@
 
 import numpy as np
 import pytest
+
 from PyRAY.library import constants
 from PyRAY.library import den2freq
-from PyRAY.library import freq2den
 from PyRAY.library import find_X
 from PyRAY.library import find_Y
 from PyRAY.library import find_mu_mup
 from PyRAY.library import find_vh
-from PyRAY.library import smooth_nonuniform_grid
+from PyRAY.library import freq2den
 from PyRAY.library import regrid_to_nonuniform_grid
+from PyRAY.library import smooth_nonuniform_grid
 from PyRAY.library import vertical_to_magnetic_angle
 from PyRAY.library import virtical_forward_operator
 
