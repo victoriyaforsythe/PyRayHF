@@ -162,7 +162,7 @@ def test_smooth_nonuniform_grid_basic():
 
     # Ensure grid is increasing
     assert np.all(np.diff(grid) > 0)
-   
+
     # Check boundaries
     assert np.isclose(grid[0], start, atol=1e-6)  # Lower boundary
     assert np.isclose(grid[-1], end, atol=1e-6)   # Upper boundary
