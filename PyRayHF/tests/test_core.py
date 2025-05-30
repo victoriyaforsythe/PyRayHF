@@ -17,7 +17,6 @@ from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
 
 
-
 def test_constants_output():
     """Test that constants function returns correct values."""
     cp, g_p = constants()
