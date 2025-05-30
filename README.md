@@ -20,7 +20,7 @@ A key advantage of PyRAY is its efficiency: it calculater the virtual heigh simu
 PyRAY can be installed from PyPI, which will handle all dependencies:
 
 ```
-pip install PyRAY
+pip install PyRAYHF
 ```
 
 Alternatively, you can clone and install it from GitHub:

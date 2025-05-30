@@ -53,7 +53,7 @@ This results in a **resampled array of altitudes**, with a fixed number of point
 The figures below show the multiplier obtained from the **stretched grid function** and the locations of the new stretched grid relative to the reflection height for each ionosonde frequency, plotted on the same x-axis as the plasma frequency.
 This new grid ensures fine resolution near the reflection height while minimizing unnecessary points at lower altitudes.
 
-.. image:: /docs/figures/Stretched_Grid.png
+.. image:: figures/Stretched_Grid.png
     :width: 700px
     :align: center
     :alt: Stretched Grid.
@@ -65,21 +65,21 @@ This ensures that every virtual height calculation uses accurately aligned input
 The following figures present the input data converted into 2D arrays, where the x-axis represents the ionosonde frequency and the y-axis corresponds to the vertical grid index, with a size of `N_points`.
 The first figure displays the altitude of each grid point. The subsequent figures show the interpolated plasma density, magnetic field strength, and magnetic field angle.
 
-.. image:: /docs/figures/Regridded_Input_Matrix.png
+.. image:: figures/Regridded_Input_Matrix.png
     :width: 800px
     :align: center
     :alt: Input Matrixes.
 
 The following figures present the computed **X**, **Y**, **Refractive Index (mu)**, and **Group Refractive Index (mu_prime)** parameters for O-mode.
 
-.. image:: /docs/figures/Intermediate_Calculations.png
+.. image:: figures/Intermediate_Calculations.png
     :width: 800px
     :align: center
     :alt: Intermediate Calculations.
 
 The group refractive index **Group Refractive Index (mu_prime)** is multiplied with a matrix that contains the distances between the grid points and summed over the second axis, obtaining the virtual height, shown with red curves on the figure below.
 
-.. image:: /docs/figures/Virtual_Height.png
+.. image:: figures/Virtual_Height.png
     :width: 400px
     :align: center
     :alt: Virtual Height.

@@ -13,6 +13,7 @@ This documentation describes the PyRAY module.
    installation.rst
    citing.rst
    examples.rst
+   tutorials.rst
    develop_guide.rst
    history.rst
    api.rst
