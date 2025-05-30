@@ -1,5 +1,5 @@
-Examples
-========
+Tutorials
+=========
 
 Here are some Notebooks tutorial that demonstrate how to use PyRAY:
 
