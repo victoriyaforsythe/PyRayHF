@@ -1,10 +1,10 @@
-.. PyRAY documentation main file.  Remember that it should at least
+.. PyRayHF documentation main file.  Remember that it should at least
    contain the root `toctree` directive.
 
-Welcome to the PyRAY documentation
+Welcome to the PyRayHF documentation
 ==================================
 
-This documentation describes the PyRAY module.
+This documentation describes the PyRayHF module.
 
 .. toctree::
    :maxdepth: -1

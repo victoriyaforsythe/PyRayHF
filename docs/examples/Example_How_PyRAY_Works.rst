@@ -1,5 +1,5 @@
-Example: How PyRAY Works
-========================
+Example: How PyRayHF Works
+==========================
 
 The virtual height is the apparent reflection height of a radio wave in the ionosphere, assuming the wave travels at the speed of light in a vacuum.
 In reality, the wave slows down due to the ionospheric plasma, and this effect is captured using the group refractive index.

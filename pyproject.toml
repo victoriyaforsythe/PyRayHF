@@ -3,8 +3,8 @@ requires = ["setuptools >= 38.6", "pip >= 10"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PyRAY"
-version = "0.0.2"
+name = "PyRayHF"
+version = "0.0.1"
 description = "Python HF Raytracing for Ionosphere"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -63,5 +63,5 @@ doc = [
 ]
 
 [project.urls]
-Documentation = "https://PyRAY.readthedocs.io/en/latest/"
-Source = "https://github.com/victoriyaforsythe/PyRAY"
+Documentation = "https://PyRayHF.readthedocs.io/en/latest/"
+Source = "https://github.com/victoriyaforsythe/PyRayHF"

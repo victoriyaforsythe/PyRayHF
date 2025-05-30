@@ -1,9 +1,9 @@
-"""Core library imports for PyRAY."""
+"""Core library imports for PyRayHF."""
 
 # Define a logger object to allow easier log handling
 import logging
 logging.raiseExceptions = False
-logger = logging.getLogger('PyRAY_logger')
+logger = logging.getLogger('PyRayHF_logger')
 
 osflag = False
 try:
@@ -13,7 +13,7 @@ except ImportError:
     osflag = True
 
 # Import the package modules and top-level classes
-from PyRAY import library  # noqa F401
+from PyRayHF import library  # noqa F401
 
 # Set version
-__version__ = metadata.version('PyRAY')
+__version__ = metadata.version('PyRayHF')

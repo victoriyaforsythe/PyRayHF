@@ -1,33 +1,33 @@
-<img width="200" height="200" src="https://github.com/victoriyaforsythe/PyRAY/blob/main/docs/figures/PyRAY_logo.png" alt="Black circle with manta ray flying through the ionosphere" title="PyRAY Logo" style="float:left;">
+<img width="200" height="200" src="https://github.com/victoriyaforsythe/PyRayHF/blob/main/docs/figures/PyRayHF_logo.png" alt="Black circle with manta ray flying through the ionosphere" title="PyRayHF Logo" style="float:left;">
 
 
-# PyRAY (Python HF Ray Tracer for the Ionosphere)
-[![PyRAY Package latest release](https://img.shields.io/pypi/v/PyRAY.svg)](https://pypi.org/project/PyRAY/)
-[![Build Status](https://github.com/victoriyaforsythe/PyRAY/actions/workflows/main.yml/badge.svg)](https://github.com/victoriyaforsythe/PyRAY/actions/workflows/main.yml)
-[![Documentation Status](https://readthedocs.org/projects/PyRAY/badge/?version=latest)](https://PyRAY.readthedocs.io/en/latest/?badge=latest)
+# PyRayHF (Python HF Ray Tracer for the Ionosphere)
+[![PyRAY Package latest release](https://img.shields.io/pypi/v/PyRayHF.svg)](https://pypi.org/project/PyRayHF/)
+[![Build Status](https://github.com/victoriyaforsythe/PyRayHF/actions/workflows/main.yml/badge.svg)](https://github.com/victoriyaforsythe/PyRayHF/actions/workflows/main.yml)
+[![Documentation Status](https://readthedocs.org/projects/PyRayHF/badge/?version=latest)](https://PyRayHF.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15555327.svg)](https://doi.org/10.5281/zenodo.15555327)
-[![Coverage Status](https://coveralls.io/repos/github/victoriyaforsythe/PyRAY/badge.svg?branch=main)](https://coveralls.io/github/victoriyaforsythe/PyRAY?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/victoriyaforsythe/PyRayHF/badge.svg?branch=main)](https://coveralls.io/github/victoriyaforsythe/PyRayHF?branch=main)
 
-PyRAY is a Python-based software package for analytic HF raytracing through the ionosphere.
+PyRayHF is a Python-based software package for analytic HF raytracing through the ionosphere.
 
 For a given electron density profile and the magnetic field it calculates virtual heights for the upward-propagating HF rays in ordinary (O) and extraodinary (X) modes.
 
-A key advantage of PyRAY is its efficiency: it calculater the virtual heigh simultaneousely for all given ionosonde freqeuncies.
+A key advantage of PyRayHF is its efficiency: it calculater the virtual heigh simultaneousely for all given ionosonde freqeuncies.
 
 
 # Installation
 
-PyRAY can be installed from PyPI, which will handle all dependencies:
+PyRayHF can be installed from PyPI, which will handle all dependencies:
 
 ```
-pip install PyRAYHF
+pip install PyRayHF
 ```
 
 Alternatively, you can clone and install it from GitHub:
 
 ```
-git clone https://github.com/victoriyaforsythe/PyRAY.git
-cd PyRAY
+git clone https://github.com/victoriyaforsythe/PyRayHF.git
+cd PyRayHF
 python -m build .
 pip install .
 ```
@@ -49,7 +49,7 @@ of vertical grid points is sufficient for O-mode (e.g., 200).
 ```
 mode = 'O'
 n_points = 200
-vh_O = PyRAY.library.virtical_forward_operator(input_arrays['freq'],
+vh_O = PyRayHF.library.virtical_forward_operator(input_arrays['freq'],
                                             input_arrays['den'],
                                             input_arrays['bmag'],
                                             input_arrays['bpsi'],
@@ -65,7 +65,7 @@ since the result may be noisy at low resolution.
 ```
 mode = 'X'
 n_points = 20000
-vh_X = PyRAY.library.virtical_forward_operator(input_arrays['freq'],
+vh_X = PyRayHF.library.virtical_forward_operator(input_arrays['freq'],
                                             input_arrays['den'],
                                             input_arrays['bmag'],
                                             input_arrays['bpsi'],
@@ -74,7 +74,7 @@ vh_X = PyRAY.library.virtical_forward_operator(input_arrays['freq'],
                                             n_points)
 ```
 
-![VH](docs/figures/Run_Vertical_PyRAY.png)
+![VH](docs/figures/Run_Vertical_PyRayHF.png)
 
 # Virtual Height Calculation Overview
 
@@ -147,4 +147,4 @@ The group refractive index **Group Refractive Index (mu_prime)** is multiplied w
 
 ![Virtual_Height](docs/figures/Virtual_Height.png)
 
-See the [tutorials](https://github.com/victoriyaforsythe/PyRAY/tree/main/docs/tutorials) folder for mode detailed examples.
+See the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder for mode detailed examples.

@@ -4,12 +4,12 @@
 # Distribution is unlimited.
 # This work was supported by the Office of Naval Research.
 # --------------------------------------------------------
-"""This library contains components for PyRAY software.
+"""This library contains components for PyRayHF software.
 
 """
 
 import numpy as np
-from PyRAY import logger
+from PyRayHF import logger
 
 
 def constants():

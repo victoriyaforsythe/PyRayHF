@@ -2,7 +2,7 @@ Contributing
 ============
 
 Bug reports, feature suggestions, and other contributions are greatly
-appreciated!  PyRAY is a community-driven project and welcomes both feedback and
+appreciated!  PyRayHF is a community-driven project and welcomes both feedback and
 contributions.
 
 Short version
@@ -40,14 +40,14 @@ If you are proposing a feature:
 Development
 -----------
 
-To set up `PyRAY` for local development:
+To set up `PyRayHF` for local development:
 
-1. Fork PyRAY on GitHub.
+1. Fork PyRayHF on GitHub.
 
 2. Clone your fork locally:
 
   ```
-    git clone git@github.com:your_name_here/PyRAY.git
+    git clone git@github.com:your_name_here/PyRayHF.git
   ```
 
 3. Create a branch for local development:
@@ -62,7 +62,7 @@ To set up `PyRAY` for local development:
   is broken on your local system:
 
   ```
-  pytest PyRAY
+  pytest PyRayHF
   ```
 
 5. You should also check for flake8 style compliance:
@@ -71,7 +71,7 @@ To set up `PyRAY` for local development:
   flake8 . --count --select=D,E,F,H,W --show-source --statistics
   ```
 
-  Note that PyRAY uses the `flake-docstrings` and `hacking` packages to ensure
+  Note that PyRayHF uses the `flake-docstrings` and `hacking` packages to ensure
   standards in docstring formatting.
 
 
@@ -85,7 +85,7 @@ To set up `PyRAY` for local development:
   git commit -m "AAA: Brief description of your changes"
   ```
   Where AAA is a standard shorthand for the type of change (eg, BUG or DOC).
-  `PyRAY` follows the [numpy development workflow](https://numpy.org/doc/stable/dev/development_workflow.html),
+  `PyRayHF` follows the [numpy development workflow](https://numpy.org/doc/stable/dev/development_workflow.html),
   see the discussion there for a full list of this shorthand notation.  
 
 9. Once you are happy with the local changes, push to GitHub:
@@ -96,7 +96,7 @@ To set up `PyRAY` for local development:
 
 10. Submit a pull request through the GitHub website. Pull requests should be
    made to the ``develop`` branch.  Note that automated tests will be run on
-   github actions, but these must be initialized by a member of the PyRAY team.
+   github actions, but these must be initialized by a member of the PyRayHF team.
 
 Pull Request Guidelines
 -----------------------
@@ -122,7 +122,7 @@ all tests on your local system first.
 Project Style Guidelines
 ------------------------
 
-In general, PyRAY follows PEP8 and numpydoc guidelines.  Pytest runs the unit
+In general, PyRayHF follows PEP8 and numpydoc guidelines.  Pytest runs the unit
 and integration tests, flake8 checks for style, and sphinx-build performs
 documentation tests.  However, there are certain additional style elements that
 have been adopted to ensure the project maintains a consistent coding style.

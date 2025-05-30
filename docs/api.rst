@@ -4,8 +4,8 @@ Application Programming Interface
 =================================
 
 
-.. automodule:: PyRAY.library
+.. automodule:: PyRayHF.library
     :members:
 
-.. automodule:: PyRAY.plotting
+.. automodule:: PyRayHF.plotting
     :members:

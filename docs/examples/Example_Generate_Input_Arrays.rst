@@ -12,7 +12,7 @@ Example: Generate Input Arrays Using PyIRI
     import matplotlib.pyplot as plt
 
     import PyIRI
-    import PyRAY
+    import PyRayHF
 
 2. Select the day and Universal Time of interest.
 
@@ -97,8 +97,8 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 
 ::
 
-    bpsi_min = PyRAY.library.vertical_to_magnetic_angle(inc_min[0])
-    bpsi_max = PyRAY.library.vertical_to_magnetic_angle(inc_max[0])
+    bpsi_min = PyRayHF.library.vertical_to_magnetic_angle(inc_min[0])
+    bpsi_max = PyRayHF.library.vertical_to_magnetic_angle(inc_max[0])
 
 
 11. Construct array of angles (°) between magnetic field and vertical ray.
@@ -118,7 +118,7 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 ::
 
     ionosonde_frequency = np.arange(1e6,
-                                    PyRAY.library.den2freq(np.max(den)),
+                                    PyRayHF.library.den2freq(np.max(den)),
                                     0.1e6)
 
 14. Combine inputs into a dictionary.
