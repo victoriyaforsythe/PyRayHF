@@ -13,8 +13,9 @@ from PyRayHF.library import find_Y
 from PyRayHF.library import freq2den
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import smooth_nonuniform_grid
-from PyRayHF.library import vertical_to_magnetic_angle
 from PyRayHF.library import vertical_forward_operator
+from PyRayHF.library import vertical_to_magnetic_angle
+
 
 
 def test_constants_output():
