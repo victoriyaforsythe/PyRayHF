@@ -26,6 +26,6 @@ examples here are from the second release.
     year         = 2023,
     publisher    = {Zenodo},
     version      = {v0.0.2},
-    doi          = {10.5281/zenodo.8235172},
+    doi          = {10.5281/zenodo.15555327},
     url          = {https://github.com/victoriyaforsythe/PyRAY}
   }
