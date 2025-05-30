@@ -141,7 +141,7 @@ The first figure displays the altitude of each grid point. The subsequent figure
 
 The following figures present the computed **X**, **Y**, **Refractive Index (mu)**, and **Group Refractive Index (mu_prime)** parameters for O-mode.
 
-![Intermediate Calculations](docs/examles/figures/Intermediate_Calculations.png)
+![Intermediate Calculations](docs/figures/Intermediate_Calculations.png)
 
 The group refractive index **Group Refractive Index (mu_prime)** is multiplied with a matrix that contains the distances between the grid points and summed over the second axis, obtaining the virtual height, shown with red curves on the figure below.
 
