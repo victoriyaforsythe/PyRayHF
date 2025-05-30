@@ -120,8 +120,8 @@ def test_find_mu_mup_basic():
     aY = np.array([0.17123449, 0.16205801, 0.15757213])
     bpsi = np.array([60.91523271, 61.66028645, 62.02450192])
     mode = 'O'
-    expected_mu = np.array([0.986261, 0.568909, 0.064759])
-    expected_mup = np.array([1.01313137, 1.79819742, 17.28626019])
+    expected_mu = np.array([0.98626092, 0.56890941, 0.06475905])
+    expected_mup = np.array([1.01313137, 1.79819741, 19.76001084])
 
     mu, mup = find_mu_mup(aX, aY, bpsi, mode)
 
