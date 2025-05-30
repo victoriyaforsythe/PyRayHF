@@ -1,5 +1,5 @@
-Virtual Height Calculation Overview
-===================================
+Example: How PyRAY Works
+========================
 
 The virtual height is the apparent reflection height of a radio wave in the ionosphere, assuming the wave travels at the speed of light in a vacuum.
 In reality, the wave slows down due to the ionospheric plasma, and this effect is captured using the group refractive index.
@@ -21,8 +21,7 @@ Using these parameters, we compute:
 Once the group refractive index profile is known, it is integrated over the height range of interest to obtain the virtual height.
 This value corresponds to the height at which the wave would appear to reflect if it were traveling through a vacuum.
 
-Why a Stretched Grid is Needed
-==============================
+**Why a Stretched Grid is Needed**
 
 In standard numerical modeling, it is common to use a uniform vertical grid, where points are evenly spaced in altitude.
 However, when calculating the virtual height in the ionosphere, this approach can lead to poor resolution near the reflection height.
@@ -37,8 +36,7 @@ To solve this, we use a **stretched vertical grid**. This grid places more point
 By concentrating resolution where it is most needed, the stretched grid ensures accurate integration of the group refractive index, while keeping the total number of points manageable.
 This approach improves both efficiency and precision, making it ideal for ionospheric ray tracing and virtual height modeling.
 
-Grid Construction for Virtual Height Calculation
-================================================
+**Grid Construction for Virtual Height Calculation**
 
 For each ionosonde frequency, we interpolate the **electron density profile (EDP)**—converted into **plasma frequency**—to determine the height at which the ionosonde frequency equals the local plasma frequency.
 This height is referred to as the **reflection height**, and it marks the upper boundary for the integration in virtual height calculation.
