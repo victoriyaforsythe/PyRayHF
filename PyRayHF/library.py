@@ -378,7 +378,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
 
     """
     # Check that input arrays have the same size
-    if (den.shape != bmag.shape != bpsi.sahpe != alt.shape):
+    if (den.shape != bmag.shape != bpsi.shape != alt.shape):
         logger.error("Error: freq, den, bmag, bpsi, alt should have same size")
 
     # Limit the ionosonde frequency array up tp the ionospheric critical
