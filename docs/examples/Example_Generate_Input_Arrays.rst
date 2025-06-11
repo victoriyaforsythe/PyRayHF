@@ -55,7 +55,7 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 
 ::
 
-    (_, _, _, _, _, _, 
+    (F2, F1, E, _, _, _, 
     edp) = PyIRI.edp_update.IRI_density_1day(year,
                                             month,
                                             day,
@@ -126,12 +126,15 @@ https://omniweb.gsfc.nasa.gov/form/dx1.html
 ::
 
     input_example = {'den': den,
-                 'alt': aalt,
-                 'bmag': abmag,
-                 'bpsi': abpsi,
-                 'freq': ionosonde_frequency}
+                     'alt': aalt,
+                     'bmag': abmag,
+                     'bpsi': abpsi,
+                     'freq': ionosonde_frequency,
+                     'F2': F2,
+                     'F1': F1,
+                     'E': E}
 
-15. Save inputs to a pickle file
+1.  Save inputs to a pickle file
 
 ::
 
