@@ -221,7 +221,7 @@ def test_vertical_forward_operator_basic_O_mode():
     assert np.all(np.isfinite(vh[:-1]))  # Lower freqs should be finite
 
 
-def test_model_VH_output(self):
+def test_model_VH_output():
     """Basic test for model_VH in O mode with short arrays."""
     # Input parameters
     F2 = {'Nm': np.array([[1.17848165e+12]]),
@@ -261,7 +261,7 @@ def test_model_VH_output(self):
     assert_allclose(edp, expected_edp, rtol=1e-6)
 
 
-def test_zero_residual_when_parameters_match(self):
+def test_zero_residual_when_parameters_match():
     """Basic test for residual_VH in O mode with short arrays."""
     # Input dictionaries
     F2 = {'Nm': np.array([[1.17848165e+12]]),
@@ -304,7 +304,7 @@ def test_zero_residual_when_parameters_match(self):
     assert_allclose(residual, np.zeros_like(vh_obs), rtol=1e-6, atol=1e-6)
 
 
-def test_minimization_recovers_synthetic_data(self):
+def test_minimization_recovers_synthetic_data():
     """Basic test for minimization to recove synthetic data."""
     # Base inputs
     F2 = {'Nm': np.array([[1.17848165e+12]]),
