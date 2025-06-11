@@ -14,6 +14,7 @@ import PyIRI
 from PyRayHF import logger
 import lmfit
 
+
 def constants():
     """Define constants for virtual height calculation.
 
@@ -590,7 +591,7 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi):
     # For the minimization we will search for the optimal values withing 20%
     # of the background value
     percent_sigma = 20.0
-    
+
     # Brute minimization gives the best result
     # The brute step controls the walk
     # If you need to make the code faster, increase the brute_step and
