@@ -250,8 +250,8 @@ def test_model_VH_output(self):
     # Expected outputs
     expected_vh = np.array([198.1695621, 247.07192693, 261.65938426])
     expected_edp = np.array([5.39526841e+10,
-                                2.81042886e+11,
-                                6.66833261e+11])
+                             2.81042886e+11,
+                             6.66833261e+11])
 
     # Run the model
     vh, edp = model_VH(F2, F1, E, freq, alt, bmag, bpsi)
@@ -338,10 +338,12 @@ def test_minimization_recovers_synthetic_data(self):
     F2_truth['B_bot'] = F2_truth['B_bot'] * 1.1
 
     # Create synthetic observations
-    vh_obs, _ = model_VH(F2_truth, deepcopy(F1), deepcopy(E), freq, alt, bmag, bpsi)
+    vh_obs, _ = model_VH(F2_truth, deepcopy(F1), deepcopy(E), freq,
+                         alt, bmag, bpsi)
 
     # Run minimization from original (unmodified) F2
-    vh_result, _ = minimize_parameters(F2, F1, E, freq, vh_obs, alt, bmag, bpsi)
+    vh_result, _ = minimize_parameters(F2, F1, E, freq, vh_obs,
+                                       alt, bmag, bpsi)
 
     # Compare the recovered result to synthetic truth
     assert_allclose(vh_result, vh_obs, rtol=1e-2, atol=1e-2)
