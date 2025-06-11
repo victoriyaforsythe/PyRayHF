@@ -225,23 +225,23 @@ def test_model_VH_output(self):
     """Basic test for model_VH in O mode with short arrays."""
     # Input parameters
     F2 = {'Nm': np.array([[1.17848165e+12]]),
-            'fo': np.array([[9.64625394]]),
-            'M3000': np.array([[2.64168819]]),
-            'hm': np.array([[365.13828931]]),
-            'B_top': np.array([[32.52487907]]),
-            'B_bot': np.array([[41.26005561]])}
+          'fo': np.array([[9.64625394]]),
+          'M3000': np.array([[2.64168819]]),
+          'hm': np.array([[365.13828931]]),
+          'B_top': np.array([[32.52487907]]),
+          'B_bot': np.array([[41.26005561]])}
     F1 = {'Nm': np.array([[7.80902301e+11]]),
-            'fo': np.array([[7.93574143]]),
-            'P': np.array([[0.91422852]]),
-            'hm': np.array([[219.26637887]]),
-            'B_bot': np.array([[54.63318944]])}
+          'fo': np.array([[7.93574143]]),
+          'P': np.array([[0.91422852]]),
+          'hm': np.array([[219.26637887]]),
+          'B_bot': np.array([[54.63318944]])}
     E = {'Nm': np.array([[1.2846662e+11]]),
-            'fo': np.array([[3.2096443]]),
-            'hm': np.array([[110.]]),
-            'B_bot': np.array([[5.]]),
-            'B_top': np.array([[7.]]),
-            'solzen': np.array([[22.26668451]]),
-            'solzen_eff': np.array([[22.26668451]])}
+         'fo': np.array([[3.2096443]]),
+         'hm': np.array([[110.]]),
+         'B_bot': np.array([[5.]]),
+         'B_top': np.array([[7.]]),
+         'solzen': np.array([[22.26668451]]),
+         'solzen_eff': np.array([[22.26668451]])}
     freq = np.array([3.0, 4.0, 5.0])
     alt = np.array([100, 200, 300])
     bmag = np.array([5e-5, 5e-5, 5e-5])
@@ -265,16 +265,16 @@ def test_zero_residual_when_parameters_match(self):
     """Basic test for residual_VH in O mode with short arrays."""
     # Input dictionaries
     F2 = {'Nm': np.array([[1.17848165e+12]]),
-         'fo': np.array([[9.64625394]]),
-         'M3000': np.array([[2.64168819]]),
-         'hm': np.array([[365.13828931]]),
-         'B_top': np.array([[32.52487907]]),
-         'B_bot': np.array([[41.26005561]])}
+          'fo': np.array([[9.64625394]]),
+          'M3000': np.array([[2.64168819]]),
+          'hm': np.array([[365.13828931]]),
+          'B_top': np.array([[32.52487907]]),
+          'B_bot': np.array([[41.26005561]])}
     F1 = {'Nm': np.array([[7.80902301e+11]]),
-         'fo': np.array([[7.93574143]]),
-         'P': np.array([[0.91422852]]),
-         'hm': np.array([[219.26637887]]),
-         'B_bot': np.array([[54.63318944]])}
+          'fo': np.array([[7.93574143]]),
+          'P': np.array([[0.91422852]]),
+          'hm': np.array([[219.26637887]]),
+          'B_bot': np.array([[54.63318944]])}
     E = {'Nm': np.array([[1.2846662e+11]]),
          'fo': np.array([[3.2096443]]),
          'hm': np.array([[110.]]),
@@ -308,16 +308,16 @@ def test_minimization_recovers_synthetic_data(self):
     """Basic test for minimization to recove synthetic data."""
     # Base inputs
     F2 = {'Nm': np.array([[1.17848165e+12]]),
-         'fo': np.array([[9.64625394]]),
-         'M3000': np.array([[2.64168819]]),
-         'hm': np.array([[365.13828931]]),
-         'B_top': np.array([[32.52487907]]),
-         'B_bot': np.array([[41.26005561]])}
+          'fo': np.array([[9.64625394]]),
+          'M3000': np.array([[2.64168819]]),
+          'hm': np.array([[365.13828931]]),
+          'B_top': np.array([[32.52487907]]),
+          'B_bot': np.array([[41.26005561]])}
     F1 = {'Nm': np.array([[7.80902301e+11]]),
-         'fo': np.array([[7.93574143]]),
-         'P': np.array([[0.91422852]]),
-         'hm': np.array([[219.26637887]]),
-         'B_bot': np.array([[54.63318944]])}
+          'fo': np.array([[7.93574143]]),
+          'P': np.array([[0.91422852]]),
+          'hm': np.array([[219.26637887]]),
+          'B_bot': np.array([[54.63318944]])}
     E = {'Nm': np.array([[1.2846662e+11]]),
          'fo': np.array([[3.2096443]]),
          'hm': np.array([[110.]]),
