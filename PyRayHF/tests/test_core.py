@@ -4,6 +4,9 @@
 import numpy as np
 import pytest
 
+from copy import deepcopy
+from lmfit import Parameters
+from numpy.testing import assert_allclose
 from PyRayHF.library import constants
 from PyRayHF.library import den2freq
 from PyRayHF.library import find_mu_mup
@@ -11,7 +14,10 @@ from PyRayHF.library import find_vh
 from PyRayHF.library import find_X
 from PyRayHF.library import find_Y
 from PyRayHF.library import freq2den
+from PyRayHF.library import minimize_parameters
+from PyRayHF.library import model_VH
 from PyRayHF.library import regrid_to_nonuniform_grid
+from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
@@ -213,3 +219,129 @@ def test_vertical_forward_operator_basic_O_mode():
     assert vh.shape == freq.shape
     assert np.isnan(vh[-1])  # 10 MHz > fof2, should be NaN
     assert np.all(np.isfinite(vh[:-1]))  # Lower freqs should be finite
+
+
+def test_model_VH_output(self):
+    """Basic test for model_VH in O mode with short arrays."""
+    # Input parameters
+    F2 = {'Nm': np.array([[1.17848165e+12]]),
+            'fo': np.array([[9.64625394]]),
+            'M3000': np.array([[2.64168819]]),
+            'hm': np.array([[365.13828931]]),
+            'B_top': np.array([[32.52487907]]),
+            'B_bot': np.array([[41.26005561]])}
+    F1 = {'Nm': np.array([[7.80902301e+11]]),
+            'fo': np.array([[7.93574143]]),
+            'P': np.array([[0.91422852]]),
+            'hm': np.array([[219.26637887]]),
+            'B_bot': np.array([[54.63318944]])}
+    E = {'Nm': np.array([[1.2846662e+11]]),
+            'fo': np.array([[3.2096443]]),
+            'hm': np.array([[110.]]),
+            'B_bot': np.array([[5.]]),
+            'B_top': np.array([[7.]]),
+            'solzen': np.array([[22.26668451]]),
+            'solzen_eff': np.array([[22.26668451]])}
+    freq = np.array([3.0, 4.0, 5.0])
+    alt = np.array([100, 200, 300])
+    bmag = np.array([5e-5, 5e-5, 5e-5])
+    bpsi = np.array([60.0, 60.0, 60.0])
+
+    # Expected outputs
+    expected_vh = np.array([198.1695621, 247.07192693, 261.65938426])
+    expected_edp = np.array([5.39526841e+10,
+                                2.81042886e+11,
+                                6.66833261e+11])
+
+    # Run the model
+    vh, edp = model_VH(F2, F1, E, freq, alt, bmag, bpsi)
+
+    # Compare results
+    assert_allclose(vh, expected_vh, rtol=1e-6)
+    assert_allclose(edp, expected_edp, rtol=1e-6)
+
+
+def test_zero_residual_when_parameters_match(self):
+    """Basic test for residual_VH in O mode with short arrays."""
+    # Input dictionaries
+    F2 = {'Nm': np.array([[1.17848165e+12]]),
+         'fo': np.array([[9.64625394]]),
+         'M3000': np.array([[2.64168819]]),
+         'hm': np.array([[365.13828931]]),
+         'B_top': np.array([[32.52487907]]),
+         'B_bot': np.array([[41.26005561]])}
+    F1 = {'Nm': np.array([[7.80902301e+11]]),
+         'fo': np.array([[7.93574143]]),
+         'P': np.array([[0.91422852]]),
+         'hm': np.array([[219.26637887]]),
+         'B_bot': np.array([[54.63318944]])}
+    E = {'Nm': np.array([[1.2846662e+11]]),
+         'fo': np.array([[3.2096443]]),
+         'hm': np.array([[110.]]),
+         'B_bot': np.array([[5.]]),
+         'B_top': np.array([[7.]]),
+         'solzen': np.array([[22.26668451]]),
+         'solzen_eff': np.array([[22.26668451]])}
+
+    freq = np.array([3.0, 4.0, 5.0])
+    alt = np.array([100, 200, 300])
+    bmag = np.array([5e-5, 5e-5, 5e-5])
+    bpsi = np.array([60.0, 60.0, 60.0])
+
+    # Use the true model output as synthetic observations
+    vh_obs, _ = model_VH(F2, deepcopy(F1), deepcopy(E), freq, alt, bmag, bpsi)
+
+    # Parameters that match the F2 inputs
+    params = Parameters()
+    params.add('NmF2', value=1.17848165e+12)
+    params.add('hmF2', value=365.13828931)
+    params.add('B_bot', value=41.26005561)
+
+    # Compute residual
+    residual = residual_VH(params, F2, F1, E, freq, vh_obs, alt, bmag, bpsi)
+
+    # Expect near-zero residual
+    assert_allclose(residual, np.zeros_like(vh_obs), rtol=1e-6, atol=1e-6)
+
+
+def test_minimization_recovers_synthetic_data(self):
+    """Basic test for minimization to recove synthetic data."""
+    # Base inputs
+    F2 = {'Nm': np.array([[1.17848165e+12]]),
+         'fo': np.array([[9.64625394]]),
+         'M3000': np.array([[2.64168819]]),
+         'hm': np.array([[365.13828931]]),
+         'B_top': np.array([[32.52487907]]),
+         'B_bot': np.array([[41.26005561]])}
+    F1 = {'Nm': np.array([[7.80902301e+11]]),
+         'fo': np.array([[7.93574143]]),
+         'P': np.array([[0.91422852]]),
+         'hm': np.array([[219.26637887]]),
+         'B_bot': np.array([[54.63318944]])}
+    E = {'Nm': np.array([[1.2846662e+11]]),
+         'fo': np.array([[3.2096443]]),
+         'hm': np.array([[110.]]),
+         'B_bot': np.array([[5.]]),
+         'B_top': np.array([[7.]]),
+         'solzen': np.array([[22.26668451]]),
+         'solzen_eff': np.array([[22.26668451]])}
+
+    freq = np.array([3.0, 4.0, 5.0])
+    alt = np.array([100, 200, 300])
+    bmag = np.array([5e-5, 5e-5, 5e-5])
+    bpsi = np.array([60.0, 60.0, 60.0])
+
+    # Create synthetic truth by modifying F2
+    F2_truth = deepcopy(F2)
+    F2_truth['Nm'] = F2_truth['Nm'] * 1.2
+    F2_truth['hm'] = F2_truth['hm'] * 0.8
+    F2_truth['B_bot'] = F2_truth['B_bot'] * 1.1
+
+    # Create synthetic observations
+    vh_obs, _ = model_VH(F2_truth, deepcopy(F1), deepcopy(E), freq, alt, bmag, bpsi)
+
+    # Run minimization from original (unmodified) F2
+    vh_result, _ = minimize_parameters(F2, F1, E, freq, vh_obs, alt, bmag, bpsi)
+
+    # Compare the recovered result to synthetic truth
+    assert_allclose(vh_result, vh_obs, rtol=1e-2, atol=1e-2)
