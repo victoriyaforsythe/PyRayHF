@@ -415,5 +415,74 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     # Find virtual height
     vh[ind] = find_vh(aX, aY, regridded['bpsi'], regridded['dist'],
                       np.min(alt), mode)
-
     return vh
+
+
+def model_vh(F2, F1, E, f_in, alt, b_mag, b_psi):
+    """
+    Compute vertical virtual height using a modeled electron density profile
+    and perform ray tracing.
+
+    Parameters
+    ----------
+    F2 : dict
+        Dictionary of F2 layer parameters. Must include:
+        - 'Nm': peak electron density (NmF2)
+        - 'hm': peak height (hmF2)
+        - 'B_bot': thickness of the bottomside of the F2 layer
+    F1 : dict
+        Dictionary of F1 layer parameters. Must include:
+        - 'P': shape factor or profile parameter
+    E : dict
+        Dictionary of E layer parameters. Must include:
+        - 'hm': peak height of the E layer
+    f_in : ndarray
+        Input frequency [MHz].
+    alt : ndarray
+        1D array of altitudes [km].
+    b_mag : ndarray
+        1D array of magnetic field magnitudes [nT].
+    b_psi : ndarray
+        1D array of magnetic field dip angles [rad].
+
+    Returns
+    -------
+    vh_O : ndarray
+        Virtual height trace (O-mode) [km].
+    EDP : ndarray
+        Reconstructed electron density profile [m^-3].
+
+    """
+    # Using PyIRI formalizm update the F1 layer parameters, in case F2
+    # parameters have changed
+    (NmF1,
+     foF1,
+     hmF1,
+     B_F1_bot) = PyIRI.edp_update.derive_dependent_F1_parameters(F1['P'],
+                                                                 F2['Nm'],
+                                                                 F2['hm'],
+                                                                 F2['B_bot'],
+                                                                 E['hm'])
+
+    # Update F1 with derived values
+    F1['Nm'] = NmF1
+    F1['hm'] = hmF1
+    F1['fo'] = foF1
+    F1['B_bot'] = B_F1_bot
+
+    # Reconstruct electron density profile
+    EDP = PyIRI.edp_update.reconstruct_density_from_parameters_1level(F2,
+                                                                      F1,
+                                                                      E,
+                                                                      alt)
+    EDP = EDP[0, :, 0]
+
+    # Set ray-tracing parameters
+    mode = 'O'
+    n_points = 200
+
+    # Run vertical raytracing using PyRayHF
+    vh_O = PyRayHF.library.vertical_forward_operator(f_in, edp,
+                                                     b_mag, b_psi,
+                                                     alt, mode, n_points)
+    return vh_O, EDP
