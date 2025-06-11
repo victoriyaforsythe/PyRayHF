@@ -39,7 +39,6 @@ keywords = [
 ]
 
 dependencies = [
-    "copy",
     "lmfit",
     "numpy",
     "PyIRI",
