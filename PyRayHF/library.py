@@ -9,9 +9,9 @@
 """
 
 from copy import deepcopy
+import lmfit
 import numpy as np
 import PyIRI
-import lmfit
 from PyRayHF import logger
 
 
@@ -422,8 +422,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
 
 
 def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi):
-    """Compute vertical virtual height using a modeled electron density profile
-    and perform ray tracing.
+    """Compute vertical virtual height using a modeled EDP and raytrace.
 
     Parameters
     ----------
@@ -492,8 +491,7 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi):
 
 def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
                 b_psi):
-    """Compute the residual between observed and modeled virtual heights for use
-    in optimization.
+    """Compute the residual between observed and modeled virtual heights.
 
     Parameters
     ----------
@@ -543,8 +541,7 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
 
 
 def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi):
-    """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed virtual
-    height data.
+    """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed VH.
 
     Parameters
     ----------
