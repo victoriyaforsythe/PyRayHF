@@ -8,9 +8,11 @@
 
 """
 
+from copy import deepcopy
 import numpy as np
+import PyIRI
 from PyRayHF import logger
-
+import lmfit
 
 def constants():
     """Define constants for virtual height calculation.
@@ -418,7 +420,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode='O',
     return vh
 
 
-def model_vh(F2, F1, E, f_in, alt, b_mag, b_psi):
+def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi):
     """
     Compute vertical virtual height using a modeled electron density profile
     and perform ray tracing.
@@ -482,7 +484,154 @@ def model_vh(F2, F1, E, f_in, alt, b_mag, b_psi):
     n_points = 200
 
     # Run vertical raytracing using PyRayHF
-    vh_O = PyRayHF.library.vertical_forward_operator(f_in, edp,
-                                                     b_mag, b_psi,
-                                                     alt, mode, n_points)
+    vh_O = vertical_forward_operator(f_in, EDP,
+                                     b_mag, b_psi,
+                                     alt, mode, n_points)
     return vh_O, EDP
+
+
+def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
+                b_psi):
+    """
+    Compute the residual between observed and modeled virtual heights for use
+    in optimization.
+
+    Parameters
+    ----------
+    params : lmfit.Parameters
+        Parameters to be optimized, containing:
+        - 'NmF2': peak electron density of F2 layer
+        - 'hmF2': peak height of F2 layer
+        - 'B_bot': thickness of F2 bottomside
+    F2_init : dict
+        Initial F2 layer parameters.
+    F1_init : dict
+        Initial F1 layer parameters.
+    E_init : dict
+        Initial E layer parameters.
+    f_in : float
+        Input frequency [MHz].
+    vh_obs : ndarray
+        Observed virtual heights [km].
+    alt : ndarray
+        Altitude array [km].
+    b_mag : ndarray
+        Magnetic field magnitude array [nT].
+    b_psi : ndarray
+        Magnetic field dip angle array [rad].
+
+    Returns
+    -------
+    residual : ndarray
+        Flattened array of residuals between observed and modeled virtual
+        heights [km].
+
+    """
+    # Work on deep copies to avoid mutating originals
+    F2 = deepcopy(F2_init)
+    F1 = deepcopy(F1_init)
+    E = deepcopy(E_init)
+
+    # Update F2 parameters from optimization values
+    F2['Nm'] = np.full_like(F2_init['Nm'], params['NmF2'].value)
+    F2['hm'] = np.full_like(F2_init['Nm'], params['hmF2'].value)
+    F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
+
+    # Run forward model
+    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi)
+    residual = (vh_obs - vh_model).ravel()
+    return residual
+
+
+def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi):
+    """
+    Minimize F2 layer parameters (hmF2 and B_bot) to fit observed virtual
+    height data.
+
+    Parameters
+    ----------
+    F2 : dict
+        Initial F2 layer parameters. Must include 'Nm', 'hm', and 'B_bot'.
+    F1 : dict
+        Initial F1 layer parameters.
+    E : dict
+        Initial E layer parameters.
+    f_in : ndarray
+        Input frequencies [MHz].
+    vh_obs : ndarray
+        Observed virtual heights [km].
+    alt : ndarray
+        Altitude array [km].
+    b_mag : ndarray
+        Magnetic field magnitude array [nT].
+    b_psi : ndarray
+        Magnetic field dip angle array [degrees].
+
+    Returns
+    -------
+    vh_result : ndarray
+        Virtual height after parameter fitting [km].
+    EDP_result : ndarray
+        Reconstructed electron density profile after fitting [m^-3].
+
+    """
+    # Use the last valid (finite) value in vh_obs to estimate initial NmF2
+    ind_valid = np.where(np.isfinite(vh_obs))[0][-1]
+    # Convert plasma frequency to plasma density and increase it slightly
+    # (by 0.01%) to make sure that we can obtain the virtual height for the
+    # last data point
+    NmF2_new = freq2den(f_in[ind_valid] * 1e6) * 1.0001
+
+    # The input arrays in F2 have shape [1, 1, 1], let's use mean to make it
+    # just one number
+    mean_hmF2 = np.nanmean(F2['hm'])
+    mean_B_bot = np.nanmean(F2['B_bot'])
+
+    # For the minimization we will search for the optimal values withing 20%
+    # of the background value
+    percent_sigma = 20.0
+    
+    # Brute minimization gives the best result
+    # The brute step controls the walk
+    # If you need to make the code faster, increase the brute_step and
+    # decrease the percent sigma
+    step = 1.
+    sigma_hmF2 = mean_hmF2 * (percent_sigma / 100.0)
+    sigma_B_bot = mean_B_bot * (percent_sigma / 100.0)
+
+    # Populate lmfit parameters for the minimization
+    params = lmfit.Parameters()
+    params.add('NmF2', value=NmF2_new, vary=False)
+    params.add('hmF2', value=mean_hmF2,
+               min=mean_hmF2 - sigma_hmF2,
+               max=mean_hmF2 + sigma_hmF2,
+               brute_step=step)
+
+    params.add('B_bot', value=mean_B_bot,
+               min=mean_B_bot - sigma_B_bot,
+               max=mean_B_bot + sigma_B_bot,
+               brute_step=step)
+
+    # Perform brute-force minimization
+    brute_result = lmfit.minimize(residual_VH, params,
+                                  args=(F2, F1, E, f_in, vh_obs,
+                                        alt, b_mag, b_psi),
+                                  method='brute')
+
+    # Extract optimal parameter values
+    NmF2_opt = brute_result.params['NmF2'].value
+    hmF2_opt = brute_result.params['hmF2'].value
+    B_bot_opt = brute_result.params['B_bot'].value
+
+    # Update F2 dictionary with optimized parameters
+    F2_fit = deepcopy(F2)
+    F1_fit = deepcopy(F1)
+    E_fit = deepcopy(E)
+    F2_fit['Nm'] = np.full_like(F2['Nm'], NmF2_opt)
+    F2_fit['hm'] = np.full_like(F2['Nm'], hmF2_opt)
+    F2_fit['B_bot'] = np.full_like(F2['Nm'], B_bot_opt)
+
+    # Run forward model with optimized parameters
+    vh_result, EDP_result = model_VH(F2_fit, F1_fit, E_fit,
+                                     f_in, alt, b_mag, b_psi)
+    return vh_result, EDP_result
