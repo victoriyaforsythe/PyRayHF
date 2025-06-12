@@ -65,7 +65,7 @@ Use only the part of the spectrum above 0.24 × NmF2.
 
 ::
 
-    lid = np.where(np.isfinite(vh_data) == 1)[0]
+    ind_valid = np.where(np.isfinite(vh_data) == 1)[0]
     freq_in = input_example['freq'][ind_valid]
     vh_in = vh_data[ind_valid]
 
