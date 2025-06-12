@@ -148,3 +148,21 @@ The group refractive index **Group Refractive Index (mu_prime)** is multiplied w
 ![Virtual_Height](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Virtual_Height.png)
 
 See the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder for mode detailed examples.
+
+# Example: Compute and Fit Virtual Heights Using PyRayHF
+This example demonstrates how to compute ionospheric virtual heights using the PyRayHF library and perform parameter inversion to fit synthetic observations.
+
+Workflow Overview:
+
+1) Load Input Arrays:
+Load a set of pre-generated ionospheric input arrays from Example_input.p, which were created using the PyIRI library (see [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials)).
+2) Generate Background Model
+Compute the virtual height (vh_back) and electron density profile (EDP_back) for the ordinary ('O') propagation mode using **model_VH**. This serves as the background model for later minimization.
+3) Create Synthetic Observations
+Simulate a "truth" scenario by modifying the F2-layer parameters (increase peak density by 20%, lower peak height by 20%, and increase bottomside thickness by 10%). Generate corresponding virtual heights and electron densities using the same model_VH function.
+4) Preprocess Observations
+Filter out any NaN values from the synthetic virtual height data to ensure the minimization function can run properly.
+5) Minimize and Fit Parameters
+Use **minimize_parameters** with brute-force optimization to find F2-layer parameters that best reproduce the synthetic virtual height observations. The method searches over a range of values with a 30% perturbation margin and step size of 1 km.
+
+![Minimization](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Minimization.png)
