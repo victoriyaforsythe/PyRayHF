@@ -14,7 +14,6 @@ from PyRayHF.library import find_vh
 from PyRayHF.library import find_X
 from PyRayHF.library import find_Y
 from PyRayHF.library import freq2den
-from PyRayHF.library import minimize_parameters
 from PyRayHF.library import model_VH
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
