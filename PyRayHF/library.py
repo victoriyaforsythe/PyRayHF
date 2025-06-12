@@ -540,7 +540,8 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
     return residual
 
 
-def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi):
+def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
+                        method='brute', percent_sigma=20., step=1.):
     """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed VH.
 
     Parameters
@@ -561,6 +562,20 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi):
         Magnetic field magnitude array [nT].
     b_psi : ndarray
         Magnetic field dip angle array [degrees].
+    method : str
+        Method of minimization in lmfit:
+        "brute": (default) A grid search method for finding a global 
+        minimum.
+        "levenberg-marquardt": Generally fast and
+        effective for many curve-fitting needs.
+        "powell": Another derivative-free method.
+    percent_sigma : flt
+        How far off from the background value to deviate.
+        Default is 20%.
+        If the speed needs to be increase, decrease this parameter.
+    step : flt
+        Step size in km for brute minimization.
+        If the speed needs to be increase, increase this parameter.
 
     Returns
     -------
@@ -611,7 +626,7 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi):
     brute_result = lmfit.minimize(residual_VH, params,
                                   args=(F2, F1, E, f_in, vh_obs,
                                         alt, b_mag, b_psi),
-                                  method='brute')
+                                  method=method)
 
     # Extract optimal parameter values
     NmF2_opt = brute_result.params['NmF2'].value
