@@ -564,7 +564,7 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
         Magnetic field dip angle array [degrees].
     method : str
         Method of minimization in lmfit:
-        "brute": (default) A grid search method for finding a global 
+        "brute": (default) A grid search method for finding a global
         minimum.
         "levenberg-marquardt": Generally fast and
         effective for many curve-fitting needs.
