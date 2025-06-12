@@ -9,10 +9,9 @@ Prerequisites
 PyRAY uses the Python modules included in the list below. This module
 officially supports Python 3.9+.
 
-1. matplotlib
+1. lmfit
 2. numpy
-3. scipy
-4. PyIRI
+3. PyIRI
 
 
 Installation Options

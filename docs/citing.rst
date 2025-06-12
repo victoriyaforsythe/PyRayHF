@@ -19,7 +19,7 @@ examples here are from the second release.
     title        = {victoriyaforsythe/PyRayHF},
     year         = 2025,
     publisher    = {Zenodo},
-    version      = {v0.0.1},
+    version      = {v0.0.2},
     doi          = {10.5281/zenodo.15555327},
     url          = {https://github.com/victoriyaforsythe/PyRayHF}
   }
