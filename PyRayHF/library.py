@@ -597,15 +597,10 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
     mean_hmF2 = np.nanmean(F2['hm'])
     mean_B_bot = np.nanmean(F2['B_bot'])
 
-    # For the minimization we will search for the optimal values withing 20%
-    # of the background value
-    percent_sigma = 20.0
-
     # Brute minimization gives the best result
     # The brute step controls the walk
     # If you need to make the code faster, increase the brute_step and
     # decrease the percent sigma
-    step = 1.
     sigma_hmF2 = mean_hmF2 * (percent_sigma / 100.0)
     sigma_B_bot = mean_B_bot * (percent_sigma / 100.0)
 
