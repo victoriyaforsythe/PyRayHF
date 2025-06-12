@@ -69,7 +69,10 @@ Use only the part of the spectrum above 0.24 × NmF2.
     freq_in = input_example['freq'][ind_valid]
     vh_in = vh_data[ind_valid]
 
-6. Using minimization find parameters that match the observations.
+6. Using brute-force optimization to find F2-layer parameters that best
+reproduce the synthetic virtual height observations.
+The method searches over a range of values with a 30% perturbation margin
+and step size of 1 km.
 
 ::
 
@@ -81,7 +84,10 @@ Use only the part of the spectrum above 0.24 × NmF2.
                                                        vh_in,
                                                        input_example['alt'],
                                                        input_example['bmag'],
-                                                       input_example['bpsi'])
+                                                       input_example['bpsi'],
+                                                       method='brute',
+                                                       percent_sigma=30.,
+                                                       step=1.)
 
 7. Plot the results. The electron density profile (EDP) is converted from
 plasma density to plasma frequency and plotted using real altitude on the
