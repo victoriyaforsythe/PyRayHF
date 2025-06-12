@@ -66,8 +66,8 @@ Use only the part of the spectrum above 0.24 × NmF2.
 ::
 
     ind_valid = np.where(np.isfinite(vh_data) == 1)[0]
-    freq_in = input_example['freq'][ind_valid]
-    vh_in = vh_data[ind_valid]
+    freq_in = input_example['freq'][lid]
+    vh_in = vh_data[lid]
 
 6. Using brute-force optimization to find F2-layer parameters that best
 reproduce the synthetic virtual height observations.
