@@ -166,3 +166,5 @@ Filter out any NaN values from the synthetic virtual height data to ensure the m
 Use **minimize_parameters** with brute-force optimization to find F2-layer parameters that best reproduce the synthetic virtual height observations. The method searches over a range of values with a 30% perturbation margin and step size of 1 km.
 
 ![Minimization](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Minimization.png)
+
+The notebook for this example can be found at [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials).
