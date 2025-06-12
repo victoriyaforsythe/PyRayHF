@@ -5,7 +5,7 @@ adheres to [Semantic Versioning](https://semver.org/).
 ## 0.0.2 (06-12-2025)
 * Bug fix in vertical_forward_operator (typo in bpsi.shape)
 * New functionality added to perform minimization of background parameters to correct ionospheric parameters using observed virtual heighs
-* New etutorial and example are added to demonstrate how minization works
+* New tutorial and example are added to demonstrate how minimization works
 * Two new unit tests are added to cover the new features
 * README is updated to include minimization example
 
