@@ -64,6 +64,7 @@ Minimization will not work properly if NaNs are present.
 Use only the part of the spectrum above 0.24 × NmF2.
 
 ::
+
     lid = np.where(np.isfinite(vh_data) == 1)[0]
     freq_in = input_example['freq'][ind_valid]
     vh_in = vh_data[ind_valid]
@@ -71,6 +72,7 @@ Use only the part of the spectrum above 0.24 × NmF2.
 6. Using minimization find parameters that match the observations.
 
 ::
+
     (vh_result,
      EDP_result) = PyRayHF.library.minimize_parameters(input_example['F2'],
                                                        input_example['F1'],

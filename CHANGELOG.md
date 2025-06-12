@@ -7,6 +7,7 @@ adheres to [Semantic Versioning](https://semver.org/).
 * New functionality added to perform minimization of background parameters to correct ionospheric parameters using observed virtual heighs
 * New etutorial and example are added to demonstrate how minization works
 * Two new unit tests are added to cover the new features
+* README is updated to include minimization example
 
 ## 0.0.1 (05-30-2025)
 * Alpha release
