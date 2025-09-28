@@ -23,27 +23,26 @@
 - **trace_ray_fermat** — Fermat-principle solver that minimizes optical path length in spherical geometry.
 
 
-**vertical_forward_operator**
-
+Function **vertical_forward_operator**<br>
 Given an electron-density profile and magnetic field, computes **virtual heights** for upward-propagating HF rays in the **O** and **X** modes. *Key advantage:* computes virtual heights **simultaneously** for all specified ionosonde frequencies.
 
-**trace_ray_cartesian_stratified**
+Function **trace_ray_cartesian_stratified**<br>
 
 Traces rays in a Cartesian `(x, z)` domain assuming a **horizontally stratified** ionosphere (`n = n(z)`). Applies Snell’s law in flat-Earth layers. Returns the **ground intercept**, **path**, **group delay**, and **path length**. *Key advantage:* fastest baseline for local studies and unit tests; simple and robust.
 
-**trace_ray_cartesian_gradient**
+Function **trace_ray_cartesian_gradient**<br>
 
 Integrates rays in a Cartesian `(x, z)` domain for a **horizontally varying** medium `n(x,z) = mu(x,z)` (with `mup` optional for delay). Uses the isotropic gradient form `d/ds(n v) = grad n`. Returns the **flat-Earth ground intercept**, **path**, and optional **group delay**. *Key caveat:* flat-Earth geometry slightly **overestimates range** compared to spherical tracers.
 
-**trace_ray_spherical_stratified**
+Function **trace_ray_spherical_stratified**<br>
 
 Traces oblique HF rays on a **spherical Earth** with a **stratified** ionosphere (`n = n(r)`). Builds `mu(z)` for geometry and `mup(z)` for timing, then applies Snell’s law in spherical shells. Returns **ground range**, **apex altitude**, **group delay**, **group path length**, and **midpoint location**. *Key advantage:* extremely fast and numerically robust—ideal for frequency/elevation sweeps and DA inner loops.
 
-**trace_ray_spherical_gradient**
+Function **trace_ray_spherical_gradient**<br>
 
 Performs spherical `(r, phi)` ray tracing with **horizontal structure** along the great-circle, using `mu(r,phi)` for geometry (and `mup` for group delay). Returns **ground range**, **apex altitude**, **group delay**, and **landing elevation**. *Key advantage:* captures first-order horizontal gradients with only a modest cost increase over the stratified spherical case; well-suited as a fast forward model for oblique-path DA.
 
-**trace_ray_fermat**
+Function **trace_ray_fermat**<br>
 
 Solves the ray path by **minimizing optical path length** (Fermat’s principle) in spherical geometry, using `mu` for geometry (and `mup` for group delay). Integrates the Euler–Lagrange form, handling turning points robustly without discrete Snell shells. Returns **ground range**, **apex altitude**, **group delay**, and **path length**. *Key advantage:* high accuracy with coarser vertical sampling and improved stability in regions with sharp `mu` gradients compared to shell-based solvers.
 
