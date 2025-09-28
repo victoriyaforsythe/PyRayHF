@@ -1,6 +1,5 @@
 <img width="200" height="200" src="https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/PyRayHF_logo.png" alt="Black circle with manta ray flying through the ionosphere" title="PyRayHF Logo" style="float:left;">
 
-
 # PyRayHF (Python HF Ray Tracer for the Ionosphere)
 [![PyRAY Package latest release](https://img.shields.io/pypi/v/PyRayHF.svg)](https://pypi.org/project/PyRayHF/)
 [![Build Status](https://github.com/victoriyaforsythe/PyRayHF/actions/workflows/main.yml/badge.svg)](https://github.com/victoriyaforsythe/PyRayHF/actions/workflows/main.yml)
@@ -10,17 +9,17 @@
 
 **PyRayHF** is a pure-Python package for high-frequency (HF) ionospheric ray tracing. It includes a fully magnetoionic vertical sounding module and several 2-D ray-tracing modes:
 
-- **vertical_forward_operator** — fully magnetoionic vertical ray tracer that computes virtual heights for upward-propagating rays in the ordinary (O) and extraordinary (X) modes. Given an electron-density profile and magnetic field, computes **virtual heights** for upward-propagating HF rays in the **O** and **X** modes. *Key advantage:* computes virtual heights **simultaneously** for all specified ionosonde frequencies.
+- **vertical_forward_operator** — fully magnetoionic vertical ray tracer that computes **virtual heights** for upward-propagating rays in the ordinary (O) and extraordinary (X) modes. *Key advantage:* computes virtual heights **simultaneously** for all specified ionosonde frequencies.
 
-- **trace_ray_cartesian_stratified** — Cartesian tracer in `(x, z)` domain for horizontally stratified media (`n = n(z)`). Applies Snell’s law in flat-Earth layers. Returns the **ground intercept**, **path**, **group delay**, and **path length**. *Key advantage:* fastest baseline for local studies and unit tests; simple and robust.
+- **trace_ray_cartesian_stratified** — Cartesian tracer in `(x, z)` for **horizontally stratified** media (`n = n(z)`). Applies Snell’s law in flat-Earth layers. Returns the **ground intercept**, **path**, **group delay**, and **path length**. *Key advantage:* fastest baseline for local studies and unit tests; simple and robust.
 
-- **trace_ray_cartesian_gradient** — gradient-aware Cartesian `(x, z)` tracer for horizontally varying media `n(x,z)` (e.g., sloped or structured ionospheres). Uses the isotropic gradient form `d/ds(n v) = grad n`. Returns the **flat-Earth ground intercept**, **path**, and optional **group delay**. *Key caveat:* flat-Earth geometry slightly **overestimates range** compared to spherical tracers.
+- **trace_ray_cartesian_gradient** — gradient-aware Cartesian `(x, z)` tracer for **horizontally varying** media `n(x,z)`. Uses the isotropic gradient form `d/ds(n v) = grad n`. Returns the **flat-Earth ground intercept**, **path**, and optional **group delay**. *Key caveat:* flat-Earth geometry slightly **overestimates range** compared to spherical tracers.
 
 - **trace_ray_spherical_stratified** — classical Snell’s-law path on a **spherical Earth** with stratified ionosphere (`n = n(r)`). Builds `mu(z)` for geometry and `mup(z)` for timing, then applies Snell’s law in spherical shells. Returns **ground range**, **apex altitude**, **group delay**, **group path length**, and **midpoint location**. *Key advantage:* extremely fast and numerically robust—ideal for frequency/elevation sweeps and DA inner loops.
 
-- **trace_ray_spherical_gradient** — spherical `(r, phi)` tracer using through **horizontally varying** media `n(x,z)` (e.g., sloped or structured ionospheres), using `mu(r,phi)` for geometry (and `mup` for group delay). Returns **ground range**, **apex altitude**, **group delay**, and **landing elevation**. *Key advantage:* captures first-order horizontal gradients with only a modest cost increase over the stratified spherical case; well-suited as a fast forward model for oblique-path DA.
+- **trace_ray_spherical_gradient** — spherical `(r, phi)` tracer for **horizontally varying** media `n(r,phi)`, using `mu(r,phi)` for geometry (and `mup` for group delay). Returns **ground range**, **apex altitude**, **group delay**, and **landing elevation**. *Key advantage:* captures first-order horizontal gradients with only a modest cost increase over the stratified spherical case; well suited as a fast forward model for oblique-path DA.
 
-- **trace_ray_fermat** — Solves the ray path by **minimizing optical path length** (Fermat’s principle) in spherical geometry, using `mu` for geometry (and `mup` for group delay). Integrates the Euler–Lagrange form, handling turning points robustly without discrete Snell shells. Returns **ground range**, **apex altitude**, **group delay**, and **path length**. *Key advantage:* high accuracy with coarser vertical sampling and improved stability in regions with sharp `mu` gradients compared to shell-based solvers.
+- **trace_ray_fermat** — solves the ray path by **minimizing optical path length** (Fermat’s principle) in spherical geometry, using `mu` for geometry (and `mup` for group delay). Integrates the Euler–Lagrange form, handling turning points robustly without discrete Snell shells. Returns **ground range**, **apex altitude**, **group delay**, and **path length**. *Key advantage:* high accuracy with coarser vertical sampling and improved stability in regions with sharp `mu` gradients compared to shell-based solvers.
 
 
 # Installation
