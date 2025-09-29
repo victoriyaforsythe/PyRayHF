@@ -669,7 +669,31 @@ def trace_ray_cartesian_stratified(f0_Hz, elevation_deg, alt_km,
         Horizontal ray positions [km]
     z_full : ndarray
         Altitudes along the ray [km]
+    
+    Notes
+    -----
+    This function models how a high-frequency radio wave propagates
+    through the ionosphere, using Snell’s law adapted for a plasma
+    medium. It calculates the trajectory of the ray as it leaves the
+    ground, bends through the ionized atmosphere, reaches a turning
+    point, and (if conditions allow) returns back toward Earth.
 
+    Background: Snell’s Law in a Plasma.
+    In a uniform dielectric, Snell’s law states that nsinθ=constant,
+    where n is the refractive index and θ is the propagation angle
+    relative to the vertical. In a plasma, the refractive index isn’t
+    constant but depends on: electron density (affects plasma
+    frequency), magnetic field (splits O and X modes), wave frequency,
+    and angle between wave vector and magnetic field.
+    
+    This gives two possible wave modes: the ordinary (O) and
+    extraordinary (X) mode, each with a different effective refractive
+    index. The function uses auxiliary functions find_X, find_Y,
+    and find_mu_mup to compute these refractive indices as functions
+    of altitude. Thus, the plasma-modified Snell’s law is applied:
+    μ′sinθ=constant, where μ′ is the “transverse refractive index”
+    for the chosen wave mode.
+    
     """
     # Ensure ray starts at ground
     h_ground = 0.0

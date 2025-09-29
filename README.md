@@ -154,3 +154,10 @@ This example demonstrates how to compute ionospheric virtual heights using the P
 ![Minimization](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Minimization.png)
 
 The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+
+
+# Example: 2-D Cartesian Stratified Raytracer
+
+This function models how a high-frequency radio wave propagates through the ionosphere, using Snell’s law adapted for a plasma medium. It calculates the trajectory of the ray as it leaves the ground, bends through the ionized atmosphere, reaches a turning point, and (if conditions allow) returns back toward Earth.
+
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
