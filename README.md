@@ -1,6 +1,5 @@
 <img width="200" height="200" src="https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/PyRayHF_logo.png" alt="Black circle with manta ray flying through the ionosphere" title="PyRayHF Logo" style="float:left;">
 
-
 # PyRayHF (Python HF Ray Tracer for the Ionosphere)
 [![PyRAY Package latest release](https://img.shields.io/pypi/v/PyRayHF.svg)](https://pypi.org/project/PyRayHF/)
 [![Build Status](https://github.com/victoriyaforsythe/PyRayHF/actions/workflows/main.yml/badge.svg)](https://github.com/victoriyaforsythe/PyRayHF/actions/workflows/main.yml)
@@ -8,11 +7,19 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15555327.svg)](https://doi.org/10.5281/zenodo.15555327)
 [![Coverage Status](https://coveralls.io/repos/github/victoriyaforsythe/PyRayHF/badge.svg?branch=main)](https://coveralls.io/github/victoriyaforsythe/PyRayHF?branch=main)
 
-PyRayHF is a Python-based software package for analytic HF raytracing through the ionosphere.
+**PyRayHF** is a pure-Python package for high-frequency (HF) ionospheric ray tracing. It includes a fully magnetoionic vertical sounding module and several 2-D ray-tracing modes:
 
-For a given electron density profile and the magnetic field it calculates virtual heights for the upward-propagating HF rays in ordinary (O) and extraodinary (X) modes.
+- **vertical_forward_operator** — fully magnetoionic vertical ray tracer that computes **virtual heights** for upward-propagating rays in the ordinary (O) and extraordinary (X) modes. *Key advantage:* computes virtual heights **simultaneously** for all specified ionosonde frequencies.
 
-A key advantage of PyRayHF is its efficiency: it calculater the virtual heigh simultaneousely for all given ionosonde freqeuncies.
+- **trace_ray_cartesian_stratified** — Cartesian tracer in `(x, z)` for **horizontally stratified** media (`n = n(z)`). Applies Snell’s law in flat-Earth layers. Returns the **ground intercept**, **path**, **group delay**, and **path length**. *Key advantage:* fastest baseline for local studies and unit tests; simple and robust.
+
+- **trace_ray_cartesian_gradient** — gradient-aware Cartesian `(x, z)` tracer for **horizontally varying** media `n(x,z)`. Uses the isotropic gradient form `d/ds(n v) = grad n`. Returns the **flat-Earth ground intercept**, **path**, and optional **group delay**. *Key caveat:* flat-Earth geometry slightly **overestimates range** compared to spherical tracers.
+
+- **trace_ray_spherical_stratified** — classical Snell’s-law path on a **spherical Earth** with stratified ionosphere (`n = n(r)`). Builds `mu(z)` for geometry and `mup(z)` for timing, then applies Snell’s law in spherical shells. Returns **ground range**, **apex altitude**, **group delay**, **group path length**, and **midpoint location**. *Key advantage:* extremely fast and numerically robust—ideal for frequency/elevation sweeps and DA inner loops.
+
+- **trace_ray_spherical_gradient** — spherical `(r, phi)` tracer for **horizontally varying** media `n(r,phi)`, using `mu(r,phi)` for geometry (and `mup` for group delay). Returns **ground range**, **apex altitude**, **group delay**, and **landing elevation**. *Key advantage:* captures first-order horizontal gradients with only a modest cost increase over the stratified spherical case; well suited as a fast forward model for oblique-path DA.
+
+- **trace_ray_fermat** — solves the ray path by **minimizing optical path length** (Fermat’s principle) in spherical geometry, using `mu` for geometry (and `mup` for group delay). Integrates the Euler–Lagrange form, handling turning points robustly without discrete Snell shells. Returns **ground range**, **apex altitude**, **group delay**, and **path length**. *Key advantage:* high accuracy with coarser vertical sampling and improved stability in regions with sharp `mu` gradients compared to shell-based solvers.
 
 
 # Installation
@@ -28,7 +35,6 @@ Alternatively, you can clone and install it from GitHub:
 ```
 git clone https://github.com/victoriyaforsythe/PyRayHF.git
 cd PyRayHF
-python -m build .
 pip install .
 ```
 
@@ -36,135 +42,115 @@ See the documentation for details about the required dependencies.
 
 # Example Workflow
 
-1. Provide input arrays for one vertical ionospheric profile, where $den$, $bmag$, $bpsi$, and $alt$ are the arrays of the same length, referring to electron density in m$^{-3}$, strength of the magnetic field in Tesla, angle of the magnetic field to the vertical in degrees, altitude in km.
-Provide the array of frequencies $freq$ at which you would like to sample this profile, that will be the frequencies of the HF sounder.
+1. Provide input arrays for a single vertical ionospheric profile, where `den`, `bmag`, `bpsi`, and `alt` are arrays of the same length representing, respectively, electron density in `m^-3`, magnetic-field strength in Tesla, magnetic-field angle to the vertical in degrees, and altitude in km. Provide an array of frequencies `freq` at which to sample this profile; these will be the HF sounder frequencies.
 
-Below are the input arrays generated by PyIRI in Example_Generate_Input_Arrays.
+   Below are the input arrays generated by PyIRI in `Example_Generate_Input_Arrays`.
 
-![Inputs](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Input_Arrays.png)
+   ![Inputs](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Input_Arrays.png)
 
-2. Compute virtual height for the ordinary 'O' propagation mode. A low number
-of vertical grid points is sufficient for O-mode (e.g., 200).
+2. Compute the virtual height for the ordinary (`'O'`) propagation mode. A low number of vertical grid points is sufficient for O-mode (e.g., 200).
 
-```
+```python
 mode = 'O'
 n_points = 200
-vh_O = PyRayHF.library.vertical_forward_operator(input_arrays['freq'],
-                                            input_arrays['den'],
-                                            input_arrays['bmag'],
-                                            input_arrays['bpsi'],
-                                            input_arrays['alt'],
-                                            mode,
-                                            n_points)
+vh_O = PyRayHF.library.vertical_forward_operator(
+    input_arrays['freq'],
+    input_arrays['den'],
+    input_arrays['bmag'],
+    input_arrays['bpsi'],
+    input_arrays['alt'],
+    mode,
+    n_points
+)
 ```
 
-3. Compute virtual height for the extraordinary 'X' propagation mode.
-A high number of vertical grid points is recommended for X-mode (e.g., 20000),
-since the result may be noisy at low resolution.
+3. Compute the virtual height for the extraordinary (`'X'`) propagation mode. A high number of vertical grid points is recommended for X-mode (e.g., 20,000), since the result may be noisy at low resolution.
 
-```
+```python
 mode = 'X'
 n_points = 20000
-vh_X = PyRayHF.library.vertical_forward_operator(input_arrays['freq'],
-                                            input_arrays['den'],
-                                            input_arrays['bmag'],
-                                            input_arrays['bpsi'],
-                                            input_arrays['alt'],
-                                            mode,
-                                            n_points)
+vh_X = PyRayHF.library.vertical_forward_operator(
+    input_arrays['freq'],
+    input_arrays['den'],
+    input_arrays['bmag'],
+    input_arrays['bpsi'],
+    input_arrays['alt'],
+    mode,
+    n_points
+)
 ```
 
 ![VH](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Run_Vertical_PyRayHF.png)
 
 # Virtual Height Calculation Overview
 
-The virtual height is the apparent reflection height of a radio wave in the ionosphere, assuming the wave travels at the speed of light in a vacuum.
-In reality, the wave slows down due to the ionospheric plasma, and this effect is captured using the group refractive index.
+The virtual height is the apparent reflection height of a radio wave in the ionosphere, assuming the wave travels at the speed of light in a vacuum. In reality, the wave slows down due to the ionospheric plasma, and this effect is captured using the group refractive index.
 
-To compute the virtual height, we integrate the group refractive index over the real height profile.
-This process uses several physical quantities, all of which can be derived from models or measurements:
+To compute the virtual height, we integrate the group refractive index over the real-height profile. This process uses several physical quantities, all of which can be derived from models or measurements:
 
-- **Electron Density**: Used to compute the plasma frequency. This quantity is the primary factor affecting wave propagation.
-- **Magnetic Field Strength**: Needed to calculate the gyrofrequency, which affects how the wave interacts with the ionized medium.
-- **Magnetic Field Angle**: The angle between the wave vector and the magnetic field line influences wave polarization and refraction.
+- **Electron density** — used to compute the plasma frequency; this is the primary factor affecting wave propagation.  
+- **Magnetic-field strength** — needed to calculate the gyrofrequency, which affects how the wave interacts with the ionized medium.  
+- **Magnetic-field angle** — the angle between the wave vector and the magnetic-field line, which influences wave polarization and refraction.
 
 Using these parameters, we compute:
 
-- **X**: The ratio of plasma frequency squared to wave frequency squared. This determines how strongly the plasma affects wave propagation.
-- **Y**: The ratio of gyrofrequency to wave frequency. This captures the influence of the magnetic field.
-- **Refractive Index (mu)**: Describes how much the wave is slowed down by the medium.
-- **Group Refractive Index (mu_prime)**: Represents how the wave packet travels, and is derived from the refractive index.
+- **X** — the ratio of plasma-frequency squared to wave-frequency squared, which determines how strongly the plasma affects propagation.  
+- **Y** — the ratio of gyrofrequency to wave frequency, capturing the influence of the magnetic field.  
+- **Refractive index (`mu`)** — describes how much the wave is slowed by the medium.  
+- **Group refractive index (`mu_prime`)** — describes wave-packet propagation and is derived from the refractive index.
 
-Once the group refractive index profile is known, it is integrated over the height range of interest to obtain the virtual height.
-This value corresponds to the height at which the wave would appear to reflect if it were traveling through a vacuum.
+Once the group refractive-index profile is known, it is integrated over the height range of interest to obtain the virtual height. This value corresponds to the height at which the wave would appear to reflect if it were traveling through a vacuum.
 
-# Why a Stretched Grid is Needed
+# Why a Stretched Grid Is Needed
 
-In standard numerical modeling, it is common to use a uniform vertical grid, where points are evenly spaced in altitude.
-However, when calculating the virtual height in the ionosphere, this approach can lead to poor resolution near the reflection height.
+In standard numerical modeling, it is common to use a uniform vertical grid with points evenly spaced in altitude. However, when calculating virtual height in the ionosphere, this approach can lead to poor resolution near the reflection height.
 
-The reflection height is the point where the radio wave slows down dramatically and turns back due to the changing refractive index.
-Around this region, the group refractive index varies rapidly with altitude, and most of the contribution to the virtual height integral comes from this narrow layer.
+The reflection height is the point where the radio wave slows dramatically and turns back due to the changing refractive index. Around this region, the group refractive index varies rapidly with altitude, and most of the contribution to the virtual-height integral comes from this narrow layer.
 
-A uniform grid may not have enough points in this critical region, resulting in large numerical errors and an inaccurate estimate of the virtual height.
-This is especially problematic when the wave frequency is close to the local plasma frequency, where the integrand becomes sharply peaked.
+A uniform grid may not have enough points in this critical region, resulting in large numerical errors and an inaccurate estimate of the virtual height. This is especially problematic when the wave frequency is close to the local plasma frequency, where the integrand becomes sharply peaked.
 
-To solve this, we use a **stretched vertical grid**. This grid places more points near the reflection region and fewer points in regions where the variation is smooth.
-By concentrating resolution where it is most needed, the stretched grid ensures accurate integration of the group refractive index, while keeping the total number of points manageable.
-This approach improves both efficiency and precision, making it ideal for ionospheric ray tracing and virtual height modeling.
+To solve this, we use a **stretched vertical grid**. This grid places more points near the reflection region and fewer points in regions where the variation is smooth. By concentrating resolution where it is most needed, the stretched grid ensures accurate integration of the group refractive index while keeping the total number of points manageable. This approach improves both efficiency and precision, making it ideal for ionospheric ray tracing and virtual-height modeling.
 
 # Grid Construction for Virtual Height Calculation
 
-For each ionosonde frequency, we interpolate the **electron density profile (EDP)**—converted into **plasma frequency**—to determine the height at which the ionosonde frequency equals the local plasma frequency.
-This height is referred to as the **reflection height**, and it marks the upper boundary for the integration in virtual height calculation.
+For each ionosonde frequency, we interpolate the **electron-density profile (EDP)**—converted into **plasma frequency**—to determine the height at which the ionosonde frequency equals the local plasma frequency. This height is the **reflection height**, and it marks the upper boundary for the integration in the virtual-height calculation.
 
-Once the reflection height is known, we construct a new vertical grid tailored to that specific frequency.
-This is achieved using a **stretched grid function** that varies smoothly from 0 to 1.
-The function concentrates points near the top of the grid—close to the reflection height—where resolution is most critical.
+Once the reflection height is known, we construct a new vertical grid tailored to that specific frequency. This is achieved using a **stretched-grid function** that varies smoothly from 0 to 1. The function concentrates points near the top of the grid—close to the reflection height—where resolution is most critical.
 
-We apply this function by multiplying it by the altitude range of interest: from the **minimum altitude** (e.g., 80 km) to the **reflection height**.
-This results in a **resampled array of altitudes**, with a fixed number of points, `N_points`.
+We apply this function by multiplying it by the altitude range of interest: from the **minimum altitude** (e.g., 80 km) to the **reflection height**. This results in a **resampled array of altitudes** with a fixed number of points, `N_points`.
 
-The figures below show the multiplier obtained from the **stretched grid function** and the locations of the new stretched grid relative to the reflection height for each ionosonde frequency, plotted on the same x-axis as the plasma frequency.
-This new grid ensures fine resolution near the reflection height while minimizing unnecessary points at lower altitudes.
+The figures below show the multiplier obtained from the **stretched-grid function** and the locations of the new stretched grid relative to the reflection height for each ionosonde frequency, plotted on the same x-axis as the plasma frequency. This new grid ensures fine resolution near the reflection height while minimizing unnecessary points at lower altitudes.
 
 ![Stretched Grid](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Stretched_Grid.png)
 
-By repeating this process for each ionosonde frequency, we form a 2D matrix of altitudes with dimensions `[N_frequency, N_points]`.
-At this stage, we **interpolate all input parameters**—such as electron density, magnetic field strength, and angle—onto this new grid.
-This ensures that every virtual height calculation uses accurately aligned input data, matched to the specific resolution needs of the ray's path at that frequency.
+By repeating this process for each ionosonde frequency, we form a 2D matrix of altitudes with dimensions `[N_frequency, N_points]`. At this stage, we **interpolate all input parameters**—such as electron density, magnetic-field strength, and magnetic-field angle—onto this new grid. This ensures that every virtual-height calculation uses accurately aligned input data, matched to the specific resolution needs of the ray path at that frequency.
 
-The following figures present the input data converted into 2D arrays, where the x-axis represents the ionosonde frequency and the y-axis corresponds to the vertical grid index, with a size of `N_points`.
-The first figure displays the altitude of each grid point. The subsequent figures show the interpolated plasma density, magnetic field strength, and magnetic field angle.
+The following figures present the input data converted into 2D arrays, where the x-axis represents ionosonde frequency and the y-axis corresponds to the vertical grid index of size `N_points`. The first figure displays the altitude of each grid point. The subsequent figures show the interpolated plasma density, magnetic-field strength, and magnetic-field angle.
 
-![Input Matrixes](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Regridded_Input_Matrix.png)
+![Input Matrices](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Regridded_Input_Matrix.png)
 
-The following figures present the computed **X**, **Y**, **Refractive Index (mu)**, and **Group Refractive Index (mu_prime)** parameters for O-mode.
+The next figures present the computed **X**, **Y**, **refractive index (`mu`)**, and **group refractive index (`mu_prime`)** parameters for O-mode.
 
 ![Intermediate Calculations](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Intermediate_Calculations.png)
 
-The group refractive index **Group Refractive Index (mu_prime)** is multiplied with a matrix that contains the distances between the grid points and summed over the second axis, obtaining the virtual height, shown with red curves on the figure below.
+The **group refractive index (`mu_prime`)** is multiplied by a matrix containing the distances between grid points and summed over the vertical axis to obtain the virtual height, shown by the red curves in the figure below.
 
 ![Virtual_Height](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Virtual_Height.png)
 
-See the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder for mode detailed examples.
+See the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder for more detailed examples.
 
 # Example: Compute and Fit Virtual Heights Using PyRayHF
+
 This example demonstrates how to compute ionospheric virtual heights using the PyRayHF library and perform parameter inversion to fit synthetic observations.
 
-Workflow Overview:
+**Workflow Overview**
 
-1) Load Input Arrays:
-Load a set of pre-generated ionospheric input arrays from Example_input.p, which were created using the PyIRI library (see [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials)).
-2) Generate Background Model
-Compute the virtual height (vh_back) and electron density profile (EDP_back) for the ordinary ('O') propagation mode using **model_VH**. This serves as the background model for later minimization.
-3) Create Synthetic Observations
-Simulate a "truth" scenario by modifying the F2-layer parameters (increase peak density by 20%, lower peak height by 20%, and increase bottomside thickness by 10%). Generate corresponding virtual heights and electron densities using the same model_VH function.
-4) Preprocess Observations
-Filter out any NaN values from the synthetic virtual height data to ensure the minimization function can run properly.
-5) Minimize and Fit Parameters
-Use **minimize_parameters** with brute-force optimization to find F2-layer parameters that best reproduce the synthetic virtual height observations. The method searches over a range of values with a 30% perturbation margin and step size of 1 km.
+1) **Load input arrays.** Load a set of pre-generated ionospheric input arrays from `Example_input.p`, created using the PyIRI library (see the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials)).  
+2) **Generate a background model.** Compute the virtual height (`vh_back`) and electron-density profile (`EDP_back`) for the ordinary (`'O'`) mode using `model_VH`. This serves as the background for later minimization.  
+3) **Create synthetic observations.** Simulate a “truth” scenario by modifying the F2-layer parameters (increase peak density by 20%, lower peak height by 20%, and increase bottomside thickness by 10%). Generate corresponding virtual heights and electron densities using the same `model_VH` function.  
+4) **Preprocess observations.** Filter out any `NaN` values from the synthetic virtual-height data to ensure the minimization function runs properly.  
+5) **Minimize and fit parameters.** Use `minimize_parameters` with brute-force optimization to find F2-layer parameters that best reproduce the synthetic virtual-height observations. The method searches over a range of values with a 30% perturbation margin and a step size of 1 km.
 
 ![Minimization](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Minimization.png)
 
-The notebook for this example can be found at [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials).
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
