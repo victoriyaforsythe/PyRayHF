@@ -719,7 +719,8 @@ def trace_ray_cartesian_stratified(f0_Hz, elevation_deg, alt_km,
     X_down = find_X(Ne_down, f0_Hz)
     Y_down = find_Y(f0_Hz, Babs_down)
     _, mup_down = find_mu_mup(X_down, Y_down, bpsi_down, mode)
-    mup_down = np.where((mup_down < 1e-3) | np.isnan(mup_down), np.nan, mup_down)
+    mup_down = np.where((mup_down < 1e-3) | np.isnan(mup_down),
+                        np.nan, mup_down)
 
     with np.errstate(invalid='ignore'):
         sin_theta_down = (mup_down / mup0) * np.sin(theta0_rad)
