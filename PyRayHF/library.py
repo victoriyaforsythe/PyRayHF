@@ -640,3 +640,100 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
     vh_result, EDP_result = model_VH(F2_fit, F1_fit, E_fit,
                                      f_in, alt, b_mag, b_psi)
     return vh_result, EDP_result
+
+
+def trace_ray_cartesian_stratified(f0_Hz, elevation_deg, alt_km,
+                                   Ne, Babs, bpsi, mode="O"):
+    """Compute a classical (Snell's law–based) raypath from the ground.
+
+    Parameters
+    ----------
+    f0_Hz : float
+        Frequency [Hz]
+    elevation_deg : float
+        Elevation angle at transmitter [degrees]
+    alt_km : ndarray
+        Altitude grid [km]
+    Ne : ndarray
+        Electron density [el/m^3]
+    Babs : ndarray
+        Magnetic field strength [T]
+    bpsi : ndarray
+        Angle between B and wave vector [rad]
+    mode : str
+        Wave mode: 'O' or 'X'
+
+    Returns
+    -------
+    x_full : ndarray
+        Horizontal ray positions [km]
+    z_full : ndarray
+        Altitudes along the ray [km]
+
+    """
+    # Ensure ray starts at ground
+    h_ground = 0.0
+    if alt_km[0] > h_ground:
+        Ne0 = np.interp(h_ground, alt_km, Ne)
+        Babs0 = np.interp(h_ground, alt_km, Babs)
+        bpsi0 = np.interp(h_ground, alt_km, bpsi)
+        alt_km = np.insert(alt_km, 0, h_ground)
+        Ne = np.insert(Ne, 0, Ne0)
+        Babs = np.insert(Babs, 0, Babs0)
+        bpsi = np.insert(bpsi, 0, bpsi0)
+
+    # Plasma parameters
+    X = find_X(Ne, f0_Hz)
+    Y = find_Y(f0_Hz, Babs)
+    mu, mup = find_mu_mup(X, Y, bpsi, mode)
+    mup = np.where((mup < 1e-3) | np.isnan(mup), np.nan, mup)
+    mup0 = mup[0]
+
+    # Launch angle
+    theta0_rad = np.radians(90.0 - elevation_deg)
+
+    # Up-leg
+    with np.errstate(invalid='ignore'):
+        sin_theta = (mup / mup0) * np.sin(theta0_rad)
+        sin_theta = np.clip(sin_theta, -1.0, 1.0)
+        theta_h = np.arcsin(sin_theta)
+        tan_theta = np.tan(theta_h)
+
+    turning_mask = sin_theta < 1.0
+    if np.any(turning_mask):
+        stop_idx = np.argmax(~turning_mask)
+    else:
+        stop_idx = len(alt_km)
+
+    alt_up = alt_km[:stop_idx]
+    tan_up = tan_theta[:stop_idx]
+    dx_up = np.zeros_like(alt_up)
+    dx_up[1:] = np.cumsum(np.diff(alt_up) * tan_up[1:])
+
+    # Down-leg
+    alt_down = alt_up[::-1]
+    Ne_down = np.interp(alt_down, alt_km, Ne)
+    Babs_down = np.interp(alt_down, alt_km, Babs)
+    bpsi_down = np.interp(alt_down, alt_km, bpsi)
+
+    X_down = find_X(Ne_down, f0_Hz)
+    Y_down = find_Y(f0_Hz, Babs_down)
+    _, mup_down = find_mu_mup(X_down, Y_down, bpsi_down, mode)
+    mup_down = np.where((mup_down < 1e-3) | np.isnan(mup_down), np.nan, mup_down)
+
+    with np.errstate(invalid='ignore'):
+        sin_theta_down = (mup_down / mup0) * np.sin(theta0_rad)
+        sin_theta_down = np.clip(sin_theta_down, -1.0, 1.0)
+        theta_down = np.arcsin(sin_theta_down)
+        tan_down = np.tan(theta_down)
+
+    dx_down = np.zeros_like(alt_down)
+    dh_down = np.diff(alt_down)
+    dx_down[1:] = np.cumsum(-dh_down * tan_down[1:])
+    dx_down += dx_up[-1]
+
+    # Combine
+    x_full = np.concatenate([dx_up, dx_down])
+    z_full = np.concatenate([alt_up, alt_down])
+
+    return x_full, z_full
