@@ -691,7 +691,7 @@ def trace_ray_cartesian_stratified(f0_Hz, elevation_deg, alt_km,
     extraordinary (X) mode, each with a different effective
     refractive index. The function uses auxiliary functions
     find_X, find_Y, and find_mu_mup to compute these
-    efractive indices as functions of altitude. Thus,
+    refractive indices as functions of altitude. Thus,
     the plasma-modified Snell’s law is applied: μ′sinθ=constant,
     where μ′ is the “transverse refractive index” for the
     chosen wave mode.
