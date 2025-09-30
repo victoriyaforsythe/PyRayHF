@@ -1340,7 +1340,7 @@ def trace_ray_cartesian_stratified(f0_Hz: float,
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km,}
+            "ground_range_km": ground_range_km}
 
 
 def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray, np.ndarray],
@@ -1545,4 +1545,4 @@ def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray, np.ndarray],
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km,}
+            "ground_range_km": ground_range_km}
