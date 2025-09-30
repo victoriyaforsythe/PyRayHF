@@ -17,7 +17,6 @@ from typing import Callable, Tuple, Optional, Dict, Any
 from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator
 
-
 def constants():
     """Define constants for virtual height calculation.
 
@@ -887,8 +886,7 @@ def ray_rhs_cartesian(s: float,
                                                  np.ndarray]],
                       renormalize_every: int,
                       eval_counter: Dict[str, int],) -> np.ndarray:
-    """
-    Right-hand side of the 2D ray equations in Cartesian coordinates.
+    """Right-hand side of the 2D ray equations in Cartesian coordinates.
 
     Parameters
     ----------
@@ -1128,16 +1126,8 @@ def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray,
             'ground_range_km': ground_range_km}
 
 
-from typing import Dict
-import numpy as np
-
-
-# ----------------------------------------------------------------------
-# Helpers
-# ----------------------------------------------------------------------
 def tan_from_mu_scalar(mu_val: float, p: float) -> float:
-    """
-    Compute tanθ safely for Snell's law in plasma.
+    """Compute tanθ safely for Snell's law in plasma.
 
     Parameters
     ----------
@@ -1158,8 +1148,7 @@ def tan_from_mu_scalar(mu_val: float, p: float) -> float:
 
 
 def find_turning_point(z: np.ndarray, mu: np.ndarray, p: float) -> float:
-    """
-    Locate altitude where μ crosses the Snell invariant p.
+    """Locate altitude where μ crosses the Snell invariant p.
 
     Uses linear interpolation between bracketing nodes.
 
