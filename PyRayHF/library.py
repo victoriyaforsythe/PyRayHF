@@ -1423,7 +1423,8 @@ def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray, np.ndarray],
           'x': 1D array of horizontal positions [km],
           'z': 1D array of altitudes [km],
           'vx','vz': direction cosines along the ray,
-          'status': str,      # 'ground' | 'domain' | 'length' | 'failure' | 'success'
+          'status': str,
+           # 'ground' | 'domain' | 'length' | 'failure' |'success'
           'group_path_km': float,
           'group_delay_sec': float,
           'x_midpoint': float,
@@ -1522,7 +1523,8 @@ def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray, np.ndarray],
         z_mid = 0.5 * (z_path[:-1] + z_path[1:])
         mup_mid = np.asarray(mup_func(x_mid, z_mid), dtype=float)
         valid = np.isfinite(mup_mid)
-        group_delay_sec = float(np.nansum((mup_mid[valid] / c_km_per_s) * ds[valid]))
+        group_delay_sec = float(np.nansum((mup_mid[valid] / c_km_per_s) *
+                                          ds[valid]))
     else:
         group_delay_sec = group_path_km / c_km_per_s
 
