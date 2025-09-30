@@ -8,14 +8,25 @@
 
 """
 
+# Standard library
 from copy import deepcopy
+
+# Third-party
 import lmfit
 import numpy as np
 import PyIRI
-from PyRayHF import logger
-from typing import Callable, Tuple, Optional, Dict, Any
 from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator
+
+# Typing
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Optional
+from typing import Tuple
+
+# Local
+from PyRayHF import logger
 
 
 def constants():
