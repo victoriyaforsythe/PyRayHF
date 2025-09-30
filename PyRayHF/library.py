@@ -17,6 +17,7 @@ from typing import Callable, Tuple, Optional, Dict, Any
 from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator
 
+
 def constants():
     """Define constants for virtual height calculation.
 
@@ -644,9 +645,13 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
     return vh_result, EDP_result
 
 
-def n_and_grad(x: np.ndarray, z: np.ndarray) -> Tuple[np.ndarray,
-                                                      np.ndarray,
-                                                      np.ndarray]:
+def n_and_grad(x: np.ndarray,
+               z: np.ndarray,
+               n_interp: RegularGridInterpolator,
+               dn_dx_interp: RegularGridInterpolator,
+               dn_dz_interp: RegularGridInterpolator,) -> Tuple[np.ndarray,
+                                                                np.ndarray,
+                                                                np.ndarray]:
     """Evaluate n, ∂n/∂x, and ∂n/∂z at points (x, z).
 
     Parameters
@@ -677,12 +682,12 @@ def n_and_grad(x: np.ndarray, z: np.ndarray) -> Tuple[np.ndarray,
     fill_value_grad (unless bounds_error=True).
 
     """
-    # Broadcast inputs to a common shape
+    # Broadcast inputs
     x_arr = np.atleast_1d(np.asarray(x, dtype=float))
     z_arr = np.atleast_1d(np.asarray(z, dtype=float))
     x_arr, z_arr = np.broadcast_arrays(x_arr, z_arr)
 
-    # Stack as (N, 2) points in (z, x) order for the interpolators
+    # Interpolation points (z, x)
     pts = np.column_stack([z_arr.ravel(), x_arr.ravel()])
 
     n_val = n_interp(pts)
@@ -691,9 +696,11 @@ def n_and_grad(x: np.ndarray, z: np.ndarray) -> Tuple[np.ndarray,
 
     out_shape = x_arr.shape
 
-    return (n_val.reshape(out_shape),
-            dnx_val.reshape(out_shape),
-            dnz_val.reshape(out_shape),)
+    return (
+        n_val.reshape(out_shape),
+        dnx_val.reshape(out_shape),
+        dnz_val.reshape(out_shape),
+    )
 
 
 def eval_refractive_index_and_grad(x: np.ndarray,
@@ -958,174 +965,6 @@ def event_x_right(s: float, y: np.ndarray, x_max_km: float) -> float:
     return x_max_km - y[0]
 
 
-def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray,
-                                                       np.ndarray],
-                                                      Tuple[np.ndarray,
-                                                            np.ndarray,
-                                                            np.ndarray]],
-                                 x0_km: float,
-                                 z0_km: float,
-                                 elevation_deg: float,
-                                 s_max_km: float = 5000.0,
-                                 *,
-                                 # Integration controls
-                                 rtol: float = 1e-7,
-                                 atol: float = 1e-9,
-                                 max_step_km: Optional[float] = None,
-                                 # Domain / stop conditions
-                                 z_ground_km: float = 0.0,
-                                 z_min_km: float = -1.0,
-                                 z_max_km: float = 1000.0,
-                                 x_min_km: float = -1e6,
-                                 x_max_km: float = 1e6,
-                                 # Numerical hygiene
-                                 renormalize_every: int = 50,) -> Dict[str,
-                                                                       Any]:
-    """Trace a 2D ray in a horizontally varying refractive index field n(x,z).
-
-    The ray equations are integrated in arc length s using:
-        dr/ds = v            (unit tangent vector)
-        dv/ds = (1/n) [∇n - (∇n·v) v]
-
-    Parameters
-    ----------
-    n_and_grad : callable
-        Function returning (n, dndx, dndz) at (x, z). Usually from
-        `build_refractive_index_interpolator`.
-    x0_km, z0_km : float
-        Starting coordinates [km].
-    elevation_deg : float
-        Launch elevation above horizontal [deg].
-    s_max_km : float, default 5000
-        Maximum arc length to integrate [km].
-
-    Integration controls
-    --------------------
-    rtol, atol : float
-        Tolerances for ODE solver.
-    max_step_km : float or None
-        Maximum step size [km].
-
-    Domain / stop conditions
-    ------------------------
-    z_ground_km : float, default 0
-        Ground height [km]. Stops when z <= this value.
-    z_min_km, z_max_km : float
-        Vertical bounds [km].
-    x_min_km, x_max_km : float
-        Horizontal bounds [km].
-
-    Numerical hygiene
-    -----------------
-    renormalize_every : int
-        Frequency of re-normalizing velocity vector.
-
-    Returns
-    -------
-    result : dict
-        {'sol': OdeSolution,
-         't': 1D array of arc length samples [km],
-         'x': 1D array of x(s) [km],
-         'z': 1D array of z(s) [km],
-         'vx': 1D array of vx(s),
-         'vz': 1D array of vz(s),
-         'status': str  # 'ground', 'domain', 'length', 'failure', 'success',
-         'group_path_km': float
-              Total ray path length [km].
-         'group_delay_sec': float
-              Propagation delay assuming speed of light in vacuum [s].
-         'x_midpoint': float
-              Horizontal position [km] at midpoint of trajectory.
-         'z_midpoint': float
-              Altitude [km] at midpoint of trajectory.
-         'ground_range_km': float
-              Ground range if the ray reached the ground.
-        }
-
-    Notes
-    -----
-    Perpendicular-gradient form ensures ||v|| = 1.
-    Cartesian geometry only—no Earth curvature.
-    NaN values in n(x,z) will terminate the ray.
-
-    """
-    # Initial conditions
-    elev = np.deg2rad(elevation_deg)
-    vx0, vz0 = np.cos(elev), np.sin(elev)
-    vnorm = np.hypot(vx0, vz0)
-    vx0, vz0 = vx0 / vnorm, vz0 / vnorm
-    y0 = np.array([x0_km, z0_km, vx0, vz0], dtype=float)
-
-    eval_counter = {'n': 0}
-
-    # Wrap event functions
-    events = [lambda s, y: event_ground(s, y, z_ground_km),
-              lambda s, y: event_z_top(s, y, z_max_km),
-              lambda s, y: event_z_bottom(s, y, z_min_km),
-              lambda s, y: event_x_left(s, y, x_min_km),
-              lambda s, y: event_x_right(s, y, x_max_km),]
-    for ev in events:
-        ev.terminal, ev.direction = True, -1.0
-
-    # Integrate ODE
-    sol = solve_ivp(lambda s, y: ray_rhs_cartesian(s,
-                                                   y,
-                                                   n_and_grad,
-                                                   renormalize_every,
-                                                   eval_counter),
-                    (0.0, s_max_km),
-                    y0,
-                    method='RK45',
-                    rtol=rtol,
-                    atol=atol,
-                    max_step=max_step_km,
-                    events=events,
-                    dense_output=True,)
-
-    # Determine termination reason
-    if sol.status == 1:
-        if len(sol.t_events[0]) > 0: status = 'ground'
-        else: status = 'domain'
-    elif sol.status == 0:
-        status = 'length'
-    elif sol.status == -1:
-        status = 'failure'
-    else:
-        status = 'success'
-
-    # Solution
-    y = sol.y
-
-    # Path metrics
-    group_path_km = float(sol.t[-1])
-    c_km_per_s = 299792.458  # speed of light [km/s]
-    group_delay_sec = group_path_km / c_km_per_s
-
-    # Midpoint (by arc length index)
-    mid_idx = len(sol.t) // 2
-    x_midpoint = float(y[0, mid_idx])
-    z_midpoint = float(y[1, mid_idx])
-
-    # Ground landing distance
-    if status == 'ground':
-        ground_range_km = float(y[0, -1])
-    else:
-        ground_range_km = np.nan
-
-    return {'sol': sol,
-            't': sol.t,      # arc length [km]
-            'x': y[0, :],
-            'z': y[1, :],
-            'vx': y[2, :],
-            'vz': y[3, :],
-            'status': status,
-            'group_path_km': group_path_km,
-            'group_delay_sec': group_delay_sec,
-            'x_midpoint': x_midpoint,
-            'z_midpoint': z_midpoint,
-            'ground_range_km': ground_range_km}
-
-
 def tan_from_mu_scalar(mu_val: float, p: float) -> float:
     """Compute tanθ safely for Snell's law in plasma.
 
@@ -1288,7 +1127,6 @@ def trace_ray_cartesian_stratified(f0_Hz: float,
     x_up = np.zeros_like(z_up)
     if z_up.size > 1:
         dz = np.diff(z_up)
-        z_mid = 0.5 * (z_up[:-1] + z_up[1:])
         mu_mid = 0.5 * (mu_up[:-1] + mu_up[1:])
         mu_mid[-1] = max(mu_mid[-1], p + 1e-8)  # avoid singularity
         tan_mid = np.array([tan_from_mu_scalar(mm, p) for mm in mu_mid])
@@ -1332,33 +1170,32 @@ def trace_ray_cartesian_stratified(f0_Hz: float,
             "ground_range_km": ground_range_km}
 
 
-def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray, np.ndarray],
-                                                      Tuple[np.ndarray,
-                                                            np.ndarray,
-                                                            np.ndarray]],
-                                 x0_km: float,
-                                 z0_km: float,
-                                 elevation_deg: float,
-                                 s_max_km: float = 5000.0,
-                                 *,
-                                 # Integration controls
-                                 rtol: float = 1e-7,
-                                 atol: float = 1e-9,
-                                 max_step_km: Optional[float] = None,
-                                 # Domain / stop conditions
-                                 z_ground_km: float = 0.0,
-                                 z_min_km: float = -1.0,
-                                 z_max_km: float = 1000.0,
-                                 x_min_km: float = -1e6,
-                                 x_max_km: float = 1e6,
-                                 # Numerical hygiene
-                                 renormalize_every: int = 50,
-                                 # Group delay input
-                                 mup_func:
-                                     Optional[Callable[[np.ndarray,
-                                                        np.ndarray],
-                                                       np.ndarray]] = None,
-                                     ) -> Dict[str, Any]:
+def trace_ray_cartesian_gradient(
+    n_and_grad: Callable[[np.ndarray, np.ndarray],
+                         Tuple[np.ndarray,
+                               np.ndarray,
+                               np.ndarray]],
+    x0_km: float,
+    z0_km: float,
+    elevation_deg: float,
+    s_max_km: float = 5000.0,
+    *,
+    # Integration controls
+    rtol: float = 1e-7,
+    atol: float = 1e-9,
+    max_step_km: Optional[float] = None,
+    # Domain / stop conditions
+    z_ground_km: float = 0.0,
+    z_min_km: float = -1.0,
+    z_max_km: float = 1000.0,
+    x_min_km: float = -1e6,
+    x_max_km: float = 1e6,
+    # Numerical hygiene
+    renormalize_every: int = 50,
+    # Group delay input
+    mup_func: Optional[Callable[[np.ndarray,
+                                 np.ndarray],
+                                np.ndarray]] = None,) -> Dict[str, Any]:
     """Gradient-based Cartesian ray tracing (flat Earth, 2D).
 
     Parameters
@@ -1512,8 +1349,8 @@ def trace_ray_cartesian_gradient(n_and_grad: Callable[[np.ndarray, np.ndarray],
         z_mid = 0.5 * (z_path[:-1] + z_path[1:])
         mup_mid = np.asarray(mup_func(x_mid, z_mid), dtype=float)
         valid = np.isfinite(mup_mid)
-        group_delay_sec = float(np.nansum((mup_mid[valid] / c_km_per_s) *
-                                          ds[valid]))
+        group_delay_sec = float(np.nansum((mup_mid[valid] / c_km_per_s)
+                                          * ds[valid]))
     else:
         group_delay_sec = group_path_km / c_km_per_s
 
