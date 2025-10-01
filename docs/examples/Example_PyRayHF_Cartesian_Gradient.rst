@@ -1,5 +1,73 @@
-Example: Cartesian Gradient Raytracing
-======================================
+Example: PyRayHF Cartesian Gradient-Based Raytracing
+====================================================
+
+Background: Ray Equations in a Refractive Medium
+------------------------------------------------
+
+While Snell's law offers a shortcut in stratified (1D) media, a more general formulation is
+needed when the refractive index varies in both altitude (*z*) and horizontal range (*x*).
+In that case we integrate the ray equations (arc-length parameterization):
+
+.. math::
+
+    \frac{d\mathbf{r}}{ds} = \mathbf{v}, \qquad \|\mathbf{v}\| = 1
+
+.. math::
+
+    \frac{d\mathbf{v}}{ds} = \frac{1}{n}\Big(\nabla n - (\nabla n \cdot \mathbf{v})\,\mathbf{v}\Big)
+
+where:
+
+.. math::
+
+    \mathbf{r} = (x, z) \quad \text{ray position [km]}
+
+.. math::
+
+    \mathbf{v} = (v_x, v_z) \quad \text{unit tangent vector}
+
+.. math::
+
+    s \quad \text{arc length [km]}
+
+.. math::
+
+    n(x,z) \quad \text{refractive index field}
+
+The **perpendicular-gradient** form above preserves normalization 
+:math:`\|\mathbf{v}\| = 1` during integration.
+
+Phase vs Group Index
+--------------------
+
+As in the stratified case, we separate geometry from timing:
+
+- **Geometry (bending):** governed by the **phase index** :math:`\mu`.
+- **Group delay:** integrated along the path using the **group index** :math:`\mu'`:
+
+.. math::
+
+    \tau = \int \frac{\mu'}{c}\, ds
+
+with :math:`c` the speed of light in vacuum.
+
+Numerical Implementation
+------------------------
+
+- Build :math:`n(x,z)` and its gradients with an interpolator
+  (e.g., ``build_refractive_index_interpolator``).
+- Integrate the ODE system in arc length :math:`s` using ``scipy.integrate.solve_ivp``.
+- Terminate on ground contact, domain exits, or when the arc-length budget is exhausted.
+- Periodically re-normalize :math:`\mathbf{v}` to control numerical drift.
+
+Specifics
+---------
+
+- Geometry (bending) uses **phase index** :math:`\mu`.
+- Group delay integrates **group index** :math:`\mu'`.
+- Cartesian, flat-Earth geometry (no Earth curvature).
+- Handles arbitrary 2D refractive index fields :math:`n(x,z)`.
+
 
 1. Import libraries.
 
