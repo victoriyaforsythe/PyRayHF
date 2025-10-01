@@ -1385,3 +1385,178 @@ def trace_ray_cartesian_gradient(
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
             "ground_range_km": ground_range_km}
+
+
+def trace_ray_spherical_stratified(
+    f0_Hz: float,
+    elevation_deg: float,
+    alt_km: np.ndarray,
+    Ne: np.ndarray,
+    Babs: np.ndarray,
+    bpsi: np.ndarray,
+    mode: str = "O",
+    R_earth_km: float = 6371.0,
+) -> Dict[str, float]:
+    """Stratified Snell's law ray tracing (spherical Earth, 2D geometry).
+
+    Parameters
+    ----------
+    f0_Hz : float
+        Frequency [Hz].
+    elevation_deg : float
+        Launch elevation above horizontal [deg].
+    alt_km : ndarray
+        Altitude grid [km].
+    Ne : ndarray
+        Electron density [el/m^3].
+    Babs : ndarray
+        Magnetic field strength [T].
+    bpsi : ndarray
+        Angle between B and k-vector [rad].
+    mode : str
+        Wave mode: 'O' or 'X'.
+    R_earth_km : float
+        Earth radius [km].
+
+    Returns
+    -------
+    result : dict
+        {'psi': ndarray,         # central angle [rad]
+         'z': ndarray,           # altitudes [km]
+         'x': ndarray,           # horizontal distance [km]
+         'r': ndarray,           # geocentric radius [km]
+         'group_path_km': float,
+         'group_delay_sec': float,
+         'x_midpoint': float,
+         'z_midpoint': float,
+         'ground_range_km': float}
+
+    Notes
+    -----
+    This spherical adaptation of Snell’s law uses the invariant:
+
+        μ r sin(θ) = constant
+
+    where μ is the phase refractive index, r = R_earth + z is the geocentric
+    radius, and θ is the propagation angle relative to the local vertical.
+
+    - Geometry (bending) uses phase index μ.
+    - Group delay integrates group index μ′ (mup).
+    - Down-leg is mirrored about the apex (turning point).
+    """
+    # Ensure ground present
+    h_ground = 0.0
+    if alt_km[0] > h_ground:
+        Ne0 = np.interp(h_ground, alt_km, Ne)
+        Babs0 = np.interp(h_ground, alt_km, Babs)
+        bpsi0 = np.interp(h_ground, alt_km, bpsi)
+        alt_km = np.insert(alt_km, 0, h_ground)
+        Ne = np.insert(Ne, 0, Ne0)
+        Babs = np.insert(Babs, 0, Babs0)
+        bpsi = np.insert(bpsi, 0, bpsi0)
+
+    # Plasma parameters
+    X = find_X(Ne, f0_Hz)
+    Y = find_Y(f0_Hz, Babs)
+    mu, mup = find_mu_mup(X, Y, bpsi, mode)
+    mu = np.where((~np.isfinite(mu)) | (mu <= 0.0), np.nan, mu)
+    mup = np.where((~np.isfinite(mup)) | (mup <= 0.0), np.nan, mup)
+
+    # Launch constants
+    theta0 = np.radians(90.0 - elevation_deg)  # from vertical
+    s0 = np.sin(theta0)
+    r0 = R_earth_km + alt_km[0]
+    mu0 = mu[0]
+    if not np.isfinite(mu0) or not np.isfinite(s0):
+        return {k: np.nan for k in ["psi", "z", "x", "r",
+                                    "group_path_km", "group_delay_sec",
+                                    "x_midpoint", "z_midpoint",
+                                    "ground_range_km"]}
+
+    # Spherical Snell invariant: p = μ r sinθ
+    p = mu0 * r0 * s0
+
+    # Turning point: find where μ r = p
+    rv = R_earth_km + alt_km
+    valid = np.isfinite(mu)
+    zv, muv, rvv = alt_km[valid], mu[valid], rv[valid]
+    if zv.size < 2:
+        return {k: np.nan for k in ["psi", "z", "x", "r",
+                                    "group_path_km", "group_delay_sec",
+                                    "x_midpoint", "z_midpoint",
+                                    "ground_range_km"]}
+
+    cross = np.where((muv[:-1] * rvv[:-1] >= p) & (muv[1:] * rvv[1:] <= p))[0]
+    if cross.size == 0:
+        return {k: np.nan for k in ["psi", "z", "x", "r",
+                                    "group_path_km", "group_delay_sec",
+                                    "x_midpoint", "z_midpoint",
+                                    "ground_range_km"]}
+
+    i0 = cross[0]
+    z0, z1 = zv[i0], zv[i0 + 1]
+    mr0, mr1 = muv[i0] * rvv[i0], muv[i0 + 1] * rvv[i0 + 1]
+    t = (mr0 - p) / (mr0 - mr1) if mr0 != mr1 else 0.0
+    t = float(np.clip(t, 0.0, 1.0))
+    z_turn = z0 + t * (z1 - z0)
+
+    # Up-leg
+    i_turn = np.searchsorted(zv, z_turn)
+    z_up = np.concatenate([zv[:i_turn], [z_turn]])
+    r_up = R_earth_km + z_up
+    mu_up = np.concatenate([muv[:i_turn], [p / r_up[-1]]])
+
+    psi_up = np.zeros_like(z_up)
+    if z_up.size > 1:
+        dz = np.diff(z_up)
+        r_mid = 0.5 * (r_up[:-1] + r_up[1:])
+        mu_mid = 0.5 * (mu_up[:-1] + mu_up[1:])
+        mu_mid[-1] = max(mu_mid[-1], p / r_mid[-1] + 1e-8)
+        sin_theta_mid = p / (mu_mid * r_mid)
+        cos_theta_mid = np.sqrt(np.clip(1.0 - sin_theta_mid**2, 0, 1))
+        dpsi = dz * np.tan(np.arcsin(sin_theta_mid)) / r_mid
+        psi_up[1:] = np.cumsum(dpsi)
+
+    # Mirror down-leg
+    psi_turn = psi_up[-1]
+    z_down = z_up[::-1]
+    psi_down = (2.0 * psi_turn) - psi_up[::-1]
+
+    psi_full = np.concatenate([psi_up, psi_down[1:]])
+    z_full = np.concatenate([z_up, z_down[1:]])
+    r_full = R_earth_km + z_full
+    x_full = psi_full * R_earth_km  # arc length on Earth’s surface
+
+    # Metrics
+    dx = np.diff(x_full)
+    dz = np.diff(z_full)
+    ds = np.hypot(dx, dz)
+    group_path_km = float(np.nansum(ds))
+
+    mup_path = np.interp(z_full, alt_km, mup)
+    mup_seg = 0.5 * (mup_path[1:] + mup_path[:-1])
+    c_km_per_s = 299792.458
+    group_delay_sec = float(np.nansum((mup_seg / c_km_per_s) * ds))
+
+    if group_path_km > 0:
+        s_cum = np.cumsum(ds)
+        mid_idx = int(np.searchsorted(s_cum, 0.5 * group_path_km))
+        x_midpoint = float(x_full[mid_idx])
+        z_midpoint = float(z_full[mid_idx])
+    else:
+        x_midpoint = z_midpoint = np.nan
+
+    ground_range_km = float(x_full[-1]) if np.isclose(z_full[-1], 0.0,
+                                                      atol=1e-3) else np.nan
+
+    return {
+        "psi": psi_full,
+        "z": z_full,
+        "x": x_full,
+        "r": r_full,
+        "group_path_km": group_path_km,
+        "group_delay_sec": group_delay_sec,
+        "x_midpoint": x_midpoint,
+        "z_midpoint": z_midpoint,
+        "ground_range_km": ground_range_km,
+    }
