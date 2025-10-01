@@ -1,5 +1,50 @@
-Example: Cartesian Snell's Law Raytracing
-=========================================
+Example: PyRayHF Cartesian Snell's Law Raytracing
+=================================================
+
+Background: Snell's Law in a Plasma
+-----------------------------------
+
+In a uniform dielectric, Snell's law states that
+
+.. math::
+
+   n \sin(\theta) = \text{constant},
+
+where :math:`n` is the refractive index and :math:`\theta` is the propagation angle
+relative to the vertical.
+
+In a plasma, the refractive index is not constant but depends on:
+
+- Electron density (affects plasma frequency),
+- Magnetic field (splits O and X modes),
+- Wave frequency,
+- Angle between the wave vector and the magnetic field.
+
+This results in two possible wave modes:
+
+- **Ordinary (O) mode**
+- **Extraordinary (X) mode**
+
+Each has a different effective refractive index. The function uses the auxiliary
+functions ``find_X``, ``find_Y``, and ``find_mu_mup`` to compute these indices as
+functions of altitude. Thus, the plasma-modified Snell's law is applied:
+
+.. math::
+
+   \mu \sin(\theta) = \text{constant},
+
+where :math:`\mu` is the *phase refractive index* for the chosen wave mode.
+
+The **group delay** is then calculated by integrating through the
+*group refractive index* :math:`\mu'` once the path is determined.
+
+Specifics
+---------
+
+- Geometry (bending) uses the **phase index** :math:`\mu`.
+- Group delay integrates the **group index** :math:`\mu'` (mup).
+- The down-leg is a perfect mirror of the up-leg about the apex.
+
 
 1. Import libraries.
 
@@ -59,10 +104,10 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
                                             mode=mode)
 
 6. Plot the results.
-Create 2D density grid (Ne assumed horizontally uniform)
 
 ::
 
+    # Create 2D density grid (Ne assumed horizontally uniform)
     nx = 500
     xmax = np.max(result['x']) * 1.1
     x_grid = np.linspace(0, xmax, nx)
@@ -94,3 +139,14 @@ Create 2D density grid (Ne assumed horizontally uniform)
     :width: 400px
     :align: center
     :alt: Snells Law.
+
+7. Print diagnostics:
+
+    print('--------------------------------------------------')
+    print('Snell\'s Law Raytracing:')
+    print('--------------------------------------------------')
+    print('Group Path (km): ', result['group_path_km'])
+    print('Group delay (sec): ', result['group_delay_sec'])
+    print('Ground Range (km): ', result['ground_range_km'])
+    print('x midpoint (km): ', result['x_midpoint'])
+    print('z midpoint (km): ', result['z_midpoint'])
