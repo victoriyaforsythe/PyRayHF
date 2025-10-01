@@ -69,6 +69,9 @@ Specifics
 - Handles arbitrary 2D refractive index fields :math:`n(x,z)`.
 
 
+How to run
+----------
+
 1. Import libraries.
 
 ::
@@ -178,7 +181,7 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
     plt.show()
 
 .. image:: figures/Cartesian_Gradient.png
-    :width: 400px
+    :width: 500px
     :align: center
     :alt: Snells Law.
 
@@ -194,3 +197,16 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
     print('Ground_ Range (km): ', result['ground_range_km'])
     print('x midpoint (km): ', result['x_midpoint'])
     print('z midpoint (km): ', result['z_midpoint'])
+
+
+Gradient-based raytracing in a medium with gradient:
+----------------------------------------------------
+Group Path (km):  885.8935955316156
+
+Group delay (sec):  0.0033971066053262392
+
+Ground Range (km):  626.4220854230803
+
+x midpoint (km):  355.28696968480824
+
+z midpoint (km):  296.41432345069234

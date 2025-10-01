@@ -33,10 +33,10 @@ functions of altitude. Thus, the plasma-modified Snell's law is applied:
 
    \mu \sin(\theta) = \text{constant},
 
-where :math:`\mu` is the *phase refractive index* for the chosen wave mode.
+where :math:`\mu` is the **phase refractive index** for the chosen wave mode.
 
 The **group delay** is then calculated by integrating through the
-*group refractive index* :math:`\mu'` once the path is determined.
+**group refractive index** :math:`\mu'` once the path is determined.
 
 Specifics
 ---------
@@ -45,6 +45,8 @@ Specifics
 - Group delay integrates the **group index** :math:`\mu'` (mup).
 - The down-leg is a perfect mirror of the up-leg about the apex.
 
+How to run
+----------
 
 1. Import libraries.
 
@@ -150,3 +152,15 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
     print('Ground Range (km): ', result['ground_range_km'])
     print('x midpoint (km): ', result['x_midpoint'])
     print('z midpoint (km): ', result['z_midpoint'])
+
+Snell's Law Raytracing:
+-----------------------
+Group Path (km):  929.1301673496166
+
+Group delay (sec):  0.0035100005520780583
+
+Ground Range (km):  675.620220419237
+
+x midpoint (km):  328.1517796293652
+
+z midpoint (km):  307.0
