@@ -1,4 +1,4 @@
-Example: Snell's Law Cartesian Raytracing
+Example: Cartesian Snell's Law Raytracing
 =========================================
 
 1. Import libraries.
@@ -44,8 +44,9 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
 
     elevation_deg = 50.
     f0_Hz = 10e6
+    mode = "O"
 
-1. Trace Using Snell's Law Cartesian 2-D Raytracing
+5. Trace Using Snell's Law Cartesian 2-D Raytracing
 
 ::
 
@@ -55,10 +56,9 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
                                             Ne=Ne,
                                             Babs=Babs,
                                             bpsi=bpsi,
-                                            mode="O"
-    )
+                                            mode=mode)
 
-5. Plot the results.
+6. Plot the results.
 Create 2D density grid (Ne assumed horizontally uniform)
 
 ::
