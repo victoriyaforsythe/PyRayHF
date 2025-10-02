@@ -1,47 +1,58 @@
-Example: PyRayHF Cartesian Gradient Raytracing
+Example: PyRayHF Spherical Gradient Raytracing
 ==============================================
 
-Background: Ray Equations in a Plasma
--------------------------------------
+Background: Ray Equations in Spherical Geometry
+-----------------------------------------------
 
-Unlike Snell's law approaches (which assume stratification and mirror the up-leg to
-construct the down-leg), the **gradient-based method** solves the full ray equations
-in Cartesian geometry:
+In spherical geometry, rays are described in :math:`(r, \phi)` coordinates:
 
-- **Ray position**: :math:`\mathbf{r} = (x, z)` [km]
-- **Unit tangent vector**: :math:`\mathbf{v} = (v_x, v_z)` with :math:`\|\mathbf{v}\| = 1`
+- **Radial coordinate**: :math:`r = R_E + z` [km]
+- **Azimuthal coordinate**: :math:`\phi` = surface arc angle [rad]
+- **Unit tangent vector**: :math:`\mathbf{v} = (v_r, v_\phi)`
 - **Arc length**: :math:`s` [km]
-- **Refractive index field**: :math:`n(x, z) = \mu` (phase index)
+- **Refractive index field**: :math:`n(r, \phi) = \mu` (phase index)
 
-The equations of motion are:
-
-.. math::
-
-   \frac{d\mathbf{r}}{ds} = \mathbf{v}
+The ray equations become:
 
 .. math::
 
-   \frac{d\mathbf{v}}{ds} = \frac{1}{n} \left( \nabla n - (\nabla n \cdot \mathbf{v}) \mathbf{v} \right)
+   \frac{dr}{ds} = v_r
 
-This form ensures that the velocity vector :math:`\mathbf{v}` remains normalized,
-and the ray bends naturally according to the spatial gradients of :math:`\mu`.
+.. math::
+
+   \frac{d\phi}{ds} = \frac{v_\phi}{r}
+
+.. math::
+
+   \frac{dv_r}{ds} = \frac{1}{\mu}
+   \left( \frac{\partial \mu}{\partial r} - (\nabla \mu \cdot \mathbf{v}) v_r \right)
+   + \frac{v_\phi^2}{r}
+
+.. math::
+
+   \frac{dv_\phi}{ds} = \frac{1}{\mu}
+   \left( \frac{1}{r} \frac{\partial \mu}{\partial \phi} - (\nabla \mu \cdot \mathbf{v}) v_\phi \right)
+   - \frac{v_r v_\phi}{r}
+
+Here the geometry includes Earth curvature explicitly, making this method essential
+for long-range HF raytracing.
 
 Specifics in PyRayHF
 --------------------
 
 - Geometry (bending) uses the **phase index μ**
-- Group delay integrates the **group index μ′** (mup) if provided via ``mup_func``
-- The refractive index and its gradients are supplied by
-  ``build_refractive_index_interpolator``
-- Cartesian geometry assumes a **flat Earth** (no curvature effects)
+- Group delay integrates the **group index μ'** (mup) if provided via ``mup_func``
+- Refractive index gradients (:math:`\partial \mu / \partial r`,
+  :math:`\partial \mu / \partial \phi`) are provided by
+  ``build_refractive_index_interpolator_rphi``
 - Termination conditions stop the ray when it:
 
-  * Reaches the ground
-  * Leaves the vertical or horizontal domain
+  * Hits the ground (:math:`r = R_E + z_{\text{ground}}`)
+  * Leaves the radial or azimuthal bounds
   * Exceeds maximum arc length
 
-This method is more general than Snell's law since it handles arbitrary 2D gradients,
-not only stratified profiles.
+This method is the most realistic in PyRayHF since it accounts for **curved-Earth
+geometry** while allowing for horizontally varying ionospheres.
 
 
 How to run
