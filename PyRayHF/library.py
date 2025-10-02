@@ -1018,13 +1018,13 @@ def find_turning_point(z: np.ndarray, mu: np.ndarray, p: float) -> float:
     return np.nan
 
 
-def trace_ray_cartesian_stratified(f0_Hz: float,
-                                   elevation_deg: float,
-                                   alt_km: np.ndarray,
-                                   Ne: np.ndarray,
-                                   Babs: np.ndarray,
-                                   bpsi: np.ndarray,
-                                   mode: str = "O",) -> Dict[str, float]:
+def trace_ray_cartesian_snells(f0_Hz: float,
+                               elevation_deg: float,
+                               alt_km: np.ndarray,
+                               Ne: np.ndarray,
+                               Babs: np.ndarray,
+                               bpsi: np.ndarray,
+                               mode: str = "O",) -> Dict[str, float]:
     """Stratified Snell's law ray tracing (flat Earth, 2D Cartesian).
 
     Parameters
@@ -1387,7 +1387,7 @@ def trace_ray_cartesian_gradient(
             "ground_range_km": ground_range_km}
 
 
-def trace_ray_spherical_stratified(
+def trace_ray_spherical_snells(
     f0_Hz: float,
     elevation_deg: float,
     alt_km: np.ndarray,
@@ -1513,7 +1513,6 @@ def trace_ray_spherical_stratified(
         mu_mid = 0.5 * (mu_up[:-1] + mu_up[1:])
         mu_mid[-1] = max(mu_mid[-1], p / r_mid[-1] + 1e-8)
         sin_theta_mid = p / (mu_mid * r_mid)
-        cos_theta_mid = np.sqrt(np.clip(1.0 - sin_theta_mid**2, 0, 1))
         dpsi = dz * np.tan(np.arcsin(sin_theta_mid)) / r_mid
         psi_up[1:] = np.cumsum(dpsi)
 

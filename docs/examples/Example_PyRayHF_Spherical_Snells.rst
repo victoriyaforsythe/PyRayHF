@@ -71,7 +71,7 @@ How to run
     import numpy as np
     import pickle
     import matplotlib.pyplot as plt
-    from PyRayHF.library import trace_ray_cartesian_stratified
+    from PyRayHF.library import trace_ray_cartesian_snells
 
 
 2. Load input arrays from the example.
@@ -113,13 +113,13 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
 
 ::
 
-    result = trace_ray_cartesian_stratified(f0_Hz=f0_Hz,
-                                            elevation_deg=elevation_deg,
-                                            alt_km=alt_km,
-                                            Ne=Ne,
-                                            Babs=Babs,
-                                            bpsi=bpsi,
-                                            mode=mode)
+    result = trace_ray_cartesian_snells(f0_Hz=f0_Hz,
+                                        elevation_deg=elevation_deg,
+                                        alt_km=alt_km,
+                                        Ne=Ne,
+                                        Babs=Babs,
+                                        bpsi=bpsi,
+                                        mode=mode)
 
 6. Plot the results.
 
