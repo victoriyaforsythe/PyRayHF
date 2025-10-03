@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Tests for core PyRayHF library functions."""
 
-import lmfit
 import numpy as np
 import pytest
 
