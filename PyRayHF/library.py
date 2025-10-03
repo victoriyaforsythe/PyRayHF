@@ -1672,6 +1672,7 @@ def trace_ray_spherical_gradient(
       't', 'r', 'phi', 'x', 'z', 'v_r', 'v_phi',
       'status', 'group_path_km', 'group_delay_sec',
       'x_midpoint', 'z_midpoint', 'ground_range_km'
+
     """
     if r_max_km is None:
         r_max_km = R_E + 1200.0
@@ -1801,8 +1802,7 @@ def n_and_grad_rphi(
     dn_dr_interp: RegularGridInterpolator,
     dn_dphi_interp: RegularGridInterpolator,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Evaluate μ(r, φ) and its gradients at given coordinates.
+    """Evaluate μ(r, φ) and its gradients at given coordinates.
 
     Parameters
     ----------
@@ -1825,6 +1825,7 @@ def n_and_grad_rphi(
         Partial derivative ∂μ/∂r at (r, φ).
     dn_dphi : np.ndarray
         Partial derivative ∂μ/∂φ at (r, φ).
+
     """
     phi_arr = np.atleast_1d(np.asarray(phi, dtype=float))
     r_arr = np.atleast_1d(np.asarray(r, dtype=float))
@@ -1877,6 +1878,7 @@ def build_refractive_index_interpolator_rphi(
     -------
     n_and_grad_rphi : callable
         Function (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ).
+
     """
     r_grid = np.asarray(r_grid, dtype=float)
     phi_grid = np.asarray(phi_grid, dtype=float)
