@@ -66,8 +66,9 @@ How to run
     import pickle
     import matplotlib.pyplot as plt
     from PyRayHF.library import find_X, find_Y, find_mu_mup
-    from PyRayHF.library import build_refractive_index_interpolator
-    from PyRayHF.library import trace_ray_cartesian_gradient
+    from PyRayHF.library import build_refractive_index_interpolator_rphi
+    from PyRayHF.library import trace_ray_spherical_gradient
+    from PyRayHF.library import constants
     from scipy.interpolate import RegularGridInterpolator
 
 
@@ -118,29 +119,30 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
 
 ::
 
-    n_and_grad = build_refractive_index_interpolator(z_grid, x_grid, mu)
-    mup_interp = RegularGridInterpolator((z_grid, x_grid),
-                                        mup,
+    # Build interpolator from spherical μ grid
+    _, _, R_E, _ = constants()
+    r_grid = R_E + z_grid   # km
+    phi_grid = x_grid / R_E # rad
+    n_and_grad_rphi = build_refractive_index_interpolator_rphi(r_grid, phi_grid, mu)
+
+    # Build μ' interpolator for group delay
+    mup_interp_rphi = RegularGridInterpolator((r_grid, phi_grid), mup,
                                         bounds_error=False,
                                         fill_value=np.nan)
-    mup_func = lambda x, z: mup_interp(np.column_stack([z, x]))
+    mup_func_rphi = lambda x, z: mup_interp_rphi(np.column_stack([R_E + z, x / R_E]))
 
 
-
-6. Raytrace:
+7. Raytrace:
 
 ::
 
-    result = trace_ray_cartesian_gradient(n_and_grad=n_and_grad,
-                                        x0_km=0.0,
-                                        z0_km=0.0,
-                                        elevation_deg=elevation_deg,
-                                        s_max_km=4000.0,
-                                        max_step_km=5.0,
-                                        z_max_km=600.0,
-                                        x_min_km=0.0,
-                                        x_max_km=1000.0,
-                                        mup_func=mup_func)
+    result = trace_ray_spherical_gradient(n_and_grad_rphi=n_and_grad_rphi,
+                                          x0_km=0.0,
+                                          z0_km=0.0,
+                                          elevation_deg=elevation_deg,
+                                          s_max_km=4000.,
+                                          R_E=R_E,
+                                          mup_func=mup_func_rphi)
 
 7. Plot the results:
 
@@ -152,31 +154,30 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
     ax_plot.set_xlim(0, 700)
     ax_plot.set_ylim(0, 600)
     ax_plot.set_facecolor("lightgray")
-    ax_plot.set_ylabel('Vertical Distance (km)')
-    ax_plot.set_xlabel('Horizontal Distance (km)')
+    ax_plot.set_ylabel('Altitude (km)')
+    ax_plot.set_xlabel('Surface Distance (km)')
     vmin = 0
     vmax = 1.2e12
     color_ticks = np.arange(vmin, vmax + 2e11, 2e11)
     pc = ax_plot.pcolormesh(Xg, Zg, Ne_gradient, shading='auto',
                             cmap='plasma', vmin=vmin, vmax=vmax)
-    ax_plot.plot(result['x'], result['z'], c='black', label='Gradient')
-    ax_plot.set_title(f"Cartesian Gradient (El={elevation_deg:.1f}°, f={f0_Hz/1e6} MHz)", fontsize=11)
+    ax_plot.plot(result['x'], result['z'], c='black')
+    ax_plot.set_title(f"Spherical Gradient (El={elevation_deg:.1f}°, f={f0_Hz/1e6} MHz)", fontsize=11)
     plt.colorbar(pc, label='Electron Density (m$^{-3}$)', ax=ax_plot,
                 ticks=color_ticks)
-    ax.legend()
     plt.show()
 
-.. image:: figures/Cartesian_Gradient.png
+.. image:: figures/Spherical_Gradient.png
     :width: 500px
     :align: center
-    :alt: Snells Law.
+    :alt: Spherical Gradient.
 
-1. Print diagnostics:
+8. Print diagnostics:
 
 ::
 
     print('--------------------------------------------------')
-    print('Gradient-based raytracing in a medium with gradient:')
+    print('Gradient-based spherical raytracing:')
     print('--------------------------------------------------')
     print('Group Path (km): ', result['group_path_km'])
     print('Group delay (sec): ', result['group_delay_sec'])
@@ -185,14 +186,14 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
     print('z midpoint (km): ', result['z_midpoint'])
 
 
-Gradient-based raytracing in a medium with gradient:
+Gradient-based spherical raytracing:
 ----------------------------------------------------
-Group Path (km):  885.8935955316156
+Group Path (km):  863.9433228011467
 
-Group delay (sec):  0.0033971066053262392
+Group delay (sec):  0.0033308603837504686
 
-Ground Range (km):  626.4220854230803
+Ground Range (km):  589.5295689652877
 
-x midpoint (km):  355.28696968480824
+x midpoint (km):  299.3606078980972
 
-z midpoint (km):  296.41432345069234
+z midpoint (km):  304.79357526370404

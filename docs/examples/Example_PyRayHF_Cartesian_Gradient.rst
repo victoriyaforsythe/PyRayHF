@@ -121,15 +121,15 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
 ::
 
     result = trace_ray_cartesian_gradient(n_and_grad=n_and_grad,
-                                        x0_km=0.0,
-                                        z0_km=0.0,
-                                        elevation_deg=elevation_deg,
-                                        s_max_km=4000.0,
-                                        max_step_km=5.0,
-                                        z_max_km=600.0,
-                                        x_min_km=0.0,
-                                        x_max_km=1000.0,
-                                        mup_func=mup_func)
+                                          x0_km=0.0,
+                                          z0_km=0.0,
+                                          elevation_deg=elevation_deg,
+                                          s_max_km=4000.0,
+                                          max_step_km=5.0,
+                                          z_max_km=600.0,
+                                          x_min_km=0.0,
+                                          x_max_km=1000.0,
+                                          mup_func=mup_func)
 
 7. Plot the results:
 
@@ -158,14 +158,14 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
 .. image:: figures/Cartesian_Gradient.png
     :width: 500px
     :align: center
-    :alt: Snells Law.
+    :alt: Cartesian Gradient.
 
-1. Print diagnostics:
+8. Print diagnostics:
 
 ::
 
     print('--------------------------------------------------')
-    print('Gradient-based raytracing in a medium with gradient:')
+    print('Cartesian gradient-based raytracing:')
     print('--------------------------------------------------')
     print('Group Path (km): ', result['group_path_km'])
     print('Group delay (sec): ', result['group_delay_sec'])
@@ -174,8 +174,8 @@ See Example_Generate_Input_Arrays for how to create input arrays using PyIRI.
     print('z midpoint (km): ', result['z_midpoint'])
 
 
-Gradient-based raytracing in a medium with gradient:
-----------------------------------------------------
+Cartesian gradient-based raytracing:
+-------------------------------------
 Group Path (km):  885.8935955316156
 
 Group delay (sec):  0.0033971066053262392
