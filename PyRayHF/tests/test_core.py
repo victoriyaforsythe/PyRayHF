@@ -21,7 +21,6 @@ from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
 from PyRayHF.library import minimize_parameters
-from unittest.mock import MagicMock
 from unittest.mock import patch
 
 
