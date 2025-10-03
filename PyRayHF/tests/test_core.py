@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Tests for core PyRayHF library functions."""
 
+import lmfit
 import numpy as np
 import pytest
 
@@ -20,6 +21,9 @@ from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
+from PyRayHF.library import minimize_parameters
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 
 def test_constants_output():
@@ -303,3 +307,45 @@ def test_zero_residual_when_parameters_match():
 
     # Expect near-zero residual
     assert_allclose(residual, np.zeros_like(vh_obs), rtol=1e-6, atol=1e-6)
+
+
+def test_minimize_parameters_runs_and_returns_shapes():
+    # Fake input dictionaries (with small 1x1x1 arrays)
+    F2 = {"Nm": np.array([[[1e11]]]),
+          "hm": np.array([[[300.0]]]),
+          "B_bot": np.array([[[200.0]]])}
+    F1 = {"Nm": np.array([[[1e10]]]),
+          "hm": np.array([[[200.0]]]),
+          "B_bot": np.array([[[100.0]]])}
+    E  = {"Nm": np.array([[[1e9]]]),
+          "hm": np.array([[[120.0]]]),
+          "B_bot": np.array([[[80.0]]])}
+
+    # Input arrays
+    f_in   = np.array([5.0, 7.0, 10.0])  # MHz
+    vh_obs = np.array([150.0, 200.0, 300.0])  # km
+    alt    = np.linspace(0, 400, 50)  # km
+    b_mag  = np.full_like(alt, 50000.0)  # nT
+    b_psi  = np.full_like(alt, 45.0)  # degrees
+
+    # Patch freq2den, residual_VH, and model_VH so we don’t run heavy physics
+    with patch("PyRayHF.library.freq2den", return_value=1e11), \
+         patch("PyRayHF.library.residual_VH",
+               return_value=np.zeros_like(vh_obs)), \
+         patch("PyRayHF.library.model_VH",
+               return_value=(vh_obs, np.ones_like(alt))):
+
+        vh_result, EDP_result = minimize_parameters(
+            F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
+            method="brute", percent_sigma=10., step=1.0)
+
+    # Check return types and shapes
+    assert isinstance(vh_result, np.ndarray)
+    assert isinstance(EDP_result, np.ndarray)
+
+    assert vh_result.shape == vh_obs.shape
+    assert EDP_result.shape == alt.shape
+
+    # Check values come from mocked model_VH
+    np.testing.assert_allclose(vh_result, vh_obs)
+    np.testing.assert_allclose(EDP_result, np.ones_like(alt))
