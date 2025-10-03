@@ -308,6 +308,7 @@ def test_zero_residual_when_parameters_match():
 
 
 def test_minimize_parameters_runs_and_returns_shapes():
+    """Basic test for minimize_parameters with short arrays."""
     # Fake input dictionaries (with small 1x1x1 arrays)
     F2 = {"Nm": np.array([[[1e11]]]),
           "hm": np.array([[[300.0]]]),
