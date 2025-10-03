@@ -16,11 +16,13 @@ from PyRayHF.library import find_Y
 from PyRayHF.library import freq2den
 from PyRayHF.library import minimize_parameters
 from PyRayHF.library import model_VH
+from PyRayHF.library import n_and_grad 
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
+from scipy.interpolate import RegularGridInterpolator
 from unittest.mock import patch
 
 
@@ -348,3 +350,44 @@ def test_minimize_parameters_runs_and_returns_shapes():
     # Check values come from mocked model_VH
     np.testing.assert_allclose(vh_result, vh_obs)
     np.testing.assert_allclose(EDP_result, np.ones_like(alt))
+
+
+def test_n_and_grad_simple_field():
+    """Basic test for n_and_grad_ with simple field."""
+    # Define toy grid
+    z_grid = np.linspace(0, 10, 6)  # 6 points
+    x_grid = np.linspace(0, 10, 6)
+    Z, X = np.meshgrid(z_grid, x_grid, indexing="ij")
+
+    # Toy refractive index field: n(x,z) = x + 2z
+    n_field = X + 2 * Z
+
+    # Exact derivatives:
+    # ∂n/∂x = 1
+    # ∂n/∂z = 2
+    dn_dx_exact = np.ones_like(n_field)
+    dn_dz_exact = 2 * np.ones_like(n_field)
+
+    # Interpolators
+    n_interp = RegularGridInterpolator((z_grid, x_grid), n_field)
+    dn_dx_interp = RegularGridInterpolator((z_grid, x_grid), dn_dx_exact)
+    dn_dz_interp = RegularGridInterpolator((z_grid, x_grid), dn_dz_exact)
+
+    # Test at some points
+    x_test = np.array([1.0, 5.0, 9.0])
+    z_test = np.array([2.0, 4.0, 8.0])
+
+    n_val, dnx_val, dnz_val = n_and_grad(x_test, z_test,
+                                         n_interp,
+                                         dn_dx_interp,
+                                         dn_dz_interp)
+
+    # Expected values
+    n_expected = x_test + 2 * z_test
+    dnx_expected = np.ones_like(x_test)
+    dnz_expected = 2 * np.ones_like(z_test)
+
+    # Assertions with tolerance
+    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
+    np.testing.assert_allclose(dnx_val, dnx_expected, rtol=1e-12)
+    np.testing.assert_allclose(dnz_val, dnz_expected, rtol=1e-12)
