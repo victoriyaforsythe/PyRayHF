@@ -14,13 +14,13 @@ from PyRayHF.library import find_vh
 from PyRayHF.library import find_X
 from PyRayHF.library import find_Y
 from PyRayHF.library import freq2den
+from PyRayHF.library import minimize_parameters
 from PyRayHF.library import model_VH
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
-from PyRayHF.library import minimize_parameters
 from unittest.mock import patch
 
 
@@ -315,16 +315,16 @@ def test_minimize_parameters_runs_and_returns_shapes():
     F1 = {"Nm": np.array([[[1e10]]]),
           "hm": np.array([[[200.0]]]),
           "B_bot": np.array([[[100.0]]])}
-    E  = {"Nm": np.array([[[1e9]]]),
-          "hm": np.array([[[120.0]]]),
-          "B_bot": np.array([[[80.0]]])}
+    E = {"Nm": np.array([[[1e9]]]),
+         "hm": np.array([[[120.0]]]),
+         "B_bot": np.array([[[80.0]]])}
 
     # Input arrays
-    f_in   = np.array([5.0, 7.0, 10.0])  # MHz
+    f_in = np.array([5.0, 7.0, 10.0])  # MHz
     vh_obs = np.array([150.0, 200.0, 300.0])  # km
-    alt    = np.linspace(0, 400, 50)  # km
-    b_mag  = np.full_like(alt, 50000.0)  # nT
-    b_psi  = np.full_like(alt, 45.0)  # degrees
+    alt = np.linspace(0, 400, 50)  # km
+    b_mag = np.full_like(alt, 50000.0)  # nT
+    b_psi = np.full_like(alt, 45.0)  # degrees
 
     # Patch freq2den, residual_VH, and model_VH so we don’t run heavy physics
     with patch("PyRayHF.library.freq2den", return_value=1e11), \
