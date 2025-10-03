@@ -9,6 +9,7 @@ from lmfit import Parameters
 from numpy.testing import assert_allclose
 from PyRayHF.library import constants
 from PyRayHF.library import den2freq
+from PyRayHF.library import eval_refractive_index_and_grad
 from PyRayHF.library import find_mu_mup
 from PyRayHF.library import find_vh
 from PyRayHF.library import find_X
@@ -388,6 +389,77 @@ def test_n_and_grad_simple_field():
     dnz_expected = 2 * np.ones_like(z_test)
 
     # Assertions with tolerance
+    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
+    np.testing.assert_allclose(dnx_val, dnx_expected, rtol=1e-12)
+    np.testing.assert_allclose(dnz_val, dnz_expected, rtol=1e-12)
+
+
+def test_eval_refractive_index_and_grad_linear_field():
+    """Basic test for eval_refractive_index_and_grad with linear field."""
+    # Define toy grid
+    z_grid = np.linspace(0, 10, 6)
+    x_grid = np.linspace(0, 10, 6)
+    Z, X = np.meshgrid(z_grid, x_grid, indexing="ij")
+
+    # Define analytic refractive index: n(x,z) = 3*x + 4*z
+    n_field = 3 * X + 4 * Z
+
+    # Exact derivatives
+    dn_dx = 3 * np.ones_like(n_field)
+    dn_dz = 4 * np.ones_like(n_field)
+
+    # Build interpolators
+    n_interp = RegularGridInterpolator((z_grid, x_grid), n_field)
+    dn_dx_interp = RegularGridInterpolator((z_grid, x_grid), dn_dx)
+    dn_dz_interp = RegularGridInterpolator((z_grid, x_grid), dn_dz)
+
+    # Test points (both scalars and arrays)
+    x_test = np.array([1.0, 5.0, 9.0])
+    z_test = np.array([2.0, 4.0, 8.0])
+
+    n_val, dnx_val, dnz_val = eval_refractive_index_and_grad(
+        x_test, z_test, n_interp, dn_dx_interp, dn_dz_interp
+    )
+
+    # Expected analytic results
+    n_expected = 3 * x_test + 4 * z_test
+    dnx_expected = np.full_like(x_test, 3.0)
+    dnz_expected = np.full_like(z_test, 4.0)
+
+    # Assertions
+    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
+    np.testing.assert_allclose(dnx_val, dnx_expected, rtol=1e-12)
+    np.testing.assert_allclose(dnz_val, dnz_expected, rtol=1e-12)
+
+
+def test_eval_refractive_index_and_grad_broadcasting():
+    """Basic test for eval_refractive_index_and_grad broadcasting."""
+    # Small grid
+    z_grid = np.linspace(0, 5, 3)
+    x_grid = np.linspace(0, 5, 3)
+    Z, X = np.meshgrid(z_grid, x_grid, indexing="ij")
+
+    # n(x,z) = x - z
+    n_field = X - Z
+    dn_dx = np.ones_like(n_field)
+    dn_dz = -np.ones_like(n_field)
+
+    n_interp = RegularGridInterpolator((z_grid, x_grid), n_field)
+    dn_dx_interp = RegularGridInterpolator((z_grid, x_grid), dn_dx)
+    dn_dz_interp = RegularGridInterpolator((z_grid, x_grid), dn_dz)
+
+    # Provide 2D mesh input
+    x_test, z_test = np.meshgrid([1.0, 2.0], [3.0, 4.0])
+
+    n_val, dnx_val, dnz_val = eval_refractive_index_and_grad(
+        x_test, z_test, n_interp, dn_dx_interp, dn_dz_interp
+    )
+
+    # Expected
+    n_expected = x_test - z_test
+    dnx_expected = np.ones_like(x_test)
+    dnz_expected = -np.ones_like(z_test)
+
     np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
     np.testing.assert_allclose(dnx_val, dnx_expected, rtol=1e-12)
     np.testing.assert_allclose(dnz_val, dnz_expected, rtol=1e-12)
