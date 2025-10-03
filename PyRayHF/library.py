@@ -10,6 +10,7 @@
 
 # Standard library
 from copy import deepcopy
+from functools import partial
 
 # Third-party
 import lmfit
@@ -909,14 +910,8 @@ def make_n_and_grad(n_interp: RegularGridInterpolator,
 
     Returns
     -------
-    n_and_grad : callable
-        Function accepting arrays (x, z) and returning:
-            n : ndarray
-                Refractive index at (x, z).
-            dndx : ndarray
-                ∂n/∂x [1/km] at (x, z).
-            dndz : ndarray
-                ∂n/∂z [1/km] at (x, z).
+    callable
+        Function (x, z) → (n, dndx, dndz), with the interpolators baked in.
 
     Notes
     -----
@@ -932,7 +927,10 @@ def make_n_and_grad(n_interp: RegularGridInterpolator,
         return eval_refractive_index_and_grad(x, z,
                                               n_interp,
                                               dn_dx_interp, dn_dz_interp)
-    return n_and_grad
+    return partial(eval_refractive_index_and_grad,
+                   n_interp=n_interp,
+                   dn_dx_interp=dn_dx_interp,
+                   dn_dz_interp=dn_dz_interp)
 
 
 def ray_rhs_cartesian(s: float,
