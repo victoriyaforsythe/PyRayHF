@@ -24,9 +24,11 @@ from PyRayHF.library import vertical_to_magnetic_angle
 
 def test_constants_output():
     """Test that constants function returns correct values."""
-    cp, g_p = constants()
+    cp, g_p, R_E, c_km_s = constants()
     assert np.isclose(cp, 8.97866275, rtol=1e-8)
     assert np.isclose(g_p, 2.799249247e10, rtol=1e-8)
+    assert np.isclose(R_E, 6371., rtol=1e-8)
+    assert np.isclose(c_km_s, 299_792.458, rtol=1e-8)
 
 
 def test_den2freq_scalar():
