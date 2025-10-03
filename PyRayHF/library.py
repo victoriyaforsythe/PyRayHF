@@ -59,7 +59,7 @@ def constants():
     R_E = 6371.
 
     # Speed of light (km/s)
-    c_km_s   = 299_792.458
+    c_km_s = 299_792.458
 
     return cp, g_p, R_E, c_km_s
 
@@ -174,7 +174,7 @@ def find_mu_mup(X, Y, bpsi, mode,
         Phase refractive index μ.
     mup : array-like
         Group refractive index μ′.
-    
+
     Notes
     -----
     When Y ≈ 0 (unmagnetized plasma), use isotropic formulas:
@@ -1129,7 +1129,7 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     """
     # Use constants defined above
     _, _, _, c_km_per_s = constants()
-    
+
     # Ensure ground present
     h_ground = 0.0
     if alt_km[0] > h_ground:
@@ -1439,9 +1439,9 @@ def trace_ray_spherical_snells(
     mode: str = "O",
     *,
     # new controls for apex refinement (defaults are conservative)
-    dz_target_km: float = 1.0,      # aim for ~1 km substeps away from apex
-    apex_boost: float = 200.0,      # multiply substeps as (1 + apex_boost * sharpness)
-    max_substeps: int = 400,        # hard cap per coarse interval
+    dz_target_km: float = 1.0,  # aim for 1 km substeps away from apex
+    apex_boost: float = 200.0,  # multiply substeps as (1+apex_boost*sharpness)
+    max_substeps: int = 400,  # hard cap per coarse interval
 ) -> Dict[str, float]:
     """Stratified Snell's law ray tracing (spherical Earth, 2D).
 
@@ -1451,26 +1451,27 @@ def trace_ray_spherical_snells(
     Apex refinement:
       dφ/dz = p / [ r sqrt((μ r)^2 - p^2) ] is sharply peaked near the apex.
       We integrate dφ over each altitude interval with adaptive substeps that
-      refine where (μ r - p) is small. This removes the ~tens of km bias you saw.
+      refine where (μ r - p) is small. This removes the tens of km bias.
+
     """
     # Earth radius
     _, _, R_E, c_km_s = constants()
 
     # Ensure ground at z=0 present
     if alt_km[0] > 0.0:
-        Ne0  = np.interp(0.0, alt_km, Ne)
-        B0   = np.interp(0.0, alt_km, Babs)
+        Ne0 = np.interp(0.0, alt_km, Ne)
+        B0 = np.interp(0.0, alt_km, Babs)
         psi0 = np.interp(0.0, alt_km, bpsi)
         alt_km = np.insert(alt_km, 0, 0.0)
-        Ne     = np.insert(Ne,     0, Ne0)
-        Babs   = np.insert(Babs,   0, B0)
-        bpsi   = np.insert(bpsi,   0, psi0)
+        Ne = np.insert(Ne, 0, Ne0)
+        Babs = np.insert(Babs, 0, B0)
+        bpsi = np.insert(bpsi, 0, psi0)
 
     # Plasma indices
     X = find_X(Ne, f0_Hz)
     Y = find_Y(f0_Hz, Babs)
     mu, mup = find_mu_mup(X, Y, bpsi, mode)
-    mu  = np.where((~np.isfinite(mu))  | (mu  <= 0.0), np.nan, mu)
+    mu = np.where((~np.isfinite(mu)) | (mu <= 0.0), np.nan, mu)
     mup = np.where((~np.isfinite(mup)) | (mup <= 0.0), np.nan, mup)
 
     # Invariant p = μ0 r0 sinθ0  (θ0 from radial)
@@ -1478,8 +1479,13 @@ def trace_ray_spherical_snells(
     r0 = R_E + alt_km[0]
     mu0 = mu[0]
     if not np.isfinite(mu0):
-        return {k: np.nan for k in ["x","z","group_path_km","group_delay_sec",
-                                    "x_midpoint","z_midpoint","ground_range_km"]}
+        return {k: np.nan for k in ["x",
+                                    "z",
+                                    "group_path_km",
+                                    "group_delay_sec",
+                                    "x_midpoint",
+                                    "z_midpoint",
+                                    "ground_range_km"]}
     p = mu0 * r0 * np.sin(theta0)
 
     # Find turning point where (μ r) crosses p
@@ -1487,18 +1493,27 @@ def trace_ray_spherical_snells(
     zv, muv = alt_km[valid], mu[valid]
     rv = R_E + zv
     if zv.size < 2:
-        return {k: np.nan for k in ["x","z","group_path_km","group_delay_sec",
-                                    "x_midpoint","z_midpoint","ground_range_km"]}
-
+        return {k: np.nan for k in ["x",
+                                    "z",
+                                    "group_path_km",
+                                    "group_delay_sec",
+                                    "x_midpoint",
+                                    "z_midpoint",
+                                    "ground_range_km"]}
     mu_r = muv * rv
     cross = None
     for i in range(zv.size - 1):
-        if (mu_r[i] >= p) and (mu_r[i+1] <= p):
-            cross = (i, i+1)
+        if (mu_r[i] >= p) and (mu_r[i + 1] <= p):
+            cross = (i, i + 1)
             break
     if cross is None:
-        return {k: np.nan for k in ["x","z","group_path_km","group_delay_sec",
-                                    "x_midpoint","z_midpoint","ground_range_km"]}
+        return {k: np.nan for k in ["x",
+                                    "z",
+                                    "group_path_km",
+                                    "group_delay_sec",
+                                    "x_midpoint",
+                                    "z_midpoint",
+                                    "ground_range_km"]}
 
     i0, i1 = cross
     z0, z1 = zv[i0], zv[i1]
@@ -1509,9 +1524,9 @@ def trace_ray_spherical_snells(
     z_turn = z0 + t * (z1 - z0)
 
     # Up-leg nodes including apex; μ at apex from invariant
-    z_up  = np.concatenate([zv[:i0+1], [z_turn]])
-    r_up  = R_E + z_up
-    mu_up = np.concatenate([muv[:i0+1], [p / r_up[-1]]])
+    z_up = np.concatenate([zv[:i0 + 1], [z_turn]])
+    r_up = R_E + z_up
+    mu_up = np.concatenate([muv[:i0 + 1], [p / r_up[-1]]])
 
     # --- Integrate φ with adaptive substeps over each coarse interval ---
     phi_up = np.zeros_like(z_up)
@@ -1522,9 +1537,9 @@ def trace_ray_spherical_snells(
         return p / (r_val * np.sqrt(denom))
 
     for k in range(len(z_up) - 1):
-        z_a, z_b = z_up[k], z_up[k+1]
-        r_a, r_b = r_up[k], r_up[k+1]
-        mu_a, mu_b = mu_up[k], mu_up[k+1]
+        z_a, z_b = z_up[k], z_up[k + 1]
+        r_a, r_b = r_up[k], r_up[k + 1]
+        mu_a, mu_b = mu_up[k], mu_up[k + 1]
         mu_r_a, mu_r_b = mu_a * r_a, mu_b * r_b
 
         dz = z_b - z_a
@@ -1556,25 +1571,25 @@ def trace_ray_spherical_snells(
             f_m = dphi_integrand(mu_r_m, r_m)
             dphi_sum += f_m * (dz / N)
 
-        phi_up[k+1] = phi_up[k] + dphi_sum
+        phi_up[k + 1] = phi_up[k] + dphi_sum
 
     # Mirror down-leg in (φ, z)
     phi_turn = phi_up[-1]
     phi_down = 2.0 * phi_turn - phi_up[::-1]
     phi_full = np.concatenate([phi_up, phi_down[1:]])
-    z_full   = np.concatenate([z_up,  z_up[::-1][1:]])
+    z_full = np.concatenate([z_up, z_up[::-1][1:]])
 
     # Coordinates and metrics
     x_full = R_E * phi_full
 
-    dz_seg  = np.diff(z_full)
+    dz_seg = np.diff(z_full)
     phi_seg = np.diff(phi_full)
-    r_mid   = R_E + 0.5 * (z_full[:-1] + z_full[1:])
-    ds_seg  = np.hypot(r_mid * phi_seg, dz_seg)
+    r_mid = R_E + 0.5 * (z_full[:-1] + z_full[1:])
+    ds_seg = np.hypot(r_mid * phi_seg, dz_seg)
 
     group_path_km = float(np.nansum(ds_seg))
     mup_path = np.interp(z_full, alt_km, mup)
-    mup_seg  = 0.5 * (mup_path[:-1] + mup_path[1:])
+    mup_seg = 0.5 * (mup_path[:-1] + mup_path[1:])
 
     group_delay_sec = float(np.nansum((mup_seg / c_km_s) * ds_seg))
 
@@ -1586,7 +1601,9 @@ def trace_ray_spherical_snells(
     else:
         x_midpoint = z_midpoint = np.nan
 
-    ground_range_km = float(x_full[-1]) if np.isclose(z_full[-1], 0.0, atol=1e-3) else np.nan
+    ground_range_km = float(x_full[-1]) if np.isclose(z_full[-1],
+                                                      0.0,
+                                                      atol=1e-3) else np.nan
 
     return {
         "x": x_full,
@@ -1600,8 +1617,10 @@ def trace_ray_spherical_snells(
 
 
 def trace_ray_spherical_gradient(
-    n_and_grad_rphi: Callable[[np.ndarray, np.ndarray],
-                              Tuple[np.ndarray, np.ndarray, np.ndarray]],
+    n_and_grad_rphi: Callable[[np.ndarray,
+                               np.ndarray], Tuple[np.ndarray,
+                                                  np.ndarray,
+                                                  np.ndarray]],
     x0_km: float,
     z0_km: float,
     elevation_deg: float,
@@ -1618,7 +1637,7 @@ def trace_ray_spherical_gradient(
     renormalize_every: int = 50,
     mup_func: Optional[Callable[[np.ndarray, np.ndarray], np.ndarray]] = None,
 ) -> Dict[str, Any]:
-    """Gradient-based spherical ray tracing (2D r–phi, phase index μ).
+    """Gradient-based spherical ray tracing (2D r-phi, phase index μ).
 
     Parameters
     ----------
@@ -1670,15 +1689,17 @@ def trace_ray_spherical_gradient(
     def rhs(s, y):
         r, phi, v_r, v_phi = y
         mu, mu_r, mu_phi = n_and_grad_rphi(phi, r)
-        mu = float(mu); mu_r = float(mu_r); mu_phi = float(mu_phi)
+        mu = float(mu)
+        mu_r = float(mu_r)
+        mu_phi = float(mu_phi)
         if not np.isfinite(mu) or mu <= 0:
             return np.zeros_like(y)
 
         grad_dot_v = mu_r * v_r + (mu_phi / r) * v_phi
 
-        drds   = v_r
+        drds = v_r
         dphids = v_phi / r
-        dv_r   = (mu_r - grad_dot_v * v_r) / mu + (v_phi**2) / r
+        dv_r = (mu_r - grad_dot_v * v_r) / mu + (v_phi**2) / r
         dv_phi = ((mu_phi / r) - grad_dot_v * v_phi) / mu - (v_r * v_phi) / r
 
         eval_counter['n'] += 1
@@ -1691,24 +1712,30 @@ def trace_ray_spherical_gradient(
         return np.array([drds, dphids, dv_r, dv_phi])
 
     # Events
-    def hit_ground(s, y): return y[0] - (R_E + z_ground_km)
-    hit_ground.terminal = True; hit_ground.direction = -1
+    def hit_ground(s, y):
+        return y[0] - (R_E + z_ground_km)
+    hit_ground.terminal = True
+    hit_ground.direction = -1
 
-    def r_top(s, y): return r_max_km - y[0]
-    r_top.terminal = True; r_top.direction = -1
+    def r_top(s, y):
+        return r_max_km - y[0]
+    r_top.terminal = True
+    r_top.direction = -1
 
-    def phi_left(s, y): return y[1] - phi_min
-    phi_left.terminal = True; phi_left.direction = -1
+    def phi_left(s, y):
+        return y[1] - phi_min
+    phi_left.terminal = True
+    phi_left.direction = -1
 
-    def phi_right(s, y): return phi_max - y[1]
-    phi_right.terminal = True; phi_right.direction = -1
+    def phi_right(s, y):
+        return phi_max - y[1]
+    phi_right.terminal = True
+    phi_right.direction = -1
 
-    sol = solve_ivp(
-        rhs, (0.0, s_max_km), y0,
-        method="RK45", rtol=rtol, atol=atol, max_step=max_step_km,
-        events=[hit_ground, r_top, phi_left, phi_right],
-        dense_output=True,
-    )
+    sol = solve_ivp(rhs, (0.0, s_max_km), y0,
+                    method="RK45", rtol=rtol, atol=atol, max_step=max_step_km,
+                    events=[hit_ground, r_top, phi_left, phi_right],
+                    dense_output=True)
 
     y = sol.y
     r_path, phi_path = y[0], y[1]
@@ -1731,7 +1758,9 @@ def trace_ray_spherical_gradient(
         z_mid = 0.5 * (z_path[:-1] + z_path[1:])
         mup_mid = np.asarray(mup_func(x_mid, z_mid), dtype=float)
         valid = np.isfinite(mup_mid)
-        group_delay_sec = float(np.nansum((mup_mid[valid] / c_km_s) * ds[valid]))
+        group_delay_sec = float(np.nansum((mup_mid[valid]
+                                           / c_km_s)
+                                          * ds[valid]))
     else:
         group_delay_sec = group_path_km / c_km_s
 
@@ -1762,11 +1791,57 @@ def trace_ray_spherical_gradient(
         "group_delay_sec": group_delay_sec,
         "x_midpoint": x_midpoint,
         "z_midpoint": z_midpoint,
-        "ground_range_km": ground_range_km,
-    }
+        "ground_range_km": ground_range_km}
 
 
-from scipy.interpolate import RegularGridInterpolator
+def n_and_grad_rphi(
+    phi: np.ndarray,
+    r: np.ndarray,
+    n_interp: RegularGridInterpolator,
+    dn_dr_interp: RegularGridInterpolator,
+    dn_dphi_interp: RegularGridInterpolator,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Evaluate μ(r, φ) and its gradients at given coordinates.
+
+    Parameters
+    ----------
+    phi : array_like
+        Azimuthal coordinate [rad]. Scalar or array. Will broadcast with r.
+    r : array_like
+        Radial coordinate [km] (Earth radius + altitude). Scalar or array.
+    n_interp : RegularGridInterpolator
+        Interpolator for μ(r, φ).
+    dn_dr_interp : RegularGridInterpolator
+        Interpolator for ∂μ/∂r.
+    dn_dphi_interp : RegularGridInterpolator
+        Interpolator for ∂μ/∂φ.
+
+    Returns
+    -------
+    n : np.ndarray
+        Refractive index μ at (r, φ). Shape matches broadcasted inputs.
+    dn_dr : np.ndarray
+        Partial derivative ∂μ/∂r at (r, φ).
+    dn_dphi : np.ndarray
+        Partial derivative ∂μ/∂φ at (r, φ).
+    """
+    phi_arr = np.atleast_1d(np.asarray(phi, dtype=float))
+    r_arr = np.atleast_1d(np.asarray(r, dtype=float))
+    phi_arr, r_arr = np.broadcast_arrays(phi_arr, r_arr)
+    pts = np.column_stack([r_arr.ravel(), phi_arr.ravel()])
+
+    n_val = n_interp(pts)
+    nr_val = dn_dr_interp(pts)
+    nphi_val = dn_dphi_interp(pts)
+
+    out_shape = phi_arr.shape
+    return (
+        n_val.reshape(out_shape),
+        nr_val.reshape(out_shape),
+        nphi_val.reshape(out_shape),
+    )
+
 
 def build_refractive_index_interpolator_rphi(
     r_grid: np.ndarray,
@@ -1777,7 +1852,8 @@ def build_refractive_index_interpolator_rphi(
     fill_value_grad: float = 0.0,
     bounds_error: bool = False,
     edge_order: int = 2,
-) -> Callable[[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+) -> Callable[[np.ndarray, np.ndarray],
+              Tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """Construct interpolators for refractive index μ(r, φ) and its gradients.
 
     Parameters
@@ -1801,7 +1877,6 @@ def build_refractive_index_interpolator_rphi(
     -------
     n_and_grad_rphi : callable
         Function (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ).
-        Inputs can be scalar or arrays (broadcasted).
     """
     r_grid = np.asarray(r_grid, dtype=float)
     phi_grid = np.asarray(phi_grid, dtype=float)
@@ -1809,12 +1884,13 @@ def build_refractive_index_interpolator_rphi(
 
     if n_field.shape != (r_grid.size, phi_grid.size):
         raise ValueError(
-            f"`n_field` shape {n_field.shape} must be (len(r_grid)={r_grid.size}, "
-            f"len(phi_grid)={phi_grid.size})."
+            f"`n_field` shape {n_field.shape} must be "
+            f"(len(r_grid)={r_grid.size}, len(phi_grid)={phi_grid.size})."
         )
 
     if not (np.all(np.diff(r_grid) > 0) and np.all(np.diff(phi_grid) > 0)):
-        raise ValueError("`r_grid` and `phi_grid` must be strictly increasing.")
+        raise ValueError(
+            "`r_grid` and `phi_grid` must be strictly increasing.")
 
     # Interpolator for μ(r,φ)
     n_interp = RegularGridInterpolator(
@@ -1823,8 +1899,10 @@ def build_refractive_index_interpolator_rphi(
         fill_value=fill_value_n,
     )
 
-    # Compute gradients on grid (axis 0 = r, axis 1 = φ)
-    dn_dr, dn_dphi = np.gradient(n_field, r_grid, phi_grid, edge_order=edge_order)
+    # Compute gradients (axis 0 = r, axis 1 = φ)
+    dn_dr, dn_dphi = np.gradient(
+        n_field, r_grid, phi_grid, edge_order=edge_order
+    )
 
     dn_dr_interp = RegularGridInterpolator(
         (r_grid, phi_grid), dn_dr,
@@ -1837,20 +1915,8 @@ def build_refractive_index_interpolator_rphi(
         fill_value=fill_value_grad,
     )
 
-    def n_and_grad_rphi(phi: np.ndarray, r: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Evaluate μ, ∂μ/∂r, and ∂μ/∂φ at (φ, r)."""
-        phi_arr = np.atleast_1d(np.asarray(phi, dtype=float))
-        r_arr = np.atleast_1d(np.asarray(r, dtype=float))
-        phi_arr, r_arr = np.broadcast_arrays(phi_arr, r_arr)
-        pts = np.column_stack([r_arr.ravel(), phi_arr.ravel()])
-
-        n_val = n_interp(pts)
-        nr_val = dn_dr_interp(pts)
-        nphi_val = dn_dphi_interp(pts)
-
-        out_shape = phi_arr.shape
-        return (n_val.reshape(out_shape),
-                nr_val.reshape(out_shape),
-                nphi_val.reshape(out_shape))
-
-    return n_and_grad_rphi
+    return lambda phi, r: n_and_grad_rphi(phi,
+                                          r,
+                                          n_interp,
+                                          dn_dr_interp,
+                                          dn_dphi_interp)
