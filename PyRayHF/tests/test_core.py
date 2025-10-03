@@ -7,6 +7,7 @@ import pytest
 from copy import deepcopy
 from lmfit import Parameters
 from numpy.testing import assert_allclose
+from PyRayHF.library import build_refractive_index_interpolator
 from PyRayHF.library import constants
 from PyRayHF.library import den2freq
 from PyRayHF.library import eval_refractive_index_and_grad
@@ -463,3 +464,77 @@ def test_eval_refractive_index_and_grad_broadcasting():
     np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
     np.testing.assert_allclose(dnx_val, dnx_expected, rtol=1e-12)
     np.testing.assert_allclose(dnz_val, dnz_expected, rtol=1e-12)
+
+
+def test_build_refractive_index_interpolator_linear_field():
+    """Basic test for build_refractive_index_interpolator with linear field."""
+    # Define grids
+    z_grid = np.linspace(0, 10, 6)
+    x_grid = np.linspace(0, 10, 6)
+    Z, X = np.meshgrid(z_grid, x_grid, indexing="ij")
+
+    # Define analytic refractive index: n(x,z) = 2x + 3z
+    n_field = 2 * X + 3 * Z
+
+    # Build interpolator
+    n_and_grad = build_refractive_index_interpolator(z_grid, x_grid, n_field)
+
+    # Test points
+    x_test = np.array([0.0, 5.0, 10.0])
+    z_test = np.array([0.0, 5.0, 10.0])
+
+    n_val, dndx, dndz = n_and_grad(x_test, z_test)
+
+    # Expected analytic results
+    n_expected = 2 * x_test + 3 * z_test
+    dndx_expected = np.full_like(x_test, 2.0)
+    dndz_expected = np.full_like(z_test, 3.0)
+
+    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
+    np.testing.assert_allclose(dndx, dndx_expected, rtol=1e-12)
+    np.testing.assert_allclose(dndz, dndz_expected, rtol=1e-12)
+
+
+def test_build_refractive_index_interpolator_broadcasting():
+    """Basic test for build_refractive_index_interpolator broadcasting."""
+    # Small grid
+    z_grid = np.linspace(0, 2, 3)
+    x_grid = np.linspace(0, 2, 3)
+    Z, X = np.meshgrid(z_grid, x_grid, indexing="ij")
+
+    # n(x,z) = x - z
+    n_field = X - Z
+
+    n_and_grad = build_refractive_index_interpolator(z_grid, x_grid, n_field)
+
+    # Mesh input
+    x_test, z_test = np.meshgrid([0.5, 1.5], [0.5, 1.5])
+
+    n_val, dndx, dndz = n_and_grad(x_test, z_test)
+
+    n_expected = x_test - z_test
+    dndx_expected = np.ones_like(x_test)
+    dndz_expected = -np.ones_like(z_test)
+
+    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
+    np.testing.assert_allclose(dndx, dndx_expected, rtol=1e-12)
+    np.testing.assert_allclose(dndz, dndz_expected, rtol=1e-12)
+
+
+def test_build_refractive_index_interpolator_outside_bounds():
+    """Basic test for build_refractive_index_interpolator outside_bounds."""
+    # Simple grid
+    z_grid = np.linspace(0, 1, 2)
+    x_grid = np.linspace(0, 1, 2)
+    n_field = np.ones((2, 2))  # constant field
+
+    n_and_grad = build_refractive_index_interpolator(
+        z_grid, x_grid, n_field, fill_value_n=-1.0, fill_value_grad=-2.0
+    )
+
+    # Outside grid
+    n_val, dndx, dndz = n_and_grad(np.array([2.0]), np.array([2.0]))
+
+    assert n_val == -1.0
+    assert dndx == -2.0
+    assert dndz == -2.0
