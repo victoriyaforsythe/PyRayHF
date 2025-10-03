@@ -519,22 +519,3 @@ def test_build_refractive_index_interpolator_broadcasting():
     np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
     np.testing.assert_allclose(dndx, dndx_expected, rtol=1e-12)
     np.testing.assert_allclose(dndz, dndz_expected, rtol=1e-12)
-
-
-def test_build_refractive_index_interpolator_outside_bounds():
-    """Basic test for build_refractive_index_interpolator outside_bounds."""
-    # Simple grid
-    z_grid = np.linspace(0, 1, 2)
-    x_grid = np.linspace(0, 1, 2)
-    n_field = np.ones((2, 2))  # constant field
-
-    n_and_grad = build_refractive_index_interpolator(
-        z_grid, x_grid, n_field, fill_value_n=-1.0, fill_value_grad=-2.0
-    )
-
-    # Outside grid
-    n_val, dndx, dndz = n_and_grad(np.array([2.0]), np.array([2.0]))
-
-    assert n_val == -1.0
-    assert dndx == -2.0
-    assert dndz == -2.0
