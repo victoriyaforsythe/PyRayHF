@@ -695,21 +695,17 @@ def test_find_mu_mup_extraordinary_mode_differs():
 
 
 def test_trace_ray_cartesian_snells_basic():
-    """Verify basic behavior and output structure of Cartesian Snell tracer."""
-    # --- Synthetic test ionosphere ---
+    """Verify Snell's-law Cartesian raytracer produces finite output."""
+    # --- Test profile setup ---
     alt_km = np.linspace(0, 400, 200)
-    # smooth Gaussian bump
-    Ne = 1e11 * np.exp(-(alt_km - 250)**2 / (2 * 60**2)) + 5e10
-    # uniform B-field [T]
-    Babs = np.full_like(alt_km, 4e-5)
-    # 45° between B and k
-    bpsi = np.full_like(alt_km, np.pi / 4)
+    Ne = 3e11 * np.exp(-(alt_km - 250)**2 / (2 * 60**2)) + 5e10
+    Babs = np.full_like(alt_km, 4e-5)  # Tesla
+    bpsi = np.full_like(alt_km, 45.0)  # degrees
 
-    # --- Ray parameters ---
     f0_Hz = 10e6
     elevation_deg = 45.0
 
-    # --- Run the model ---
+    # --- Run the tracer ---
     result = trace_ray_cartesian_snells(
         f0_Hz=f0_Hz,
         elevation_deg=elevation_deg,
@@ -725,20 +721,23 @@ def test_trace_ray_cartesian_snells_basic():
         "x", "z", "group_path_km", "group_delay_sec",
         "x_midpoint", "z_midpoint", "ground_range_km"
     }
-    assert expected_keys.issubset(result.keys())
+    assert expected_keys.issubset(result.keys()), "Missing keys in result dict"
 
-    # --- Shape and positivity checks ---
-    assert np.all(np.isfinite(result["x"]))
-    assert np.all(np.isfinite(result["z"]))
+    # --- Finite values ---
+    assert np.all(np.isfinite(result["x"])), "x contains NaN"
+    assert np.all(np.isfinite(result["z"])), "z contains NaN"
+    assert np.isfinite(result["group_path_km"])
+    assert np.isfinite(result["group_delay_sec"])
+    assert np.isfinite(result["ground_range_km"])
+
+    # --- Physically meaningful ---
     assert result["group_path_km"] > 0
-    assert result["ground_range_km"] > 0
     assert result["group_delay_sec"] > 0
+    assert result["ground_range_km"] > 0
 
-    # --- Geometry checks ---
-    # Starts at ground
-    assert np.isclose(result["z"][0], 0.0, atol=1e-3)
-    # Should go upward before turning
+    # --- Geometry sanity ---
     z = result["z"]
-    assert np.nanmax(z) > 50.0, "Ray should reach high altitude"
-    # Ends near ground (down-leg mirror)
-    assert np.isclose(result["z"][-1], 0.0, atol=1e-2)
+    assert np.isclose(z[0], 0.0, atol=1e-3), "Ray must start at ground"
+    assert np.nanmax(z) > 50.0, "Ray should reach reasonable altitude"
+    assert np.isclose(z[-1], 0.0, atol=1e-2), "Ray must return to ground"
+
