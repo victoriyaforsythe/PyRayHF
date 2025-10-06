@@ -774,6 +774,7 @@ def test_cartesian_snells_vs_gradient_consistency():
         (z_grid, x_grid), mup,
         bounds_error=False, fill_value=np.nan
     )
+
     def mup_func(x, z):
         """Evaluate μ′(x, z) at given coordinates for group delay."""
         pts = np.column_stack([z, x])
@@ -814,3 +815,50 @@ def test_cartesian_snells_vs_gradient_consistency():
     assert np.nanmax(result_grad["z"]) > 100.0
     assert np.isclose(result_snell["z"][-1], 0.0, atol=1e-2)
     assert np.isclose(result_grad["z"][-1], 0.0, atol=1e-2)
+
+
+def test_spherical_snells_flat_earth_limit():
+    """Verify spherical Snell's-law reduces to Cartesian for large R_E."""
+    # --- Atmospheric and ray parameters ---
+    alt_km = np.linspace(0, 600, 200)
+    Ne = 1e12 * np.exp(-(alt_km - 250)**2 / (2 * 60**2))
+    Babs = np.full_like(alt_km, 4e-5)  # Tesla
+    bpsi = np.full_like(alt_km, 45.0)  # degrees
+    f0_Hz = 10e6
+    elevation_deg = 50.0
+    mode = "O"
+
+    # --- Flat-Earth reference (Cartesian Snell's law) ---
+    result_cart = trace_ray_cartesian_snells(
+        f0_Hz=f0_Hz,
+        elevation_deg=elevation_deg,
+        alt_km=alt_km,
+        Ne=Ne,
+        Babs=Babs,
+        bpsi=bpsi,
+        mode=mode,
+    )
+
+    # --- Spherical Snell's law with huge Earth radius (≈ flat) ---
+    result_sph = trace_ray_spherical_snells(
+        f0_Hz=f0_Hz,
+        elevation_deg=elevation_deg,
+        alt_km=alt_km,
+        Ne=Ne,
+        Babs=Babs,
+        bpsi=bpsi,
+        mode=mode,
+        R_E=6371e9,   # effectively infinite curvature radius
+    )
+
+    # --- Key metrics should match within tight tolerance ---
+    for key in ["group_path_km", "group_delay_sec", "ground_range_km"]:
+        v_cart, v_sph = result_cart[key], result_sph[key]
+        rel_err = abs(v_cart - v_sph) / max(abs(v_cart), abs(v_sph))
+        assert rel_err < 1e-4, f"{key} mismatch >0.01%: {rel_err*100:.4f}%"
+
+    # --- Geometry sanity ---
+    assert np.nanmax(result_cart["z"]) > 100.0
+    assert np.nanmax(result_sph["z"]) > 100.0
+    assert np.isclose(result_cart["z"][-1], 0.0, atol=1e-3)
+    assert np.isclose(result_sph["z"][-1], 0.0, atol=1e-3)
