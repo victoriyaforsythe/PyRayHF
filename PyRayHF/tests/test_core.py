@@ -961,15 +961,6 @@ def test_spherical_snells_vs_gradient_consistency():
     correct geometric consistency and refraction curvature handling.
 
     """
-    from PyRayHF.library import (
-        trace_ray_spherical_snells,
-        trace_ray_spherical_gradient,
-        build_refractive_index_interpolator_rphi,
-        find_X, find_Y, find_mu_mup,
-        constants,
-    )
-    from scipy.interpolate import RegularGridInterpolator
-
     # --- Constants and setup ---
     cp, gp, R_E, c_km_s = constants()
     f0_Hz = 10e6
