@@ -24,6 +24,7 @@ from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import tan_from_mu_scalar
+from PyRayHF.library import trace_ray_cartesian_gradient
 from PyRayHF.library import trace_ray_cartesian_snells
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
@@ -740,3 +741,73 @@ def test_trace_ray_cartesian_snells_basic():
     assert np.isclose(z[0], 0.0, atol=1e-3), "Ray must start at ground"
     assert np.nanmax(z) > 50.0, "Ray should reach reasonable altitude"
     assert np.isclose(z[-1], 0.0, atol=1e-2), "Ray must return to ground"
+
+
+def test_cartesian_snells_vs_gradient_consistency():
+    """Compare Snells and gradient Cartesian tracers in a uniform medium."""
+    # --- Atmospheric & ray parameters ---
+    alt_km = np.linspace(0, 600, 200)
+    Ne = 1e12 * np.exp(-(alt_km - 250)**2 / (2 * 60**2))
+    Babs = np.full_like(alt_km, 4e-5)  # Tesla
+    bpsi = np.full_like(alt_km, 45.0)  # degrees
+    f0_Hz = 10e6
+    elevation_deg = 45.0
+    mode = "O"
+
+    # --- Plasma parameters ---
+    nx = 200
+    xmax = 1000
+    x_grid = np.linspace(0, xmax, nx)
+    z_grid = alt_km
+    Xg, Zg = np.meshgrid(x_grid, z_grid)
+    Ne_grid = np.tile(Ne[:, np.newaxis], (1, nx))
+    Babs_grid = np.tile(Babs[:, np.newaxis], (1, nx))
+    bpsi_grid = np.tile(bpsi[:, np.newaxis], (1, nx))
+
+    X = find_X(Ne_grid, f0_Hz)
+    Y = find_Y(f0_Hz, Babs_grid)
+    mu, mup = find_mu_mup(X, Y, bpsi_grid, mode)
+
+    # --- Build interpolators ---
+    n_and_grad = build_refractive_index_interpolator(z_grid, x_grid, mu)
+    mup_interp = RegularGridInterpolator(
+        (z_grid, x_grid), mup,
+        bounds_error=False, fill_value=np.nan
+    )
+    mup_func = lambda x, z: mup_interp(np.column_stack([z, x]))
+
+    # --- Run both raytracers ---
+    result_snell = trace_ray_cartesian_snells(
+        f0_Hz=f0_Hz,
+        elevation_deg=elevation_deg,
+        alt_km=alt_km,
+        Ne=Ne,
+        Babs=Babs,
+        bpsi=bpsi,
+        mode=mode,
+    )
+
+    result_grad = trace_ray_cartesian_gradient(
+        n_and_grad=n_and_grad,
+        x0_km=0.0,
+        z0_km=0.0,
+        elevation_deg=elevation_deg,
+        s_max_km=4000.0,
+        max_step_km=5.0,
+        z_max_km=600.0,
+        x_min_km=0.0,
+        x_max_km=1000.0,
+        mup_func=mup_func,
+    )
+
+    # --- Consistency checks ---
+    for key in ["group_path_km", "group_delay_sec", "ground_range_km"]:
+        v1, v2 = result_snell[key], result_grad[key]
+        rel_err = abs(v1 - v2) / max(abs(v1), abs(v2))
+        assert rel_err < 0.02, f"{key} mismatch >2%: {rel_err*100:.2f}%"
+
+    # --- Geometry sanity ---
+    assert np.nanmax(result_snell["z"]) > 100.0
+    assert np.nanmax(result_grad["z"]) > 100.0
+    assert np.isclose(result_snell["z"][-1], 0.0, atol=1e-2)
+    assert np.isclose(result_grad["z"][-1], 0.0, atol=1e-2)
