@@ -523,9 +523,7 @@ def test_build_refractive_index_interpolator_broadcasting():
 
 
 def test_build_refractive_index_interpolator_rphi_linear_field():
-    """Basic test for build_refractive_index_interpolator_rphi"""
-    from PyRayHF.library import build_refractive_index_interpolator_rphi
-
+    """Basic test for build_refractive_index_interpolator_rphi."""
     # Define small synthetic grid
     r_grid = np.linspace(6371.0, 6376.0, 6)  # Earth's radius + altitude [km]
     phi_grid = np.linspace(0, 0.01, 6)       # radians
