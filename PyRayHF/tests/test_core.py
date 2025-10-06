@@ -928,10 +928,6 @@ def test_trace_ray_spherical_gradient_basic():
         elevation_deg=elevation_deg,
         s_max_km=4000.0,
         R_E=R_E,
-        z_max_km=600.0,
-        phi_min=-np.pi,
-        phi_max=np.pi,
-        max_step_km=5.0,
         mup_func=mup_func,
     )
 
@@ -1011,9 +1007,7 @@ def test_spherical_snells_vs_gradient_consistency():
         Ne=Ne,
         Babs=Babs,
         bpsi=bpsi,
-        mode=mode,
-        R_E=R_E,
-    )
+        mode=mode)
 
     grad = trace_ray_spherical_gradient(
         n_and_grad_rphi=n_and_grad_rphi,
@@ -1022,12 +1016,7 @@ def test_spherical_snells_vs_gradient_consistency():
         elevation_deg=elevation_deg,
         s_max_km=4000.0,
         R_E=R_E,
-        z_max_km=600.0,
-        phi_min=-np.pi,
-        phi_max=np.pi,
-        max_step_km=5.0,
-        mup_func=mup_func,
-    )
+        mup_func=mup_func)
 
     # --- Assertions ---
     # Check both rays are valid
