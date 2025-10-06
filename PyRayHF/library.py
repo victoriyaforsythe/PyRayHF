@@ -1440,20 +1440,86 @@ def trace_ray_spherical_snells(
     dz_target_km: float = 1.0,  # aim for 1 km substeps away from apex
     apex_boost: float = 200.0,  # multiply substeps as (1+apex_boost*sharpness)
     max_substeps: int = 400,  # hard cap per coarse interval
+    R_E: Optional[float] = None,
 ) -> Dict[str, float]:
-    """Stratified Snell's law ray tracing (spherical Earth, 2D).
+    """
+    Stratified Snell's law ray tracing (spherical Earth, 2D geometry).
 
-    Geometry uses spherical Snell's invariant μ r sinθ = const (phase index μ).
-    Group delay integrates μ′ (mup) along the path. Down-leg is mirrored.
+    Parameters
+    ----------
+    f0_Hz : float
+        Radio frequency [Hz].
+    elevation_deg : float
+        Launch elevation above local horizontal [degrees].
+    alt_km : ndarray
+        Altitude grid [km].
+    Ne : ndarray
+        Electron density profile [el/m³].
+    Babs : ndarray
+        Magnetic field strength [T].
+    bpsi : ndarray
+        Magnetic field inclination [degrees].
+    mode : str, default 'O'
+        Wave mode: 'O' (ordinary) or 'X' (extraordinary).
 
-    Apex refinement:
-      dφ/dz = p / [ r sqrt((μ r)^2 - p^2) ] is sharply peaked near the apex.
-      We integrate dφ over each altitude interval with adaptive substeps that
-      refine where (μ r - p) is small. This removes the tens of km bias.
+    dz_target_km : float, default 1.0
+        Target altitude increment for apex refinement [km].
+    apex_boost : float, default 200.0
+        Sharpness multiplier that increases substeps near turning points.
+    max_substeps : int, default 400
+        Hard limit on number of adaptive substeps per altitude interval.
+    R_E : float or None, optional
+        Earth radius [km]. If None, defaults to value from `constants()`.
+
+    Returns
+    -------
+    result : dict
+        {
+          'x': ndarray,             # surface distance [km]
+          'z': ndarray,             # altitude along the ray [km]
+          'group_path_km': float,   # total geometric path length [km]
+          'group_delay_sec': float, # group delay [s]
+          'x_midpoint': float,      # midpoint horizontal coordinate [km]
+          'z_midpoint': float,      # midpoint altitude [km]
+          'ground_range_km': float  # surface distance to landing point [km]
+        }
+
+    Notes
+    -----
+    **Physical formulation:**
+      In spherical geometry, Snell's invariant becomes:
+          μ * r * sin(θ) = constant
+      where μ is the phase refractive index, r = R_E + z, and θ is the
+      angle between the ray and the local vertical.
+
+      The ray is launched from ground level, bent according to μ(r),
+      reflected at the turning point where μ * r = p, and mirrored down.
+
+    **Group delay:**
+      The propagation delay is integrated along the ray using the group
+      refractive index μ′ (mup):
+          τ = ∫ (μ′ / c) ds
+      where c is the speed of light in vacuum.
+
+    **Apex refinement:**
+      Near the turning point, the derivative
+          dφ/dz = p / [ r * sqrt((μ r)² - p²) ]
+      becomes sharply peaked, making coarse integration unstable.
+      To resolve this, the algorithm adaptively subdivides altitude steps
+      where |μ r - p| is small, increasing resolution toward the apex
+      while capping the total substeps with `max_substeps`.
+
+    **Comparison to Cartesian model:**
+      This function extends the flat-Earth Snell's law formulation
+      (`trace_ray_cartesian_snells`) to spherical geometry. For large R_E,
+      both solutions converge within numerical precision.
 
     """
-    # Earth radius
-    _, _, R_E, c_km_s = constants()
+    # Speed of light
+    _, _, _, c_km_s = constants()
+    # Load Earth radius if not provided
+    if R_E is None:
+        _, _, R_E, _ = constants()
 
     # Ensure ground at z=0 present
     if alt_km[0] > 0.0:
