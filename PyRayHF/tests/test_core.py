@@ -697,8 +697,8 @@ def test_find_mu_mup_extraordinary_mode_differs():
 def test_trace_ray_cartesian_snells_basic():
     """Verify Snell's-law Cartesian raytracer produces finite output."""
     # --- Test profile setup ---
-    alt_km = np.linspace(0, 400, 200)
-    Ne = 3e11 * np.exp(-(alt_km - 250)**2 / (2 * 60**2)) + 5e10
+    alt_km = np.linspace(0, 600, 200)
+    Ne = 1e12 * np.exp(-(alt_km - 250)**2 / (2 * 60**2))
     Babs = np.full_like(alt_km, 4e-5)  # Tesla
     bpsi = np.full_like(alt_km, 45.0)  # degrees
 
