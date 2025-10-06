@@ -23,6 +23,7 @@ from PyRayHF.library import n_and_grad
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
+from PyRayHF.library import tan_from_mu_scalar
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
 from scipy.interpolate import RegularGridInterpolator
@@ -579,3 +580,87 @@ def test_build_refractive_index_interpolator_rphi_broadcasting():
     np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
     np.testing.assert_allclose(dn_dr, dn_dr_expected, rtol=1e-12)
     np.testing.assert_allclose(dn_dphi, dn_dphi_expected, rtol=1e-12)
+
+
+def test_tan_from_mu_scalar_basic():
+    """Test tan_from_mu_scalar against analytic expectation for μ and p."""
+    # For μ = 2, p = 1 → tanθ = p / sqrt(μ^2 - p^2) = 1 / sqrt(3)
+    mu_val = 2.0
+    p = 1.0
+    expected = 1.0 / np.sqrt(3.0)
+    result = tan_from_mu_scalar(mu_val, p)
+    np.testing.assert_allclose(result, expected, rtol=1e-12)
+
+    # Test near the singularity (μ → p)
+    mu_val = 1.0000001
+    result = tan_from_mu_scalar(mu_val, 1.0)
+    assert np.isfinite(result)
+    assert result > 0.0
+
+
+def test_tan_from_mu_scalar_behavior_near_zero():
+    """tan_from_mu_scalar should handle near-zero μ gracefully."""
+    mu_val = 1e-6
+    p = 1e-7
+    result = tan_from_mu_scalar(mu_val, p)
+    assert np.isfinite(result)
+    assert result >= 0.0
+
+
+def test_find_X_basic():
+    """Plasma frequency term X = (f_p / f)^2."""
+    from PyRayHF.library import f_e  # fundamental constant in your lib
+
+    # Set up test data
+    f_Hz = 10e6
+    Ne = np.array([1e11, 1e12])  # m^-3
+
+    # Analytical X = (f_p/f)^2 = (8.98e3 * sqrt(Ne) / f)^2
+    fp = 8.98e3 * np.sqrt(Ne)
+    expected = (fp / f_Hz) ** 2
+
+    result = find_X(Ne, f_Hz)
+    np.testing.assert_allclose(result, expected, rtol=1e-12)
+
+
+def test_find_Y_basic():
+    """Magnetoionic parameter Y = f_H / f."""
+    f_Hz = 10e6
+    Babs = np.array([1e-5, 5e-5])  # Tesla
+    e = 1.602176634e-19
+    m = 9.10938356e-31
+
+    expected = e * Babs / (2 * np.pi * m * f_Hz)
+    result = find_Y(f_Hz, Babs)
+    np.testing.assert_allclose(result, expected, rtol=1e-12)
+
+
+def test_find_mu_mup_ordinary_mode():
+    """Test O-mode (μ, μ′) outputs for known X, Y, and bpsi."""
+    X = np.array([0.1, 0.2])
+    Y = np.array([0.01, 0.02])
+    bpsi = np.array([0.0, np.pi / 4])
+
+    mu, mup = find_mu_mup(X, Y, bpsi, mode="O")
+
+    # For small X and Y, μ ≈ sqrt(1 - X), μ′ ≈ μ
+    mu_expected = np.sqrt(1 - X)
+    mup_expected = mu_expected
+    np.testing.assert_allclose(mu, mu_expected, rtol=1e-2)
+    np.testing.assert_allclose(mup, mup_expected, rtol=1e-2)
+
+
+def test_find_mu_mup_extraordinary_mode_differs():
+    """X-mode should differ slightly from O-mode."""
+    X = np.array([0.1])
+    Y = np.array([0.02])
+    bpsi = np.array([np.pi / 3])
+
+    mu_O, mup_O = find_mu_mup(X, Y, bpsi, mode="O")
+    mu_X, mup_X = find_mu_mup(X, Y, bpsi, mode="X")
+
+    # Both must be positive but not identical
+    assert np.all(mu_X > 0)
+    assert np.all(mup_X > 0)
+    assert not np.allclose(mu_O, mu_X)
+    assert not np.allclose(mup_O, mup_X)
