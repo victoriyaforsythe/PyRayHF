@@ -24,6 +24,7 @@ from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import tan_from_mu_scalar
+from PyRayHF.library import trace_ray_cartesian_snells
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
 from scipy.interpolate import RegularGridInterpolator
@@ -691,3 +692,53 @@ def test_find_mu_mup_extraordinary_mode_differs():
     assert np.all(mup_X > 0)
     assert not np.allclose(mu_O, mu_X)
     assert not np.allclose(mup_O, mup_X)
+
+
+def test_trace_ray_cartesian_snells_basic():
+    """Verify basic behavior and output structure of Cartesian Snell tracer."""
+    # --- Synthetic test ionosphere ---
+    alt_km = np.linspace(0, 400, 200)
+    # smooth Gaussian bump
+    Ne = 1e11 * np.exp(-(alt_km - 250)**2 / (2 * 60**2)) + 5e10
+    # uniform B-field [T]
+    Babs = np.full_like(alt_km, 4e-5)
+    # 45° between B and k
+    bpsi = np.full_like(alt_km, np.pi / 4)
+
+    # --- Ray parameters ---
+    f0_Hz = 10e6
+    elevation_deg = 45.0
+
+    # --- Run the model ---
+    result = trace_ray_cartesian_snells(
+        f0_Hz=f0_Hz,
+        elevation_deg=elevation_deg,
+        alt_km=alt_km,
+        Ne=Ne,
+        Babs=Babs,
+        bpsi=bpsi,
+        mode="O"
+    )
+
+    # --- Structure checks ---
+    expected_keys = {
+        "x", "z", "group_path_km", "group_delay_sec",
+        "x_midpoint", "z_midpoint", "ground_range_km"
+    }
+    assert expected_keys.issubset(result.keys())
+
+    # --- Shape and positivity checks ---
+    assert np.all(np.isfinite(result["x"]))
+    assert np.all(np.isfinite(result["z"]))
+    assert result["group_path_km"] > 0
+    assert result["ground_range_km"] > 0
+    assert result["group_delay_sec"] > 0
+
+    # --- Geometry checks ---
+    # Starts at ground
+    assert np.isclose(result["z"][0], 0.0, atol=1e-3)
+    # Should go upward before turning
+    z = result["z"]
+    assert np.nanmax(z) > 50.0, "Ray should reach high altitude"
+    # Ends near ground (down-leg mirror)
+    assert np.isclose(result["z"][-1], 0.0, atol=1e-2)
