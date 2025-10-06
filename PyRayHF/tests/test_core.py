@@ -26,6 +26,7 @@ from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import tan_from_mu_scalar
 from PyRayHF.library import trace_ray_cartesian_gradient
 from PyRayHF.library import trace_ray_cartesian_snells
+from PyRayHF.library import trace_ray_spherical_snells
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
 from scipy.interpolate import RegularGridInterpolator
