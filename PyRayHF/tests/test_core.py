@@ -774,7 +774,10 @@ def test_cartesian_snells_vs_gradient_consistency():
         (z_grid, x_grid), mup,
         bounds_error=False, fill_value=np.nan
     )
-    mup_func = lambda x, z: mup_interp(np.column_stack([z, x]))
+    def mup_func(x, z):
+        """Evaluate μ′(x, z) at given coordinates for group delay."""
+        pts = np.column_stack([z, x])
+        return mup_interp(pts)
 
     # --- Run both raytracers ---
     result_snell = trace_ray_cartesian_snells(
