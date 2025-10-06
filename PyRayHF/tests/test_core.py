@@ -900,7 +900,11 @@ def test_trace_ray_spherical_gradient_basic():
     # Plasma parameters
     X = find_X(Ne[:, None], f0_Hz)
     Y = find_Y(f0_Hz, Babs[:, None])
-    mu, mup = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
+    mu_1d, mup_1d = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
+
+    # Broadcast to (r, φ) grid
+    mu = np.tile(mu_1d, (1, phi_grid.size))
+    mup = np.tile(mup_1d, (1, phi_grid.size))
 
     # Build interpolator for μ(r, φ)
     n_and_grad_rphi = build_refractive_index_interpolator_rphi(
@@ -981,7 +985,11 @@ def test_spherical_snells_vs_gradient_consistency():
     # --- Plasma parameters ---
     X = find_X(Ne[:, None], f0_Hz)
     Y = find_Y(f0_Hz, Babs[:, None])
-    mu, mup = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
+    mu_1d, mup_1d = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
+
+    # Broadcast to (r, φ) grid
+    mu = np.tile(mu_1d, (1, phi_grid.size))
+    mup = np.tile(mup_1d, (1, phi_grid.size))
 
     # --- Build interpolators ---
     n_and_grad_rphi = build_refractive_index_interpolator_rphi(
