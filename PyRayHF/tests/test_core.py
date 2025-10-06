@@ -8,6 +8,7 @@ from copy import deepcopy
 from lmfit import Parameters
 from numpy.testing import assert_allclose
 from PyRayHF.library import build_refractive_index_interpolator
+from PyRayHF.library import build_refractive_index_interpolator_rphi
 from PyRayHF.library import constants
 from PyRayHF.library import den2freq
 from PyRayHF.library import eval_refractive_index_and_grad
@@ -519,3 +520,64 @@ def test_build_refractive_index_interpolator_broadcasting():
     np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
     np.testing.assert_allclose(dndx, dndx_expected, rtol=1e-12)
     np.testing.assert_allclose(dndz, dndz_expected, rtol=1e-12)
+
+
+def test_build_refractive_index_interpolator_rphi_linear_field():
+    """Basic test for build_refractive_index_interpolator_rphi"""
+    from PyRayHF.library import build_refractive_index_interpolator_rphi
+
+    # Define small synthetic grid
+    r_grid = np.linspace(6371.0, 6376.0, 6)  # Earth's radius + altitude [km]
+    phi_grid = np.linspace(0, 0.01, 6)       # radians
+
+    R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
+
+    # Define an analytic refractive index field μ(r,φ) = 2φ + 3(r - 6371)
+    n_field = 2 * PHI + 3 * (R - 6371.0)
+
+    # Build interpolator
+    n_and_grad_rphi = build_refractive_index_interpolator_rphi(r_grid,
+                                                               phi_grid,
+                                                               n_field)
+
+    # Test at a few points
+    phi_test = np.array([0.0, 0.005, 0.01])
+    r_test = np.array([6371.0, 6373.5, 6376.0])
+
+    n_val, dn_dr, dn_dphi = n_and_grad_rphi(phi_test, r_test)
+
+    # Expected analytic results
+    n_expected = 2 * phi_test + 3 * (r_test - 6371.0)
+    dn_dr_expected = np.full_like(r_test, 3.0)
+    dn_dphi_expected = np.full_like(phi_test, 2.0)
+
+    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
+    np.testing.assert_allclose(dn_dr, dn_dr_expected, rtol=1e-12)
+    np.testing.assert_allclose(dn_dphi, dn_dphi_expected, rtol=1e-12)
+
+
+def test_build_refractive_index_interpolator_rphi_broadcasting():
+    """Check broadcasting behavior build_refractive_index_interpolator_rphi."""
+    r_grid = np.linspace(6371.0, 6373.0, 3)
+    phi_grid = np.linspace(0, 0.01, 3)
+    R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
+
+    # Define linear field μ(r,φ) = φ - (r - 6371)
+    n_field = PHI - (R - 6371.0)
+
+    n_and_grad_rphi = build_refractive_index_interpolator_rphi(r_grid,
+                                                               phi_grid,
+                                                               n_field)
+
+    phi_test, r_test = np.meshgrid([0.002, 0.006], [6371.5, 6372.5])
+
+    n_val, dn_dr, dn_dphi = n_and_grad_rphi(phi_test, r_test)
+
+    # Expected analytic results
+    n_expected = phi_test - (r_test - 6371.0)
+    dn_dr_expected = -np.ones_like(r_test)
+    dn_dphi_expected = np.ones_like(phi_test)
+
+    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
+    np.testing.assert_allclose(dn_dr, dn_dr_expected, rtol=1e-12)
+    np.testing.assert_allclose(dn_dphi, dn_dphi_expected, rtol=1e-12)
