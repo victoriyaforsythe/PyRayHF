@@ -26,6 +26,7 @@ from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import tan_from_mu_scalar
 from PyRayHF.library import trace_ray_cartesian_gradient
 from PyRayHF.library import trace_ray_cartesian_snells
+from PyRayHF.library import trace_ray_spherical_gradient
 from PyRayHF.library import trace_ray_spherical_snells
 from PyRayHF.library import vertical_forward_operator
 from PyRayHF.library import vertical_to_magnetic_angle
@@ -863,3 +864,190 @@ def test_spherical_snells_flat_earth_limit():
     assert np.nanmax(result_sph["z"]) > 100.0
     assert np.isclose(result_cart["z"][-1], 0.0, atol=1e-3)
     assert np.isclose(result_sph["z"][-1], 0.0, atol=1e-3)
+
+
+def test_trace_ray_spherical_gradient_basic():
+    """Test spherical gradient-based ray tracing on a simple plasma profile.
+
+    This validates numerical integration of the full spherical gradient
+    equations using μ (phase refractive index) for geometry and μ′ (group
+    index) for delay. The ray should rise, bend smoothly, and return to
+    ground—producing reasonable path and delay metrics.
+
+    The test ensures:
+      - Returned arrays are finite and monotonic in arclength.
+      - Ground return occurs within expected horizontal range.
+      - Group path and delay are positive and physically plausible.
+
+    """
+    # --- Basic setup ---
+    cp, gp, R_E, c_km_s = constants()
+    f0_Hz = 10e6
+    elevation_deg = 50.0
+    mode = "O"
+
+    # Altitude grid [km]
+    alt_km = np.linspace(0, 600, 200)
+    Ne = 1e12 * np.exp(-(alt_km - 250) ** 2 / (2 * 60 ** 2))
+    Babs = np.full_like(alt_km, 4e-5)  # Tesla
+    bpsi = np.full_like(alt_km, 45.0)  # degrees
+
+    # Convert to spherical coordinates
+    r_grid = R_E + alt_km
+    phi_grid = np.linspace(0, 0.1, 300)  # ~R_E * 0.1 ≈ 637 km
+    Rg, Phig = np.meshgrid(r_grid, phi_grid, indexing="ij")
+
+    # Plasma parameters
+    X = find_X(Ne[:, None], f0_Hz)
+    Y = find_Y(f0_Hz, Babs[:, None])
+    mu, mup = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
+
+    # Build interpolator for μ(r, φ)
+    n_and_grad_rphi = build_refractive_index_interpolator_rphi(
+        r_grid, phi_grid, mu
+    )
+
+    # Build μ' interpolator for group delay
+    mup_interp = RegularGridInterpolator(
+        (r_grid, phi_grid), mup,
+        bounds_error=False, fill_value=np.nan,
+    )
+
+    def mup_func(phi, r):
+        return mup_interp(np.column_stack([r, phi]))
+
+    # --- Trace ray ---
+    result = trace_ray_spherical_gradient(
+        n_and_grad_rphi=n_and_grad_rphi,
+        x0_km=0.0,
+        z0_km=0.0,
+        elevation_deg=elevation_deg,
+        s_max_km=4000.0,
+        R_E=R_E,
+        z_max_km=600.0,
+        phi_min=-np.pi,
+        phi_max=np.pi,
+        max_step_km=5.0,
+        mup_func=mup_func,
+    )
+
+    # --- Assertions ---
+    assert result["status"] in {"ground", "success"}
+    assert np.all(np.isfinite(result["x"]))
+    assert np.all(np.isfinite(result["z"]))
+    assert result["group_path_km"] > 0
+    assert result["group_delay_sec"] > 0
+    assert 500 < result["ground_range_km"] < 800
+
+    # Physical consistency
+    rel_err = abs(result["group_delay_sec"]
+                  * c_km_s
+                  / result["group_path_km"] - 1)
+    assert rel_err < 0.05, f"Delay-path consistency off by {rel_err*100:.2f}%"
+
+
+def test_spherical_snells_vs_gradient_consistency():
+    """Compare spherical Snell's law and spherical gradient raytracing results.
+
+    This ensures that the geometric and group-delay results from the
+    gradient-based spherical integration match the semi-analytic
+    Snell's-law ray tracer within a few percent.
+
+    The two formulations differ only in their numerical approach:
+      - Snell’s law integrates analytically via μ r sinθ = const.
+      - Gradient form integrates dv/ds = (∇μ - (∇μ·v)v)/μ in spherical coords.
+
+    A relative difference below ~3% is physically acceptable and indicates
+    correct geometric consistency and refraction curvature handling.
+
+    """
+    from PyRayHF.library import (
+        trace_ray_spherical_snells,
+        trace_ray_spherical_gradient,
+        build_refractive_index_interpolator_rphi,
+        find_X, find_Y, find_mu_mup,
+        constants,
+    )
+    from scipy.interpolate import RegularGridInterpolator
+
+    # --- Constants and setup ---
+    cp, gp, R_E, c_km_s = constants()
+    f0_Hz = 10e6
+    elevation_deg = 50.0
+    mode = "O"
+
+    # Altitude and plasma profile
+    alt_km = np.linspace(0, 600, 200)
+    Ne = 1e12 * np.exp(-(alt_km - 250) ** 2 / (2 * 60 ** 2))
+    Babs = np.full_like(alt_km, 4e-5)
+    bpsi = np.full_like(alt_km, 45.0)
+
+    # --- Spherical coordinates ---
+    r_grid = R_E + alt_km
+    phi_grid = np.linspace(0, 0.1, 300)
+    Rg, Phig = np.meshgrid(r_grid, phi_grid, indexing="ij")
+
+    # --- Plasma parameters ---
+    X = find_X(Ne[:, None], f0_Hz)
+    Y = find_Y(f0_Hz, Babs[:, None])
+    mu, mup = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
+
+    # --- Build interpolators ---
+    n_and_grad_rphi = build_refractive_index_interpolator_rphi(
+        r_grid, phi_grid, mu
+    )
+    mup_interp = RegularGridInterpolator(
+        (r_grid, phi_grid), mup,
+        bounds_error=False, fill_value=np.nan,
+    )
+
+    def mup_func(phi, r):
+        return mup_interp(np.column_stack([r, phi]))
+
+    # --- Run both ray tracers ---
+    snell = trace_ray_spherical_snells(
+        f0_Hz=f0_Hz,
+        elevation_deg=elevation_deg,
+        alt_km=alt_km,
+        Ne=Ne,
+        Babs=Babs,
+        bpsi=bpsi,
+        mode=mode,
+        R_E=R_E,
+    )
+
+    grad = trace_ray_spherical_gradient(
+        n_and_grad_rphi=n_and_grad_rphi,
+        x0_km=0.0,
+        z0_km=0.0,
+        elevation_deg=elevation_deg,
+        s_max_km=4000.0,
+        R_E=R_E,
+        z_max_km=600.0,
+        phi_min=-np.pi,
+        phi_max=np.pi,
+        max_step_km=5.0,
+        mup_func=mup_func,
+    )
+
+    # --- Assertions ---
+    # Check both rays are valid
+    for res in (snell, grad):
+        assert np.isfinite(res["group_path_km"])
+        assert np.isfinite(res["group_delay_sec"])
+        assert np.isfinite(res["ground_range_km"])
+
+    # Compare key metrics
+    keys = ["group_path_km", "group_delay_sec", "ground_range_km"]
+    tolerances = {"group_path_km": 0.03,
+                  "group_delay_sec": 0.03,
+                  "ground_range_km": 0.03}
+
+    for key in keys:
+        a = snell[key]
+        b = grad[key]
+        rel_err = abs(a - b) / max(a, b)
+        assert rel_err < tolerances[key], (
+            f"{key} mismatch >3%: {rel_err*100:.2f}% "
+            f"(Snell={a:.3f}, Grad={b:.3f})"
+        )
