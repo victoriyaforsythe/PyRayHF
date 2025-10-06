@@ -1442,8 +1442,7 @@ def trace_ray_spherical_snells(
     max_substeps: int = 400,  # hard cap per coarse interval
     R_E: Optional[float] = None,
 ) -> Dict[str, float]:
-    """
-    Stratified Snell's law ray tracing (spherical Earth, 2D geometry).
+    """Stratified Snell's law ray tracing (spherical Earth, 2D geometry).
 
     Parameters
     ----------
