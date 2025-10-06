@@ -609,8 +609,6 @@ def test_tan_from_mu_scalar_behavior_near_zero():
 
 def test_find_X_basic():
     """Plasma frequency term X = (f_p / f)^2."""
-    from PyRayHF.library import f_e  # fundamental constant in your lib
-
     # Set up test data
     f_Hz = 10e6
     Ne = np.array([1e11, 1e12])  # m^-3
