@@ -740,4 +740,3 @@ def test_trace_ray_cartesian_snells_basic():
     assert np.isclose(z[0], 0.0, atol=1e-3), "Ray must start at ground"
     assert np.nanmax(z) > 50.0, "Ray should reach reasonable altitude"
     assert np.isclose(z[-1], 0.0, atol=1e-2), "Ray must return to ground"
-
