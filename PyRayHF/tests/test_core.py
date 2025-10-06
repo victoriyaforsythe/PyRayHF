@@ -608,28 +608,42 @@ def test_tan_from_mu_scalar_behavior_near_zero():
 
 
 def test_find_X_basic():
-    """Plasma frequency term X = (f_p / f)^2."""
+    """Validate plasma frequency parameter X = (f_p / f)^2."""
+
+    # Get constants from the library
+    cp, _, _, _ = constants()
+
     # Set up test data
-    f_Hz = 10e6
-    Ne = np.array([1e11, 1e12])  # m^-3
+    f_Hz = 10e6  # 10 MHz
+    Ne = np.array([1e11, 1e12])  # electron density [m^-3]
 
-    # Analytical X = (f_p/f)^2 = (8.98e3 * sqrt(Ne) / f)^2
-    fp = 8.98e3 * np.sqrt(Ne)
-    expected = (fp / f_Hz) ** 2
+    # Expected formula: X = (f_p / f)^2 = (cp * sqrt(Ne) / f)^2
+    expected = (cp * np.sqrt(Ne) / f_Hz) ** 2
 
+    # Compute using library
     result = find_X(Ne, f_Hz)
+
+    # Verify match
     np.testing.assert_allclose(result, expected, rtol=1e-12)
 
 
 def test_find_Y_basic():
-    """Magnetoionic parameter Y = f_H / f."""
-    f_Hz = 10e6
-    Babs = np.array([1e-5, 5e-5])  # Tesla
-    e = 1.602176634e-19
-    m = 9.10938356e-31
+    """Validate magnetoionic parameter Y = f_H / f using library constants."""
 
-    expected = e * Babs / (2 * np.pi * m * f_Hz)
+    # Get constants from the library
+    _, g_p, _, _ = constants()
+
+    # Test data
+    f_Hz = 10e6  # 10 MHz
+    Babs = np.array([1e-5, 5e-5])  # magnetic field [T]
+
+    # Expected: Y = f_H / f = (g_p * B) / f
+    expected = (g_p * Babs) / f_Hz
+
+    # Compute using library
     result = find_Y(f_Hz, Babs)
+
+    # Compare with tight tolerance
     np.testing.assert_allclose(result, expected, rtol=1e-12)
 
 
