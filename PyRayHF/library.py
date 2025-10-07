@@ -916,7 +916,7 @@ def ray_rhs_cartesian(s: float,
 
 def event_ground(s: float, y: np.ndarray, z_ground_km: float) -> float:
     """Stop when ray hits or goes below the ground."""
-    return y[1] - z_ground_km
+    return y[1] - z_ground_km - 1e3
 
 
 def event_z_top(s: float, y: np.ndarray, z_max_km: float) -> float:
