@@ -1688,8 +1688,8 @@ def build_refractive_index_interpolator_cartesian(
 
 
 def build_refractive_index_interpolator_spherical(
-    r_grid: np.ndarray,
-    phi_grid: np.ndarray,
+    z_grid: np.ndarray,
+    x_grid: np.ndarray,
     n_field: np.ndarray,
     *,
     fill_value_n: float = np.nan,
@@ -1704,10 +1704,10 @@ def build_refractive_index_interpolator_spherical(
 
     Parameters
     ----------
-    r_grid : ndarray, shape (nr,)
-        Radial coordinates [km], strictly increasing (R_E + altitude).
-    phi_grid : ndarray, shape (nφ,)
-        Azimuth coordinates [rad], strictly increasing.
+    z_grid : ndarray, shape (nz,)
+        Altitude coordinates [km], strictly increasing.
+    x_grid : ndarray, shape (nx,)
+        Horizontal coordinates [km], strictly increasing.
     n_field : ndarray, shape (nr, nφ)
         Refractive index values on (r, φ) grid.
     fill_value_n : float
@@ -1725,9 +1725,16 @@ def build_refractive_index_interpolator_spherical(
         Function (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ).
 
     """
-    r_grid = np.asarray(r_grid, dtype=float)
-    phi_grid = np.asarray(phi_grid, dtype=float)
+    x_grid = np.asarray(x_grid, dtype=float)
+    z_grid = np.asarray(z_grid, dtype=float)
     n_field = np.asarray(n_field, dtype=float)
+
+    # Load Earth radius if not provided
+    if R_E is None:
+        _, _, R_E, _ = constants()
+
+    r_grid = R_E + z_grid  # km
+    phi_grid = x_grid / R_E  # rad
 
     if n_field.shape != (r_grid.size, phi_grid.size):
         raise ValueError(
@@ -1827,7 +1834,7 @@ def build_mup_function(
         )
 
         def mup_func(x: np.ndarray, z: np.ndarray) -> np.ndarray:
-            """Evaluate μ′(x, z) in Cartesian geometry."""
+            """Evaluate μ'(x, z) in Cartesian geometry."""
             pts = np.column_stack([np.ravel(z), np.ravel(x)])
             vals = mup_interp(pts)
             return vals.reshape(np.shape(x))
@@ -1847,7 +1854,7 @@ def build_mup_function(
         )
 
         def mup_func(x: np.ndarray, z: np.ndarray) -> np.ndarray:
-            """Evaluate μ′(x, z) in spherical geometry."""
+            """Evaluate μ'(x, z) in spherical geometry."""
             r = R_E + np.asarray(z)
             phi = np.asarray(x) / R_E
             pts = np.column_stack([r.ravel(), phi.ravel()])

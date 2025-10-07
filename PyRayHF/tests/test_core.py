@@ -539,14 +539,18 @@ def test_build_refractive_index_interpolator_spherical_linear_field():
     r_grid = np.linspace(R_E, R_E + 5., 6)  # Earth's radius + altitude [km]
     phi_grid = np.linspace(0, 0.01, 6)       # radians
 
+    # Get cartesian out of spherical
+    z_grid = r_grid - R_E  # km
+    x_grid = R_E * phi_grid  # rad
+
     R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
 
     # Define an analytic refractive index field μ(r,φ) = 2φ + 3(r - 6371)
     n_field = 2 * PHI + 3 * (R - R_E)
 
     # Build interpolator
-    n_and_grad_rphi = build_refractive_index_interpolator_spherical(r_grid,
-                                                                    phi_grid,
+    n_and_grad_rphi = build_refractive_index_interpolator_spherical(z_grid,
+                                                                    x_grid,
                                                                     n_field)
 
     # Test at a few points
