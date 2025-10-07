@@ -811,81 +811,6 @@ def eval_refractive_index_and_grad(x: np.ndarray,
             dnz_val.reshape(shape),)
 
 
-def build_refractive_index_interpolator(z_grid: np.ndarray,
-                                        x_grid: np.ndarray,
-                                        n_field: np.ndarray,
-                                        *,
-                                        fill_value_n: float = np.nan,
-                                        fill_value_grad: float = 0.0,
-                                        bounds_error: bool = False,
-                                        edge_order: int = 2,
-                                        ) -> Callable[[np.ndarray,
-                                                       np.ndarray],
-                                                      Tuple[np.ndarray,
-                                                            np.ndarray,
-                                                            np.ndarray]]:
-    """Construct interpolators for refractive index n(z, x) and its gradients.
-
-    Parameters
-    ----------
-    z_grid : ndarray, shape (nz,)
-        Altitude coordinates [km], strictly increasing.
-    x_grid : ndarray, shape (nx,)
-        Horizontal coordinates [km], strictly increasing.
-    n_field : ndarray, shape (nz, nx)
-        Refractive index values on (z, x) grid.
-    fill_value_n : float
-        Fill value for n outside grid (default NaN).
-    fill_value_grad : float
-        Fill value for gradients outside grid (default 0.0).
-    bounds_error : bool
-        If True, raise error outside grid. If False, use fill values.
-    edge_order : int
-        Accuracy order for finite differences (default 2).
-
-    Returns
-    -------
-    n_and_grad : callable
-        Function (x, z) → (n, dndx, dndz).
-    """
-    z_grid = np.asarray(z_grid, dtype=float)
-    x_grid = np.asarray(x_grid, dtype=float)
-    n_field = np.asarray(n_field, dtype=float)
-
-    if n_field.shape != (z_grid.size, x_grid.size):
-        raise ValueError(
-            f"`n_field` must have shape (len(z_grid)={z_grid.size}, "
-            f"len(x_grid)={x_grid.size}), "
-            f"got {n_field.shape}."
-        )
-
-    if not (np.all(np.diff(z_grid) > 0) and np.all(np.diff(x_grid) > 0)):
-        raise ValueError("`z_grid` and `x_grid` must be strictly increasing.")
-
-    # Interpolator for n
-    n_interp = RegularGridInterpolator(
-        (z_grid, x_grid), n_field,
-        bounds_error=bounds_error,
-        fill_value=fill_value_n,
-    )
-
-    # Gradients on grid
-    dn_dz, dn_dx = np.gradient(n_field, z_grid, x_grid, edge_order=edge_order)
-
-    dn_dx_interp = RegularGridInterpolator(
-        (z_grid, x_grid), dn_dx,
-        bounds_error=bounds_error,
-        fill_value=fill_value_grad,
-    )
-    dn_dz_interp = RegularGridInterpolator(
-        (z_grid, x_grid), dn_dz,
-        bounds_error=bounds_error,
-        fill_value=fill_value_grad,
-    )
-
-    return make_n_and_grad(n_interp, dn_dx_interp, dn_dz_interp)
-
-
 def make_n_and_grad(n_interp: RegularGridInterpolator,
                     dn_dx_interp: RegularGridInterpolator,
                     dn_dz_interp: RegularGridInterpolator,
@@ -919,7 +844,7 @@ def make_n_and_grad(n_interp: RegularGridInterpolator,
     shape. The returned function simply delegates to
     eval_refractive_index_and_grad, keeping the interpolators “baked in” so you
     don't need to pass them around separately.
-    Typical usage is inside build_refractive_index_interpolator.
+    Typical usage is inside build_refractive_index_interpolator_cartesian.
 
     """
     def n_and_grad(x: np.ndarray,
@@ -1253,7 +1178,7 @@ def trace_ray_cartesian_gradient(
     ----------
     n_and_grad : callable
         Function (x, z) -> (μ, dμ/dx, dμ/dz).
-        Usually built with `build_refractive_index_interpolator`.
+        Usually built with `build_refractive_index_interpolator_cartesian`.
     x0_km, z0_km : float
         Start coordinates [km].
     elevation_deg : float
@@ -1350,20 +1275,36 @@ def trace_ray_cartesian_gradient(
     eval_counter = {'n': 0}
 
     # Event functions
-    events = [lambda s, y: event_ground(s, y, z_ground_km),
-              lambda s, y: event_z_top(s, y, z_max_km),
-              lambda s, y: event_z_bottom(s, y, z_min_km),
-              lambda s, y: event_x_left(s, y, x_min_km),
-              lambda s, y: event_x_right(s, y, x_max_km),]
+    def ground_event(s, y):
+        return event_ground(s, y, z_ground_km)
+
+    def z_top_event(s, y):
+        return event_z_top(s, y, z_max_km)
+
+    def z_bottom_event(s, y):
+        return event_z_bottom(s, y, z_min_km)
+
+    def x_left_event(s, y):
+        return event_x_left(s, y, x_min_km)
+
+    def x_right_event(s, y):
+        return event_x_right(s, y, x_max_km)
+
+    events = [ground_event,
+              z_top_event,
+              z_bottom_event,
+              x_left_event,
+              x_right_event]
 
     for ev in events:
         ev.terminal, ev.direction = True, -1.0
 
-    # Integrate ODE
-    sol = solve_ivp(lambda s, y: ray_rhs_cartesian(s, y,
-                                                   n_and_grad,
-                                                   renormalize_every,
-                                                   eval_counter),
+    def rhs_cartesian_wrapper(s, y):
+        """Wrapper to pass fixed parameters into ray_rhs_cartesian."""
+        return ray_rhs_cartesian(s, y, n_and_grad, renormalize_every,
+                                 eval_counter)
+
+    sol = solve_ivp(rhs_cartesian_wrapper,
                     (0.0, s_max_km),
                     y0,
                     method="RK45",
@@ -1371,7 +1312,7 @@ def trace_ray_cartesian_gradient(
                     atol=atol,
                     max_step=max_step_km,
                     events=events,
-                    dense_output=True,)
+                    dense_output=True)
 
     # Termination reason
     if sol.status == 1:
@@ -1689,7 +1630,7 @@ def trace_ray_spherical_gradient(
     elevation_deg: float,
     s_max_km: float = 6000.0,
     *,
-    R_E: float = 6371.0,
+    R_E: float = None,
     z_ground_km: float = 0.0,
     r_max_km: float = None,
     phi_min: float = -np.pi,
@@ -1737,6 +1678,10 @@ def trace_ray_spherical_gradient(
       'x_midpoint', 'z_midpoint', 'ground_range_km'
 
     """
+    # Load Earth radius if not provided
+    if R_E is None:
+        _, _, R_E, _ = constants()
+
     if r_max_km is None:
         r_max_km = R_E + 1200.0
 
@@ -1907,7 +1852,82 @@ def n_and_grad_rphi(
     )
 
 
-def build_refractive_index_interpolator_rphi(
+def build_refractive_index_interpolator_cartesian(
+    z_grid: np.ndarray,
+    x_grid: np.ndarray,
+    n_field: np.ndarray,
+    *,
+    fill_value_n: float = np.nan,
+    fill_value_grad: float = 0.0,
+    bounds_error: bool = False,
+    edge_order: int = 2,
+    ) -> Callable[[np.ndarray,
+                    np.ndarray],
+                    Tuple[np.ndarray,
+                        np.ndarray,
+                        np.ndarray]]:
+    """Construct interpolators for refractive index n(z, x) and its gradients.
+
+    Parameters
+    ----------
+    z_grid : ndarray, shape (nz,)
+        Altitude coordinates [km], strictly increasing.
+    x_grid : ndarray, shape (nx,)
+        Horizontal coordinates [km], strictly increasing.
+    n_field : ndarray, shape (nz, nx)
+        Refractive index values on (z, x) grid.
+    fill_value_n : float
+        Fill value for n outside grid (default NaN).
+    fill_value_grad : float
+        Fill value for gradients outside grid (default 0.0).
+    bounds_error : bool
+        If True, raise error outside grid. If False, use fill values.
+    edge_order : int
+        Accuracy order for finite differences (default 2).
+
+    Returns
+    -------
+    n_and_grad : callable
+        Function (x, z) → (n, dndx, dndz).
+    """
+    z_grid = np.asarray(z_grid, dtype=float)
+    x_grid = np.asarray(x_grid, dtype=float)
+    n_field = np.asarray(n_field, dtype=float)
+
+    if n_field.shape != (z_grid.size, x_grid.size):
+        raise ValueError(
+            f"`n_field` must have shape (len(z_grid)={z_grid.size}, "
+            f"len(x_grid)={x_grid.size}), "
+            f"got {n_field.shape}."
+        )
+
+    if not (np.all(np.diff(z_grid) > 0) and np.all(np.diff(x_grid) > 0)):
+        raise ValueError("`z_grid` and `x_grid` must be strictly increasing.")
+
+    # Interpolator for n
+    n_interp = RegularGridInterpolator(
+        (z_grid, x_grid), n_field,
+        bounds_error=bounds_error,
+        fill_value=fill_value_n,
+    )
+
+    # Gradients on grid
+    dn_dz, dn_dx = np.gradient(n_field, z_grid, x_grid, edge_order=edge_order)
+
+    dn_dx_interp = RegularGridInterpolator(
+        (z_grid, x_grid), dn_dx,
+        bounds_error=bounds_error,
+        fill_value=fill_value_grad,
+    )
+    dn_dz_interp = RegularGridInterpolator(
+        (z_grid, x_grid), dn_dz,
+        bounds_error=bounds_error,
+        fill_value=fill_value_grad,
+    )
+    return make_n_and_grad(n_interp, dn_dx_interp, dn_dz_interp)
+
+
+def build_refractive_index_interpolator_spherical(
     r_grid: np.ndarray,
     phi_grid: np.ndarray,
     n_field: np.ndarray,
@@ -1980,8 +2000,97 @@ def build_refractive_index_interpolator_rphi(
         fill_value=fill_value_grad,
     )
 
-    return lambda phi, r: n_and_grad_rphi(phi,
-                                          r,
-                                          n_interp,
-                                          dn_dr_interp,
-                                          dn_dphi_interp)
+    def n_and_grad_rphi_func(phi, r):
+        """Evaluate μ(r, φ) and its grad using precomputed interpolators."""
+        return n_and_grad_rphi(phi, r, n_interp, dn_dr_interp, dn_dphi_interp)
+
+    return n_and_grad_rphi_func
+
+
+def build_mup_function(
+    mup_field: np.ndarray,
+    x_grid: np.ndarray,
+    z_grid: np.ndarray,
+    *,
+    geometry: str = "cartesian",
+    R_E: float = None,
+    bounds_error: bool = False,
+    fill_value: float = np.nan,
+) -> Callable[[np.ndarray, np.ndarray], np.ndarray]:
+    """Construct callable for evaluating μ'(x, z) for group delay integration.
+
+    Parameters
+    ----------
+    mup_field : ndarray
+        Grid of μ′ (group refractive index) values.
+    x_grid : ndarray
+        Horizontal coordinate grid:
+          - For "cartesian": horizontal distance [km].
+          - For "spherical": surface arc distance [km].
+    z_grid : ndarray
+        Vertical coordinate grid [km].
+    geometry : {'cartesian', 'spherical'}, optional
+        Coordinate system type. Default is 'cartesian'.
+    R_E : float, optional
+        Earth radius [km], used only for spherical geometry.
+    bounds_error : bool, optional
+        Passed to RegularGridInterpolator. If True, raise error outside grid.
+    fill_value : float, optional
+        Fill value used for extrapolation. Default np.nan.
+
+    Returns
+    -------
+    mup_func : callable
+        Function mup_func(x, z) that evaluates μ′ at given coordinates.
+
+    Notes
+    -----
+    • For Cartesian geometry, (z, x) order is used in the interpolator.
+    • For Spherical geometry, (r, φ) order is used, where
+        r = R_E + z   and   φ = x / R_E.
+
+    """
+    # Load Earth radius if not provided
+    if R_E is None:
+        _, _, R_E, _ = constants()
+
+    # Create the interpolator depending on geometry type
+    if geometry == "cartesian":
+        mup_interp = RegularGridInterpolator(
+            (z_grid, x_grid),
+            mup_field,
+            bounds_error=bounds_error,
+            fill_value=fill_value,
+        )
+
+        def mup_func(x: np.ndarray, z: np.ndarray) -> np.ndarray:
+            """Evaluate μ′(x, z) in Cartesian geometry."""
+            pts = np.column_stack([np.ravel(z), np.ravel(x)])
+            vals = mup_interp(pts)
+            return vals.reshape(np.shape(x))
+
+        return mup_func
+
+    elif geometry == "spherical":
+        # Convert to r, φ grids
+        r_grid = R_E + np.asarray(z_grid)
+        phi_grid = np.asarray(x_grid) / R_E
+
+        mup_interp = RegularGridInterpolator(
+            (r_grid, phi_grid),
+            mup_field,
+            bounds_error=bounds_error,
+            fill_value=fill_value,
+        )
+
+        def mup_func(x: np.ndarray, z: np.ndarray) -> np.ndarray:
+            """Evaluate μ′(x, z) in spherical geometry."""
+            r = R_E + np.asarray(z)
+            phi = np.asarray(x) / R_E
+            pts = np.column_stack([r.ravel(), phi.ravel()])
+            vals = mup_interp(pts)
+            return vals.reshape(np.shape(x))
+        return mup_func
+
+    else:
+        raise ValueError("geometry must be 'cartesian' or 'spherical'")

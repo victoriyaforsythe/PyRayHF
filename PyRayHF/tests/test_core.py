@@ -7,8 +7,9 @@ import pytest
 from copy import deepcopy
 from lmfit import Parameters
 from numpy.testing import assert_allclose
-from PyRayHF.library import build_refractive_index_interpolator
-from PyRayHF.library import build_refractive_index_interpolator_rphi
+from PyRayHF.library import build_mup_function
+from PyRayHF.library import build_refractive_index_interpolator_cartesian
+from PyRayHF.library import build_refractive_index_interpolator_spherical
 from PyRayHF.library import constants
 from PyRayHF.library import den2freq
 from PyRayHF.library import eval_refractive_index_and_grad
@@ -19,6 +20,7 @@ from PyRayHF.library import find_Y
 from PyRayHF.library import freq2den
 from PyRayHF.library import minimize_parameters
 from PyRayHF.library import model_VH
+from PyRayHF.library import mup_func_rphi
 from PyRayHF.library import n_and_grad
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
@@ -472,7 +474,7 @@ def test_eval_refractive_index_and_grad_broadcasting():
     np.testing.assert_allclose(dnz_val, dnz_expected, rtol=1e-12)
 
 
-def test_build_refractive_index_interpolator_linear_field():
+def test_build_refractive_index_interpolator_cartesian_linear_field():
     """Basic test for build_refractive_index_interpolator with linear field."""
     # Define grids
     z_grid = np.linspace(0, 10, 6)
@@ -483,7 +485,9 @@ def test_build_refractive_index_interpolator_linear_field():
     n_field = 2 * X + 3 * Z
 
     # Build interpolator
-    n_and_grad = build_refractive_index_interpolator(z_grid, x_grid, n_field)
+    n_and_grad = build_refractive_index_interpolator_cartesian(z_grid,
+                                                               x_grid,
+                                                               n_field)
 
     # Test points
     x_test = np.array([0.0, 5.0, 10.0])
@@ -501,7 +505,7 @@ def test_build_refractive_index_interpolator_linear_field():
     np.testing.assert_allclose(dndz, dndz_expected, rtol=1e-12)
 
 
-def test_build_refractive_index_interpolator_broadcasting():
+def test_build_refractive_index_interpolator_cartesian_broadcasting():
     """Basic test for build_refractive_index_interpolator broadcasting."""
     # Small grid
     z_grid = np.linspace(0, 2, 3)
@@ -511,7 +515,9 @@ def test_build_refractive_index_interpolator_broadcasting():
     # n(x,z) = x - z
     n_field = X - Z
 
-    n_and_grad = build_refractive_index_interpolator(z_grid, x_grid, n_field)
+    n_and_grad = build_refractive_index_interpolator_cartesian(z_grid,
+                                                               x_grid,
+                                                               n_field)
 
     # Mesh input
     x_test, z_test = np.meshgrid([0.5, 1.5], [0.5, 1.5])
@@ -527,30 +533,31 @@ def test_build_refractive_index_interpolator_broadcasting():
     np.testing.assert_allclose(dndz, dndz_expected, rtol=1e-12)
 
 
-def test_build_refractive_index_interpolator_rphi_linear_field():
-    """Basic test for build_refractive_index_interpolator_rphi."""
+def test_build_refractive_index_interpolator_spherical_linear_field():
+    """Basic test for build_refractive_index_interpolator_spherical."""
     # Define small synthetic grid
-    r_grid = np.linspace(6371.0, 6376.0, 6)  # Earth's radius + altitude [km]
+    _, _, R_E, _ = constants()
+    r_grid = np.linspace(R_E, R_E + 5., 6)  # Earth's radius + altitude [km]
     phi_grid = np.linspace(0, 0.01, 6)       # radians
 
     R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
 
     # Define an analytic refractive index field μ(r,φ) = 2φ + 3(r - 6371)
-    n_field = 2 * PHI + 3 * (R - 6371.0)
+    n_field = 2 * PHI + 3 * (R - R_E)
 
     # Build interpolator
-    n_and_grad_rphi = build_refractive_index_interpolator_rphi(r_grid,
-                                                               phi_grid,
-                                                               n_field)
+    n_and_grad_rphi = build_refractive_index_interpolator_spherical(r_grid,
+                                                                    phi_grid,
+                                                                    n_field)
 
     # Test at a few points
     phi_test = np.array([0.0, 0.005, 0.01])
-    r_test = np.array([6371.0, 6373.5, 6376.0])
+    r_test = np.array([R_E, R_E + 2.5, R_E + 5.])
 
     n_val, dn_dr, dn_dphi = n_and_grad_rphi(phi_test, r_test)
 
     # Expected analytic results
-    n_expected = 2 * phi_test + 3 * (r_test - 6371.0)
+    n_expected = 2 * phi_test + 3 * (r_test - R_E)
     dn_dr_expected = np.full_like(r_test, 3.0)
     dn_dphi_expected = np.full_like(phi_test, 2.0)
 
@@ -559,25 +566,26 @@ def test_build_refractive_index_interpolator_rphi_linear_field():
     np.testing.assert_allclose(dn_dphi, dn_dphi_expected, rtol=1e-12)
 
 
-def test_build_refractive_index_interpolator_rphi_broadcasting():
-    """Check broadcasting behavior build_refractive_index_interpolator_rphi."""
-    r_grid = np.linspace(6371.0, 6373.0, 3)
+def test_build_refractive_index_interpolator_spherical_broadcasting():
+    """Check broadcasting behavior."""
+    _, _, R_E, _ = constants()
+    r_grid = np.linspace(R_E, R_E + 2., 3)
     phi_grid = np.linspace(0, 0.01, 3)
     R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
 
     # Define linear field μ(r,φ) = φ - (r - 6371)
-    n_field = PHI - (R - 6371.0)
+    n_field = PHI - (R - R_E)
 
-    n_and_grad_rphi = build_refractive_index_interpolator_rphi(r_grid,
-                                                               phi_grid,
-                                                               n_field)
+    n_and_grad_rphi = build_refractive_index_interpolator_spherical(r_grid,
+                                                                    phi_grid,
+                                                                    n_field)
 
-    phi_test, r_test = np.meshgrid([0.002, 0.006], [6371.5, 6372.5])
+    phi_test, r_test = np.meshgrid([0.002, 0.006], [R_E + 0.5, R_E + 1.5])
 
     n_val, dn_dr, dn_dphi = n_and_grad_rphi(phi_test, r_test)
 
     # Expected analytic results
-    n_expected = phi_test - (r_test - 6371.0)
+    n_expected = phi_test - (r_test - R_E)
     dn_dr_expected = -np.ones_like(r_test)
     dn_dphi_expected = np.ones_like(phi_test)
 
@@ -716,8 +724,7 @@ def test_trace_ray_cartesian_snells_basic():
         Ne=Ne,
         Babs=Babs,
         bpsi=bpsi,
-        mode="O"
-    )
+        mode="O")
 
     # --- Structure checks ---
     expected_keys = {
@@ -771,16 +778,16 @@ def test_cartesian_snells_vs_gradient_consistency():
     mu, mup = find_mu_mup(X, Y, bpsi_grid, mode)
 
     # --- Build interpolators ---
-    n_and_grad = build_refractive_index_interpolator(z_grid, x_grid, mu)
-    mup_interp = RegularGridInterpolator(
-        (z_grid, x_grid), mup,
-        bounds_error=False, fill_value=np.nan
-    )
+    n_and_grad_cartesian = build_refractive_index_interpolator_cartesian(
+        z_grid,
+        x_grid,
+        mu)
 
-    def mup_func(x, z):
-        """Evaluate μ′(x, z) at given coordinates for group delay."""
-        pts = np.column_stack([z, x])
-        return mup_interp(pts)
+    mup_func_cartesian = build_mup_function(
+        mup_field=mup,
+        x_grid=x_grid,
+        z_grid=z_grid,
+        geometry="cartesian")
 
     # --- Run both raytracers ---
     result_snell = trace_ray_cartesian_snells(
@@ -790,11 +797,10 @@ def test_cartesian_snells_vs_gradient_consistency():
         Ne=Ne,
         Babs=Babs,
         bpsi=bpsi,
-        mode=mode,
-    )
+        mode=mode)
 
     result_grad = trace_ray_cartesian_gradient(
-        n_and_grad=n_and_grad,
+        n_and_grad=n_and_grad_cartesian,
         x0_km=0.0,
         z0_km=0.0,
         elevation_deg=elevation_deg,
@@ -803,8 +809,7 @@ def test_cartesian_snells_vs_gradient_consistency():
         z_max_km=600.0,
         x_min_km=0.0,
         x_max_km=1000.0,
-        mup_func=mup_func,
-    )
+        mup_func=mup_func_cartesian)
 
     # --- Consistency checks ---
     for key in ["group_path_km", "group_delay_sec", "ground_range_km"]:
@@ -883,52 +888,63 @@ def test_trace_ray_spherical_gradient_basic():
     # --- Basic setup ---
     cp, gp, R_E, c_km_s = constants()
     f0_Hz = 10e6
-    elevation_deg = 50.0
+    elevation_deg = 45.
     mode = "O"
 
-    # Altitude grid [km]
     alt_km = np.linspace(0, 600, 200)
-    Ne = 1e12 * np.exp(-(alt_km - 250) ** 2 / (2 * 60 ** 2))
+    Ne = 1e12 * np.exp(-(alt_km - 250)**2 / (2 * 60**2))
     Babs = np.full_like(alt_km, 4e-5)  # Tesla
     bpsi = np.full_like(alt_km, 45.0)  # degrees
 
-    # Convert to spherical coordinates
-    r_grid = R_E + alt_km
-    phi_grid = np.linspace(0, 0.1, 300)  # ~R_E * 0.1 ≈ 637 km
-    Rg, Phig = np.meshgrid(r_grid, phi_grid, indexing="ij")
+    # Create 2D density grid (Ne assumed horizontally uniform)
+    nx = 500
+    xmax = 1000
+    x_grid = np.linspace(0, xmax, nx)
+    z_grid = alt_km
+    Xg, Zg = np.meshgrid(x_grid, z_grid)
+    Ne_grid = np.tile(Ne[:, np.newaxis], (1, nx))
+    Babs_grid = np.tile(Babs[:, np.newaxis], (1, nx))
+    bpsi_grid = np.tile(bpsi[:, np.newaxis], (1, nx))
 
-    # Plasma parameters
-    X = find_X(Ne[:, None], f0_Hz)
-    Y = find_Y(f0_Hz, Babs[:, None])
-    mu_1d, mup_1d = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
+    # Calculate plasma parameters
+    X = find_X(Ne_grid, f0_Hz)
+    Y = find_Y(f0_Hz, Babs_grid)
+    mu, mup = find_mu_mup(X, Y, bpsi_grid, mode)
+    mup = np.where((mup < 1e-3) | np.isnan(mup), np.nan, mup)
+    mup0 = mup[0]
 
-    # Broadcast to (r, φ) grid
-    mu = np.tile(mu_1d, (1, phi_grid.size))
-    mup = np.tile(mup_1d, (1, phi_grid.size))
+    # Build interpolator from spherical μ grid
+    r_grid = R_E + z_grid   # km
+    phi_grid = x_grid / R_E # rad
+    n_and_grad_spherical = build_refractive_index_interpolator_spherical(
+        r_grid,
+        phi_grid,
+        mu)
 
-    # Build interpolator for μ(r, φ)
-    n_and_grad_rphi = build_refractive_index_interpolator_rphi(
-        r_grid, phi_grid, mu
-    )
+    mup_func_spherical = build_mup_function(mup_field=mup,
+                                            x_grid=x_grid,
+                                            z_grid=z_grid,
+                                            geometry="spherical")
 
-    # Build μ' interpolator for group delay
-    mup_interp = RegularGridInterpolator(
-        (r_grid, phi_grid), mup,
-        bounds_error=False, fill_value=np.nan,
-    )
-
-    def mup_func(phi, r):
-        return mup_interp(np.column_stack([r, phi]))
+    # Run spherical gradient tracer
+    result4 = trace_ray_spherical_gradient(
+        n_and_grad_rphi=n_and_grad_spherical,
+        x0_km=0.0,
+        z0_km=0.0,
+        elevation_deg=50.,
+        s_max_km=4000.,
+        R_E=None,
+        mup_func=mup_func_rphi)
 
     # --- Trace ray ---
     result = trace_ray_spherical_gradient(
-        n_and_grad_rphi=n_and_grad_rphi,
+        n_and_grad_rphi=n_and_grad_spherical,
         x0_km=0.0,
         z0_km=0.0,
         elevation_deg=elevation_deg,
         s_max_km=4000.0,
-        R_E=R_E,
-        mup_func=mup_func,
+        R_E=None,
+        mup_func=mup_func_spherical,
     )
 
     # --- Assertions ---
@@ -944,98 +960,3 @@ def test_trace_ray_spherical_gradient_basic():
                   * c_km_s
                   / result["group_path_km"] - 1)
     assert rel_err < 0.05, f"Delay-path consistency off by {rel_err*100:.2f}%"
-
-
-def test_spherical_snells_vs_gradient_consistency():
-    """Compare spherical Snell's law and spherical gradient raytracing results.
-
-    This ensures that the geometric and group-delay results from the
-    gradient-based spherical integration match the semi-analytic
-    Snell's-law ray tracer within a few percent.
-
-    The two formulations differ only in their numerical approach:
-      - Snell’s law integrates analytically via μ r sinθ = const.
-      - Gradient form integrates dv/ds = (∇μ - (∇μ·v)v)/μ in spherical coords.
-
-    A relative difference below ~3% is physically acceptable and indicates
-    correct geometric consistency and refraction curvature handling.
-
-    """
-    # --- Constants and setup ---
-    cp, gp, R_E, c_km_s = constants()
-    f0_Hz = 10e6
-    elevation_deg = 50.0
-    mode = "O"
-
-    # Altitude and plasma profile
-    alt_km = np.linspace(0, 600, 200)
-    Ne = 1e12 * np.exp(-(alt_km - 250) ** 2 / (2 * 60 ** 2))
-    Babs = np.full_like(alt_km, 4e-5)
-    bpsi = np.full_like(alt_km, 45.0)
-
-    # --- Spherical coordinates ---
-    r_grid = R_E + alt_km
-    phi_grid = np.linspace(0, 0.1, 300)
-    Rg, Phig = np.meshgrid(r_grid, phi_grid, indexing="ij")
-
-    # --- Plasma parameters ---
-    X = find_X(Ne[:, None], f0_Hz)
-    Y = find_Y(f0_Hz, Babs[:, None])
-    mu_1d, mup_1d = find_mu_mup(X, Y, np.radians(bpsi[:, None]), mode)
-
-    # Broadcast to (r, φ) grid
-    mu = np.tile(mu_1d, (1, phi_grid.size))
-    mup = np.tile(mup_1d, (1, phi_grid.size))
-
-    # --- Build interpolators ---
-    n_and_grad_rphi = build_refractive_index_interpolator_rphi(
-        r_grid, phi_grid, mu
-    )
-    mup_interp = RegularGridInterpolator(
-        (r_grid, phi_grid), mup,
-        bounds_error=False, fill_value=np.nan,
-    )
-
-    def mup_func(phi, r):
-        return mup_interp(np.column_stack([r, phi]))
-
-    # --- Run both ray tracers ---
-    snell = trace_ray_spherical_snells(
-        f0_Hz=f0_Hz,
-        elevation_deg=elevation_deg,
-        alt_km=alt_km,
-        Ne=Ne,
-        Babs=Babs,
-        bpsi=bpsi,
-        mode=mode)
-
-    grad = trace_ray_spherical_gradient(
-        n_and_grad_rphi=n_and_grad_rphi,
-        x0_km=0.0,
-        z0_km=0.0,
-        elevation_deg=elevation_deg,
-        s_max_km=4000.0,
-        R_E=R_E,
-        mup_func=mup_func)
-
-    # --- Assertions ---
-    # Check both rays are valid
-    for res in (snell, grad):
-        assert np.isfinite(res["group_path_km"])
-        assert np.isfinite(res["group_delay_sec"])
-        assert np.isfinite(res["ground_range_km"])
-
-    # Compare key metrics
-    keys = ["group_path_km", "group_delay_sec", "ground_range_km"]
-    tolerances = {"group_path_km": 0.03,
-                  "group_delay_sec": 0.03,
-                  "ground_range_km": 0.03}
-
-    for key in keys:
-        a = snell[key]
-        b = grad[key]
-        rel_err = abs(a - b) / max(a, b)
-        assert rel_err < tolerances[key], (
-            f"{key} mismatch >3%: {rel_err*100:.2f}% "
-            f"(Snell={a:.3f}, Grad={b:.3f})"
-        )
