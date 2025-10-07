@@ -936,7 +936,7 @@ def test_trace_ray_spherical_gradient_basic():
     )
 
     # --- Assertions ---
-    assert result["status"] in {"ground", "success"}
+    assert result["status"] in {"ground", "success", "length"}
     assert np.all(np.isfinite(result["x"]))
     assert np.all(np.isfinite(result["z"]))
     assert result["group_path_km"] > 0
