@@ -20,7 +20,6 @@ from PyRayHF.library import find_Y
 from PyRayHF.library import freq2den
 from PyRayHF.library import minimize_parameters
 from PyRayHF.library import model_VH
-from PyRayHF.library import mup_func_rphi
 from PyRayHF.library import n_and_grad
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
@@ -815,7 +814,7 @@ def test_cartesian_snells_vs_gradient_consistency():
     for key in ["group_path_km", "group_delay_sec", "ground_range_km"]:
         v1, v2 = result_snell[key], result_grad[key]
         rel_err = abs(v1 - v2) / max(abs(v1), abs(v2))
-        assert rel_err < 0.04, f"{key} mismatch >4% ({rel_err*100:.2f}%)"
+        assert rel_err < 0.04, f"{key} mismatch >4% ({rel_err * 100:.2f}%)"
 
     # --- Geometry sanity ---
     assert np.nanmax(result_snell["z"]) > 100.0
@@ -862,7 +861,7 @@ def test_spherical_snells_flat_earth_limit():
     for key in ["group_path_km", "group_delay_sec", "ground_range_km"]:
         v_cart, v_sph = result_cart[key], result_sph[key]
         rel_err = abs(v_cart - v_sph) / max(abs(v_cart), abs(v_sph))
-        assert rel_err < 0.03, f"{key} mismatch >3% ({rel_err*100:.2f}%)"
+        assert rel_err < 0.03, f"{key} mismatch >3% ({rel_err * 100:.2f}%)"
 
     # --- Geometry sanity ---
     assert np.nanmax(result_cart["z"]) > 100.0
@@ -948,4 +947,4 @@ def test_trace_ray_spherical_gradient_basic():
     rel_err = abs(result["group_delay_sec"]
                   * c_km_s
                   / result["group_path_km"] - 1)
-    assert rel_err < 0.05, f"Delay-path consistency off by {rel_err*100:.2f}%"
+    assert rel_err < 0.05, f"Delay-path sonsist off by {rel_err * 100:.2f}%"

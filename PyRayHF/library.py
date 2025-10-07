@@ -1244,7 +1244,8 @@ def trace_ray_cartesian_gradient(
 
     # --- Right-hand side
     def rhs_cartesian(s, y):
-        return ray_rhs_cartesian(s, y, n_and_grad, renormalize_every, eval_counter)
+        return ray_rhs_cartesian(s, y, n_and_grad,
+                                 renormalize_every, eval_counter)
 
     # --- Integrate
     sol = solve_ivp(rhs_cartesian,
@@ -1632,10 +1633,9 @@ def trace_ray_spherical_gradient(
 
     # --- Required inputs
     if mup_func is None:
-        raise ValueError(
-            "mup_func must be provided — build it with " +
-            "build_mup_function(..., geometry='spherical')."
-        )
+        string1 = "mup_func must be provided — build it with "
+        string2 = "build_mup_function(..., geometry='spherical')."
+        raise ValueError(string1 + string2)
 
     # --- Constants / defaults
     if R_E is None:
@@ -1667,7 +1667,7 @@ def trace_ray_spherical_gradient(
     def rhs_wrapper(s, y):
         """Make thin wrapper for rhs_spherical with fixed parameters."""
         return rhs_spherical(s, y, n_and_grad_rphi,
-                                renormalize_every, eval_counter)
+                             renormalize_every, eval_counter)
 
     # --- Integrate
     sol = solve_ivp(rhs_wrapper,
@@ -1797,12 +1797,11 @@ def build_refractive_index_interpolator_cartesian(
     fill_value_n: float = np.nan,
     fill_value_grad: float = 0.0,
     bounds_error: bool = False,
-    edge_order: int = 2,
-    ) -> Callable[[np.ndarray,
-                   np.ndarray],
-                  Tuple[np.ndarray,
-                        np.ndarray,
-                        np.ndarray]]:
+    edge_order: int = 2) -> Callable[[np.ndarray,
+                                      np.ndarray],
+                                     Tuple[np.ndarray,
+                                           np.ndarray,
+                                           np.ndarray]]:
     """Construct interpolators for refractive index n(z, x) and its gradients.
 
     Parameters
@@ -1872,9 +1871,11 @@ def build_refractive_index_interpolator_spherical(
     fill_value_n: float = np.nan,
     fill_value_grad: float = 0.0,
     bounds_error: bool = False,
-    edge_order: int = 2,
-) -> Callable[[np.ndarray, np.ndarray],
-              Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    edge_order: int = 2) -> Callable[[np.ndarray,
+                                      np.ndarray],
+                                     Tuple[np.ndarray,
+                                           np.ndarray,
+                                           np.ndarray]]:
     """Construct interpolators for refractive index μ(r, φ) and its gradients.
 
     Parameters
@@ -1952,8 +1953,9 @@ def build_mup_function(
     geometry: str = "cartesian",
     R_E: float = None,
     bounds_error: bool = False,
-    fill_value: float = np.nan,
-) -> Callable[[np.ndarray, np.ndarray], np.ndarray]:
+    fill_value: float = np.nan) -> Callable[[np.ndarray,
+                                             np.ndarray],
+                                            np.ndarray]:
     """Construct callable for evaluating μ'(x, z) for group delay integration.
 
     Parameters
@@ -2097,8 +2099,8 @@ def rhs_spherical(
 
     Notes
     -----
-    • Implements 2D spherical geometry (flat-Earth limit not assumed).  
-    • The equations conserve |v| ≈ 1 under small step sizes.  
+    • Implements 2D spherical geometry (flat-Earth limit not assumed).
+    • The equations conserve |v| ≈ 1 under small step sizes.
     • NaN or non-positive μ values return zero derivatives (halts ray).
 
     References
