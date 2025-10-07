@@ -916,7 +916,7 @@ def ray_rhs_cartesian(s: float,
 
 def event_ground(s: float, y: np.ndarray, z_ground_km: float) -> float:
     """Stop when ray hits or goes below the ground."""
-    return y[1] - z_ground_km - 1e3
+    return y[1] - z_ground_km - 1e-3
 
 
 def event_z_top(s: float, y: np.ndarray, z_max_km: float) -> float:
@@ -1289,6 +1289,12 @@ def trace_ray_cartesian_gradient(
     mid_idx = len(sol.t) // 2
     x_midpoint = float(x_path[mid_idx]) if x_path.size else np.nan
     z_midpoint = float(z_path[mid_idx]) if z_path.size else np.nan
+
+    if len(sol.t_events[0]) > 0 or np.isclose(z_path[-1], 0.0, atol=1e-2):
+        ground_range_km = float(x_path[-1])
+    else:
+        ground_range_km = np.nan
+
     ground_range_km = float(x_path[-1]) if status == "ground" else np.nan
 
     # --- Return dictionary
@@ -1722,7 +1728,10 @@ def trace_ray_spherical_gradient(
     else:
         x_midpoint = z_midpoint = np.nan
 
-    ground_range_km = float(x_path[-1]) if len(sol.t_events[0]) else np.nan
+    if len(sol.t_events[0]) > 0 or np.isclose(z_path[-1], 0.0, atol=1e-2):
+        ground_range_km = float(x_path[-1])
+    else:
+        ground_range_km = np.nan
 
     # --- Return
     return {"t": sol.t,
