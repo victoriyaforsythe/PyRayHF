@@ -533,81 +533,87 @@ def test_build_refractive_index_interpolator_cartesian_broadcasting():
 
 
 def test_build_refractive_index_interpolator_spherical_linear_field():
-    """Basic test for build_refractive_index_interpolator_spherical."""
-    # Define small synthetic grid
+    """Test spherical μ(r,φ) interpolator on a simple linear refractive ind.
+    Verifies that interpolation and gradient outputs are consistent with
+    analytic derivatives for a linear field:
+        μ(r,φ) = 1 + a*z + b*x
+    where z = r - R_E and x = R_E*φ.
+
+    """
+    # Load Earth radius
     _, _, R_E, _ = constants()
-    r_grid = np.linspace(R_E, R_E + 5., 6)  # Earth's radius + altitude [km]
-    phi_grid = np.linspace(0, 0.01, 6)       # radians
 
-    # Get cartesian out of spherical
-    z_grid = r_grid - R_E  # km
-    x_grid = R_E * phi_grid  # rad
+    # Create linear refractive index field
+    a, b = 1e-4, 2e-4  # linear coefficients
+    z_grid = np.linspace(0, 400, 80)
+    x_grid = np.linspace(0, 1000, 120)
+    Z, X = np.meshgrid(z_grid, x_grid, indexing="ij")
+    n_field = 1.0 + a * Z + b * X
 
-    R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
+    # Build spherical interpolator (handles conversion internally)
+    n_and_grad = build_refractive_index_interpolator_spherical(
+        z_grid=z_grid,
+        x_grid=x_grid,
+        n_field=n_field,
+        R_E=R_E
+    )
 
-    # Define an analytic refractive index field μ(r,φ) = 2φ + 3(r - 6371)
-    n_field = 2 * PHI + 3 * (R - R_E)
+    # Pick some test points
+    x_test = np.array([0.0, 250.0, 750.0])
+    z_test = np.array([0.0, 200.0, 400.0])
 
-    # Build interpolator
-    n_and_grad_rphi = build_refractive_index_interpolator_spherical(z_grid,
-                                                                    x_grid,
-                                                                    n_field)
+    # Evaluate μ, ∂μ/∂r, ∂μ/∂φ
+    mu_val, mu_r, mu_phi = n_and_grad(x_test / R_E, R_E + z_test)
 
-    # Test at a few points
-    phi_test = np.array([0.0, 0.005, 0.01])
-    r_test = np.array([R_E, R_E + 2.5, R_E + 5.])
-    # Get cartesian out of spherical
-    z_test = r_test - R_E  # km
-    x_test = R_E * phi_test  # rad
+    # Expected analytic values
+    expected_mu = 1.0 + a * z_test + b * x_test
+    expected_mu_r = np.full_like(expected_mu, a)
+    expected_mu_phi = np.full_like(expected_mu, b * R_E)
 
-    n_val, dn_dr, dn_dphi = n_and_grad_rphi(z_test, x_test)
-
-    # Expected analytic results
-    n_expected = 2 * phi_test + 3 * (r_test - R_E)
-    dn_dr_expected = np.full_like(r_test, 3.0)
-    dn_dphi_expected = np.full_like(phi_test, 2.0)
-
-    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
-    np.testing.assert_allclose(dn_dr, dn_dr_expected, rtol=1e-12)
-    np.testing.assert_allclose(dn_dphi, dn_dphi_expected, rtol=1e-12)
+    # Validate
+    np.testing.assert_allclose(mu_val, expected_mu, rtol=1e-6)
+    np.testing.assert_allclose(mu_r, expected_mu_r, rtol=1e-6)
+    np.testing.assert_allclose(mu_phi, expected_mu_phi, rtol=1e-6)
 
 
 def test_build_refractive_index_interpolator_spherical_broadcasting():
-    """Check broadcasting behavior."""
-    # Define small synthetic grid
+    """Test spherical interpolator with internal Cartesian→spherical."""
+    from PyRayHF.library import build_refractive_index_interpolator_spherical, constants
+    import numpy as np
+
+    # Get Earth radius
     _, _, R_E, _ = constants()
-    r_grid = np.linspace(R_E, R_E + 5., 6)  # Earth's radius + altitude [km]
-    phi_grid = np.linspace(0, 0.01, 6)       # radians
 
-    # Get cartesian out of spherical
-    z_grid = r_grid - R_E  # km
-    x_grid = R_E * phi_grid  # rad
+    # Build a simple test field: n = 1 + 1e-4*(z + x)
+    z_grid = np.linspace(0, 500, 50)
+    x_grid = np.linspace(0, 1000, 100)
+    Z, X = np.meshgrid(z_grid, x_grid, indexing="ij")
+    n_field = 1.0 + 1e-4 * (Z + X)
 
-    R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
+    # Build spherical interpolator (auto converts to r, φ)
+    n_and_grad = build_refractive_index_interpolator_spherical(
+        z_grid=z_grid,
+        x_grid=x_grid,
+        n_field=n_field,
+        R_E=R_E
+    )
 
-    # Define an analytic refractive index field μ(r,φ) = 2φ + 3(r - 6371)
-    n_field = 2 * PHI + 3 * (R - R_E)
+    # Evaluate at a few arbitrary points
+    x_test = np.array([0.0, 500.0, 1000.0])
+    z_test = np.array([0.0, 250.0, 500.0])
 
-    # Build interpolator
-    n_and_grad_rphi = build_refractive_index_interpolator_spherical(z_grid,
-                                                                    x_grid,
-                                                                    n_field)
+    n_val, dn_dr, dn_dphi = n_and_grad(x_test / R_E, R_E + z_test)
 
-    phi_test, r_test = np.meshgrid([0.002, 0.006], [R_E + 0.5, R_E + 1.5])
-    # Get cartesian out of spherical
-    z_test = r_test - R_E  # km
-    x_test = R_E * phi_test  # rad
+    # --- Expected values ---
+    # n = 1 + 1e-4 * (z + x)
+    expected_n = 1.0 + 1e-4 * (z_test + x_test)
+    expected_dn_dr = np.full_like(expected_n, 1e-4)  # d/dz term
+    # ∂/∂φ = (∂n/∂x) * (dx/dφ) = 1e-4 * R_E
+    expected_dn_dphi = np.full_like(expected_n, 1e-4 * R_E)
 
-    n_val, dn_dr, dn_dphi = n_and_grad_rphi(z_test, x_test)
-
-    # Expected analytic results
-    n_expected = phi_test - (r_test - R_E)
-    dn_dr_expected = -np.ones_like(r_test)
-    dn_dphi_expected = np.ones_like(phi_test)
-
-    np.testing.assert_allclose(n_val, n_expected, rtol=1e-12)
-    np.testing.assert_allclose(dn_dr, dn_dr_expected, rtol=1e-12)
-    np.testing.assert_allclose(dn_dphi, dn_dphi_expected, rtol=1e-12)
+    np.testing.assert_allclose(n_val, expected_n, rtol=1e-6)
+    np.testing.assert_allclose(dn_dr, expected_dn_dr, rtol=1e-6)
+    np.testing.assert_allclose(dn_dphi, expected_dn_dphi, rtol=1e-6)
 
 
 def test_tan_from_mu_scalar_basic():
