@@ -1217,6 +1217,8 @@ def trace_ray_cartesian_gradient(
     • NaNs or invalid μ terminate integration.
 
     """
+    # Use constants defined above
+    _, _, R_E, _ = constants()
 
     # --- Check mandatory input
     if mup_func is None:
@@ -1231,18 +1233,11 @@ def trace_ray_cartesian_gradient(
 
     eval_counter = {'n': 0}
 
-    # --- Event functions (flattened, no lambdas)
-    def event_ground(s, y): return y[1] - z_ground_km
-    def event_z_top(s, y): return z_max_km - y[1]
-    def event_z_bottom(s, y): return y[1] - z_min_km
-    def event_x_left(s, y): return y[0] - x_min_km
-    def event_x_right(s, y): return x_max_km - y[0]
-
-    events = [event_ground,
-              event_z_top,
-              event_z_bottom,
-              event_x_left,
-              event_x_right]
+    # --- Use global shared event helpers directly (no lambdas)
+    events = [partial(event_ground, z_ground_km=z_ground_km),
+              partial(event_z_top, z_max_km=z_max_km),
+              partial(event_x_left, x_min_km=x_min_km),
+              partial(event_x_right, x_max_km=x_max_km)]
 
     for ev in events:
         ev.terminal, ev.direction = True, -1.0
