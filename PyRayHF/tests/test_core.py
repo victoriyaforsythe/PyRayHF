@@ -533,13 +533,7 @@ def test_build_refractive_index_interpolator_cartesian_broadcasting():
 
 
 def test_build_refractive_index_interpolator_spherical_linear_field():
-    """Test spherical μ(r,φ) interpolator on a simple linear refractive ind.
-    Verifies that interpolation and gradient outputs are consistent with
-    analytic derivatives for a linear field:
-        μ(r,φ) = 1 + a*z + b*x
-    where z = r - R_E and x = R_E*φ.
-
-    """
+    """Test spherical μ(r,φ) interpolator on a simple linear refractive ind."""
     # Load Earth radius
     _, _, R_E, _ = constants()
 
