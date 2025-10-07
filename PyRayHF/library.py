@@ -2043,7 +2043,7 @@ def rhs_spherical(
     renormalize_every: int,
     eval_counter: Dict[str, int],
 ) -> np.ndarray:
-    """Calculate the right-hand side of the spherical ray equations.
+    r"""Calculate the right-hand side of the spherical ray equations.
 
     Computes derivatives for the ODE system governing 2D spherical ray
     propagation (r, φ) in a refractive index field μ(r, φ). The equations
