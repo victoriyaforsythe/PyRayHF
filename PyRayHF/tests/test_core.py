@@ -923,11 +923,9 @@ def test_trace_ray_spherical_gradient_basic():
     mup = np.where((mup < 1e-3) | np.isnan(mup), np.nan, mup)
 
     # Build interpolator from spherical μ grid
-    r_grid = R_E + z_grid  # km
-    phi_grid = x_grid / R_E  # rad
     n_and_grad_spherical = build_refractive_index_interpolator_spherical(
-        r_grid,
-        phi_grid,
+        z_grid,
+        x_grid,
         mu)
 
     mup_func_spherical = build_mup_function(mup_field=mup,
