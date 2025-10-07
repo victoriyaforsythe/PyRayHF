@@ -556,8 +556,11 @@ def test_build_refractive_index_interpolator_spherical_linear_field():
     # Test at a few points
     phi_test = np.array([0.0, 0.005, 0.01])
     r_test = np.array([R_E, R_E + 2.5, R_E + 5.])
+    # Get cartesian out of spherical
+    z_test = r_test - R_E  # km
+    x_test = R_E * phi_test  # rad
 
-    n_val, dn_dr, dn_dphi = n_and_grad_rphi(phi_test, r_test)
+    n_val, dn_dr, dn_dphi = n_and_grad_rphi(z_test, x_test)
 
     # Expected analytic results
     n_expected = 2 * phi_test + 3 * (r_test - R_E)
