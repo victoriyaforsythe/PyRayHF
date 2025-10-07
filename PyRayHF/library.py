@@ -1564,191 +1564,6 @@ def trace_ray_spherical_snells(
     }
 
 
-def trace_ray_spherical_gradient(
-    n_and_grad_rphi: Callable[[np.ndarray, np.ndarray],
-                              Tuple[np.ndarray, np.ndarray, np.ndarray]],
-    mup_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    x0_km: float,
-    z0_km: float,
-    elevation_deg: float,
-    s_max_km: float = 6000.0,
-    *,
-    R_E: Optional[float] = None,
-    z_ground_km: float = 0.0,
-    r_max_km: Optional[float] = None,
-    phi_min: float = -np.pi,
-    phi_max: float = +np.pi,
-    rtol: float = 1e-7,
-    atol: float = 1e-9,
-    max_step_km: Optional[float] = 2.0,
-    renormalize_every: int = 50,
-) -> Dict[str, Any]:
-    """Raytrace in 2-D spherical using μ for geometry and μ' for delay.
-
-    Geometry
-    --------
-    Integrates in spherical coordinates (r, φ) with tangent v = (v_r, v_φ):
-        dr/ds   = v_r
-        dφ/ds   = v_φ / r
-        dv_r/ds = (1/μ)[∂μ/∂r - (∇μ·v)v_r] + (v_φ²)/r
-        dv_φ/ds = (1/μ)[(∂μ/∂φ)/r - (∇μ·v)v_φ] - (v_r v_φ)/r
-    where ∇μ·v = (∂μ/∂r)v_r + (∂μ/∂φ)(v_φ / r).
-
-    Delay
-    -----
-    Group delay integrates μ′ along the path:
-        τ = ∫ ( μ′(x, z) / c ) ds
-    with x = R_E φ (surface arc) and z = r − R_E.
-
-    Parameters
-    ----------
-    n_and_grad_rphi : callable
-        (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ).
-    mup_func : callable  (REQUIRED)
-        (x, z) → μ′(x, z). Build with `build_mup_function(...,
-        geometry="spherical")`.
-    x0_km, z0_km : float
-        Launch point [km]; x0 is surface arc distance, z0 altitude.
-    elevation_deg : float
-        Launch elevation above local horizontal [deg].
-    s_max_km : float
-        Max arclength to integrate [km].
-    R_E : float, optional
-        Earth radius [km]. Defaults to `constants()[2]` if None.
-    z_ground_km : float
-        Ground altitude [km]; stop when r ≤ R_E + z_ground_km.
-    r_max_km : float, optional
-        Max r; default R_E + 1200 km if None.
-    phi_min, phi_max : float
-        Azimuth bounds [rad].
-    rtol, atol : float
-        ODE tolerances.
-    max_step_km : float or None
-        Max solver step [km].
-    renormalize_every : int
-        Re-normalize v every N RHS calls.
-
-    Returns
-    -------
-    dict
-        {'t', 'r', 'phi', 'v_r', 'v_phi', 'x', 'z', 'status',
-        'group_path_km', 'group_delay_sec', 'x_midpoint', 'z_midpoint',
-        'ground_range_km'}
-
-    """
-
-    # --- Required inputs
-    if mup_func is None:
-        string1 = "mup_func must be provided — build it with "
-        string2 = "build_mup_function(..., geometry='spherical')."
-        raise ValueError(string1 + string2)
-
-    # --- Constants / defaults
-    if R_E is None:
-        _, _, R_E, c_km_s = constants()
-    else:
-        _, _, _, c_km_s = constants()
-    if r_max_km is None:
-        r_max_km = R_E + 1200.0
-
-    # --- Initial conditions
-    r0 = R_E + z0_km
-    phi0 = x0_km / R_E
-    elev = np.deg2rad(elevation_deg)
-    v_r0, v_phi0 = np.sin(elev), np.cos(elev)
-    y0 = np.array([r0, phi0, v_r0, v_phi0], dtype=float)
-
-    eval_counter = {'n': 0}
-
-    # --- Use global shared event helpers directly (no lambdas)
-    events = [
-        partial(event_ground, z_ground_km=R_E + z_ground_km),
-        partial(event_z_top, z_max_km=r_max_km),
-        partial(event_x_left, x_min_km=phi_min),
-        partial(event_x_right, x_max_km=phi_max)]
-
-    for ev in events:
-        ev.terminal, ev.direction = True, -1.0
-
-    def rhs_wrapper(s, y):
-        """Make thin wrapper for rhs_spherical with fixed parameters."""
-        return rhs_spherical(s, y, n_and_grad_rphi,
-                             renormalize_every, eval_counter)
-
-    # --- Integrate
-    sol = solve_ivp(rhs_wrapper,
-                    (0.0, s_max_km),
-                    y0,
-                    method="RK45",
-                    rtol=rtol,
-                    atol=atol,
-                    max_step=max_step_km,
-                    events=events,
-                    dense_output=True)
-
-    # --- Status
-    if sol.status == 1:
-        status = "ground" if len(sol.t_events[0]) > 0 else "domain"
-    elif sol.status == 0:
-        status = "length"
-    elif sol.status == -1:
-        status = "failure"
-    else:
-        status = "success"
-
-    # --- Extract paths
-    r_path, phi_path = sol.y[0], sol.y[1]
-    v_r_path, v_phi_path = sol.y[2], sol.y[3]
-    x_path = R_E * phi_path
-    z_path = r_path - R_E
-
-    # --- Geometry metrics
-    dx = np.diff(x_path)
-    dz = np.diff(z_path)
-    ds = np.hypot(dx, dz)
-    group_path_km = float(np.nansum(ds))
-
-    # --- Group delay (μ')
-    if ds.size > 0:
-        x_mid = 0.5 * (x_path[:-1] + x_path[1:])
-        z_mid = 0.5 * (z_path[:-1] + z_path[1:])
-        mup_mid = np.asarray(mup_func(x_mid, z_mid), dtype=float)
-        valid = np.isfinite(mup_mid)
-        group_delay_sec = float(np.nansum((mup_mid[valid] / c_km_s)
-                                          * ds[valid]))
-    else:
-        group_delay_sec = 0.0
-
-    # --- Midpoint & landing
-    if group_path_km > 0.0:
-        s_cum = np.cumsum(ds)
-        mid_idx = int(np.searchsorted(s_cum, 0.5 * group_path_km))
-        x_midpoint = float(x_path[mid_idx])
-        z_midpoint = float(z_path[mid_idx])
-    else:
-        x_midpoint = z_midpoint = np.nan
-
-    if len(sol.t_events[0]) > 0 or np.isclose(z_path[-1], 0.0, atol=1e-2):
-        ground_range_km = float(x_path[-1])
-    else:
-        ground_range_km = np.nan
-
-    # --- Return
-    return {"t": sol.t,
-            "r": r_path,
-            "phi": phi_path,
-            "v_r": v_r_path,
-            "v_phi": v_phi_path,
-            "x": x_path,
-            "z": z_path,
-            "status": status,
-            "group_path_km": group_path_km,
-            "group_delay_sec": group_delay_sec,
-            "x_midpoint": x_midpoint,
-            "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km}
-
-
 def n_and_grad_rphi(
     phi: np.ndarray,
     r: np.ndarray,
@@ -2150,3 +1965,189 @@ def rhs_spherical(
             v_phi /= vmag
 
     return np.array([drds, dphids, dv_r, dv_phi], dtype=float)
+
+
+def trace_ray_spherical_gradient(
+    n_and_grad_rphi: Callable[[np.ndarray, np.ndarray],
+                              Tuple[np.ndarray, np.ndarray, np.ndarray]],
+    mup_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    x0_km: float,
+    z0_km: float,
+    elevation_deg: float,
+    s_max_km: float = 6000.0,
+    *,
+    R_E: Optional[float] = None,
+    z_ground_km: float = 0.0,
+    r_max_km: Optional[float] = None,
+    phi_min: float = -np.pi,
+    phi_max: float = +np.pi,
+    rtol: float = 1e-7,
+    atol: float = 1e-9,
+    max_step_km: Optional[float] = 2.0,
+    renormalize_every: int = 50,
+) -> Dict[str, Any]:
+    """Raytrace in 2-D spherical using μ for geometry and μ' for delay.
+
+    Geometry
+    --------
+    Integrates in spherical coordinates (r, φ) with tangent v = (v_r, v_φ):
+        dr/ds   = v_r
+        dφ/ds   = v_φ / r
+        dv_r/ds = (1/μ)[∂μ/∂r - (∇μ·v)v_r] + (v_φ²)/r
+        dv_φ/ds = (1/μ)[(∂μ/∂φ)/r - (∇μ·v)v_φ] - (v_r v_φ)/r
+    where ∇μ·v = (∂μ/∂r)v_r + (∂μ/∂φ)(v_φ / r).
+
+    Delay
+    -----
+    Group delay integrates μ′ along the path:
+        τ = ∫ ( μ′(x, z) / c ) ds
+    with x = R_E φ (surface arc) and z = r − R_E.
+
+    Parameters
+    ----------
+    n_and_grad_rphi : callable
+        (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ).
+    mup_func : callable  (REQUIRED)
+        (x, z) → μ′(x, z). Build with `build_mup_function(...,
+        geometry="spherical")`.
+    x0_km, z0_km : float
+        Launch point [km]; x0 is surface arc distance, z0 altitude.
+    elevation_deg : float
+        Launch elevation above local horizontal [deg].
+    s_max_km : float
+        Max arclength to integrate [km].
+    R_E : float, optional
+        Earth radius [km]. Defaults to `constants()[2]` if None.
+    z_ground_km : float
+        Ground altitude [km]; stop when r ≤ R_E + z_ground_km.
+    r_max_km : float, optional
+        Max r; default R_E + 1200 km if None.
+    phi_min, phi_max : float
+        Azimuth bounds [rad].
+    rtol, atol : float
+        ODE tolerances.
+    max_step_km : float or None
+        Max solver step [km].
+    renormalize_every : int
+        Re-normalize v every N RHS calls.
+
+    Returns
+    -------
+    dict
+        {'t', 'r', 'phi', 'v_r', 'v_phi', 'x', 'z', 'status',
+        'group_path_km', 'group_delay_sec', 'x_midpoint', 'z_midpoint',
+        'ground_range_km'}
+
+    """
+
+    # --- Required inputs
+    if mup_func is None:
+        string1 = "mup_func must be provided — build it with "
+        string2 = "build_mup_function(..., geometry='spherical')."
+        raise ValueError(string1 + string2)
+
+    # --- Constants / defaults
+    if R_E is None:
+        _, _, R_E, c_km_s = constants()
+    else:
+        _, _, _, c_km_s = constants()
+    if r_max_km is None:
+        r_max_km = R_E + 1200.0
+
+    # --- Initial conditions
+    r0 = R_E + z0_km
+    phi0 = x0_km / R_E
+    elev = np.deg2rad(elevation_deg)
+    v_r0, v_phi0 = np.sin(elev), np.cos(elev)
+    y0 = np.array([r0, phi0, v_r0, v_phi0], dtype=float)
+
+    eval_counter = {'n': 0}
+
+    # --- Use global shared event helpers directly (no lambdas)
+    events = [
+        partial(event_ground, z_ground_km=R_E + z_ground_km),
+        partial(event_z_top, z_max_km=r_max_km),
+        partial(event_x_left, x_min_km=phi_min),
+        partial(event_x_right, x_max_km=phi_max)]
+
+    for ev in events:
+        ev.terminal, ev.direction = True, -1.0
+
+    def rhs_wrapper(s, y):
+        """Make thin wrapper for rhs_spherical with fixed parameters."""
+        return rhs_spherical(s, y, n_and_grad_rphi,
+                             renormalize_every, eval_counter)
+
+    # --- Integrate
+    sol = solve_ivp(rhs_wrapper,
+                    (0.0, s_max_km),
+                    y0,
+                    method="RK45",
+                    rtol=rtol,
+                    atol=atol,
+                    max_step=max_step_km,
+                    events=events,
+                    dense_output=True)
+
+    # --- Status
+    if sol.status == 1:
+        status = "ground" if len(sol.t_events[0]) > 0 else "domain"
+    elif sol.status == 0:
+        status = "length"
+    elif sol.status == -1:
+        status = "failure"
+    else:
+        status = "success"
+
+    # --- Extract paths
+    r_path, phi_path = sol.y[0], sol.y[1]
+    v_r_path, v_phi_path = sol.y[2], sol.y[3]
+    x_path = R_E * phi_path
+    z_path = r_path - R_E
+
+    # --- Path length (spherical metric): ds^2 = dr^2 + (r · dφ)^2
+    dr = np.diff(r_path)
+    dphi = np.diff(phi_path)
+    r_mid = 0.5 * (r_path[:-1] + r_path[1:])
+    ds = np.sqrt(dr**2 + (r_mid * dphi)**2)
+    group_path_km = float(np.nansum(ds))
+
+    # --- Group delay (μ')
+    if ds.size > 0:
+        x_mid = 0.5 * (x_path[:-1] + x_path[1:])
+        z_mid = 0.5 * (z_path[:-1] + z_path[1:])
+        mup_mid = np.asarray(mup_func(x_mid, z_mid), dtype=float)
+        valid = np.isfinite(mup_mid)
+        group_delay_sec = float(np.nansum((mup_mid[valid] / c_km_s)
+                                          * ds[valid]))
+    else:
+        group_delay_sec = 0.0
+
+    # --- Midpoint & landing
+    if group_path_km > 0.0:
+        s_cum = np.cumsum(ds)
+        mid_idx = int(np.searchsorted(s_cum, 0.5 * group_path_km))
+        x_midpoint = float(x_path[mid_idx])
+        z_midpoint = float(z_path[mid_idx])
+    else:
+        x_midpoint = z_midpoint = np.nan
+
+    if len(sol.t_events[0]) > 0 or np.isclose(z_path[-1], 0.0, atol=1e-2):
+        ground_range_km = float(x_path[-1])
+    else:
+        ground_range_km = np.nan
+
+    # --- Return
+    return {"t": sol.t,
+            "r": r_path,
+            "phi": phi_path,
+            "v_r": v_r_path,
+            "v_phi": v_phi_path,
+            "x": x_path,
+            "z": z_path,
+            "status": status,
+            "group_path_km": group_path_km,
+            "group_delay_sec": group_delay_sec,
+            "x_midpoint": x_midpoint,
+            "z_midpoint": z_midpoint,
+            "ground_range_km": ground_range_km}

@@ -874,7 +874,7 @@ def test_trace_ray_spherical_gradient_basic():
     """Test spherical gradient-based ray tracing on a simple plasma profile.
 
     This validates numerical integration of the full spherical gradient
-    equations using μ (phase refractive index) for geometry and μ′ (group
+    equations using μ (phase refractive index) for geometry and μ' (group
     index) for delay. The ray should rise, bend smoothly, and return to
     ground—producing reasonable path and delay metrics.
 
