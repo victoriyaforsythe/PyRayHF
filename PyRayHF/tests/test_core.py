@@ -578,9 +578,6 @@ def test_build_refractive_index_interpolator_spherical_linear_field():
 
 def test_build_refractive_index_interpolator_spherical_broadcasting():
     """Test spherical interpolator with internal Cartesian→spherical."""
-    from PyRayHF.library import build_refractive_index_interpolator_spherical, constants
-    import numpy as np
-
     # Get Earth radius
     _, _, R_E, _ = constants()
 
