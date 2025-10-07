@@ -571,16 +571,23 @@ def test_build_refractive_index_interpolator_spherical_linear_field():
 
 def test_build_refractive_index_interpolator_spherical_broadcasting():
     """Check broadcasting behavior."""
+    # Define small synthetic grid
     _, _, R_E, _ = constants()
-    r_grid = np.linspace(R_E, R_E + 2., 3)
-    phi_grid = np.linspace(0, 0.01, 3)
+    r_grid = np.linspace(R_E, R_E + 5., 6)  # Earth's radius + altitude [km]
+    phi_grid = np.linspace(0, 0.01, 6)       # radians
+
+    # Get cartesian out of spherical
+    z_grid = r_grid - R_E  # km
+    x_grid = R_E * phi_grid  # rad
+
     R, PHI = np.meshgrid(r_grid, phi_grid, indexing="ij")
 
-    # Define linear field μ(r,φ) = φ - (r - 6371)
-    n_field = PHI - (R - R_E)
+    # Define an analytic refractive index field μ(r,φ) = 2φ + 3(r - 6371)
+    n_field = 2 * PHI + 3 * (R - R_E)
 
-    n_and_grad_rphi = build_refractive_index_interpolator_spherical(r_grid,
-                                                                    phi_grid,
+    # Build interpolator
+    n_and_grad_rphi = build_refractive_index_interpolator_spherical(z_grid,
+                                                                    x_grid,
                                                                     n_field)
 
     phi_test, r_test = np.meshgrid([0.002, 0.006], [R_E + 0.5, R_E + 1.5])
