@@ -1695,6 +1695,7 @@ def build_refractive_index_interpolator_spherical(
     fill_value_n: float = np.nan,
     fill_value_grad: float = 0.0,
     bounds_error: bool = False,
+    R_E: float = None,
     edge_order: int = 2) -> Callable[[np.ndarray,
                                       np.ndarray],
                                      Tuple[np.ndarray,
@@ -1716,6 +1717,8 @@ def build_refractive_index_interpolator_spherical(
         Fill value for gradients outside grid (default 0.0).
     bounds_error : bool
         If True, raise error outside grid. If False, use fill values.
+    R_E : flt
+        Radius of the Earth (km).
     edge_order : int
         Accuracy order for finite differences (default 2).
 
