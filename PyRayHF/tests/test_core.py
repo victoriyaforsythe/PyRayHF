@@ -591,8 +591,11 @@ def test_build_refractive_index_interpolator_spherical_broadcasting():
                                                                     n_field)
 
     phi_test, r_test = np.meshgrid([0.002, 0.006], [R_E + 0.5, R_E + 1.5])
+    # Get cartesian out of spherical
+    z_test = r_test - R_E  # km
+    x_test = R_E * phi_test  # rad
 
-    n_val, dn_dr, dn_dphi = n_and_grad_rphi(phi_test, r_test)
+    n_val, dn_dr, dn_dphi = n_and_grad_rphi(z_test, x_test)
 
     # Expected analytic results
     n_expected = phi_test - (r_test - R_E)
