@@ -911,11 +911,10 @@ def test_trace_ray_spherical_gradient_basic():
     Y = find_Y(f0_Hz, Babs_grid)
     mu, mup = find_mu_mup(X, Y, bpsi_grid, mode)
     mup = np.where((mup < 1e-3) | np.isnan(mup), np.nan, mup)
-    mup0 = mup[0]
 
     # Build interpolator from spherical μ grid
-    r_grid = R_E + z_grid   # km
-    phi_grid = x_grid / R_E # rad
+    r_grid = R_E + z_grid  # km
+    phi_grid = x_grid / R_E  # rad
     n_and_grad_spherical = build_refractive_index_interpolator_spherical(
         r_grid,
         phi_grid,
@@ -925,16 +924,6 @@ def test_trace_ray_spherical_gradient_basic():
                                             x_grid=x_grid,
                                             z_grid=z_grid,
                                             geometry="spherical")
-
-    # Run spherical gradient tracer
-    result4 = trace_ray_spherical_gradient(
-        n_and_grad_rphi=n_and_grad_spherical,
-        x0_km=0.0,
-        z0_km=0.0,
-        elevation_deg=50.,
-        s_max_km=4000.,
-        R_E=None,
-        mup_func=mup_func_rphi)
 
     # --- Trace ray ---
     result = trace_ray_spherical_gradient(
