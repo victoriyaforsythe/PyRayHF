@@ -164,7 +164,7 @@ This function models how a high-frequency radio wave propagates through the iono
 In a uniform dielectric, Snell’s law states that `nsinθ=constant`, where `n` is the refractive index and `θ` is the propagation angle relative to the vertical. In a plasma, the refractive index isn’t constant but depends on: electron density (affects plasma frequency), magnetic field (splits O and X modes), wave frequency, and angle between wave vector and magnetic field. This gives two possible wave modes: the ordinary (O) and extraordinary (X) mode, each with a different effective refractive index. The function uses auxiliary functions `find_X`, `find_Y`, and `find_mu_mup` to compute these refractive indices as functions of altitude. Thus, the plasma-modified Snell’s law is applied:
 `μ′sinθ=constant`, where `μ′` is the **transverse refractive index** for the chosen wave mode.
 
-![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Cartesian_Snells.png)
+![Cartesian_Snells](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Cartesian_Snells.png)
 
 The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
 
@@ -179,7 +179,7 @@ where `r` is the radial distance from Earth’s center, `θ` is the local zenith
 
 The function numerically integrates the ray’s trajectory through successive altitude layers, updating the refractive index via `find_X`, `find_Y`, and `find_mu_mup`. It determines the turning point (where the refractive index causes total reflection) and mirrors the trajectory in `(φ, z)` to model the down-leg, producing a complete path from launch to return.
 
-![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Spherical_Snells.png)
+![Spherical_Snells](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Spherical_Snells.png)
 
 The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
 
@@ -193,7 +193,7 @@ Instead of enforcing Snell’s law between distinct layers `(μ′ sinθ = const
 which relates changes in propagation angle to the vertical gradient of the refractive index. This captures subtle curvature and bending that arise in a smoothly varying medium—especially important when electron density changes gradually with altitude.
 The function calculates the refractive index profile from plasma parameters using `find_X`, `find_Y`, and `find_mu_mup`, then integrates the trajectory step-by-step through the medium. It determines the turning point (where total reflection would occur) and traces the ray down the Earth without mirrowing the path. This produces a high-resolution model of ionospheric refraction without relying on piecewise Snell’s-law approximations.
 
-![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Cartesian_Gradient.png)
+![Cartesian_Gradient](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Cartesian_Gradient.png)
 
 The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
 
@@ -207,6 +207,6 @@ In spherical coordinates, Snell’s law takes the form
 for discrete layers. When the refractive index varies continuously, this constant relationship is replaced by its differential form, where the angular change of the ray depends on the local refractive index gradient and geometry. The result is a gradual bending of the ray path governed by both the plasma structure and Earth’s curvature.
 The function computes the refractive index profile at each altitude using `find_X`, `find_Y`, and `find_mu_mup`, then integrates the coupled differential equations for radial distance `r` and angle `θ`. It determines the turning point (where total reflection occurs) and traces the ray back toward Earth without mirroring the path, producing a complete up- and down-leg trajectory in the `(φ, z)` plane.
 
-![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Spherical_Gradient.png)
+![Spherical_Gradient](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Spherical_Gradient.png)
 
 The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
