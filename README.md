@@ -156,13 +156,34 @@ This example demonstrates how to compute ionospheric virtual heights using the P
 The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
 
 
-# Example: 2-D Cartesian Stratified Raytracer
+# Example: 2-D Cartesian Snell's Law Raytracer
 
 This function models how a high-frequency radio wave propagates through the ionosphere, using Snell’s law adapted for a plasma medium. It calculates the trajectory of the ray as it leaves the ground, bends through the ionized plasma, reaches a turning point, and (if conditions allow) returns back toward Earth.
 
 Background: Snell’s Law in a Plasma. In a uniform dielectric, Snell’s law states that `nsinθ=constant`, where `n` is the refractive index and `θ` is the propagation angle relative to the vertical. In a plasma, the refractive index isn’t constant but depends on: electron density (affects plasma frequency), magnetic field (splits O and X modes), wave frequency, and angle between wave vector and magnetic field. This gives two possible wave modes: the ordinary (O) and extraordinary (X) mode, each with a different effective refractive index. The function uses auxiliary functions `find_X`, `find_Y`, and `find_mu_mup` to compute these refractive indices as functions of altitude. Thus, the plasma-modified Snell’s law is applied:
 `μ′sinθ=constant`, where `μ′` is the **transverse refractive index** for the chosen wave mode.
 
-![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Cartesian_Stratified.png)
+![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Cartesian_Snells.png)
+
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+
+# Example: 2-D Spherical Snell's Law Raytracer
+
+
+![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Spherical_Snells.png)
+
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+
+# Example: 2-D Cartesian Gradient Raytracer
+
+
+![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Cartesian_Gradient.png)
+
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+
+# Example: 2-D Spherical Gradient Raytracer
+
+
+![2D_Cartesian_Stratified](https://raw.githubusercontent.com/victoriyaforsythe/PyRayHF/refs/heads/main/docs/figures/Spherical_Gradient.png)
 
 The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
