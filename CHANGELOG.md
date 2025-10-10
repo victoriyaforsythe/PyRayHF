@@ -2,7 +2,7 @@
 All notable changes to this project are documented in this file. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
-## 0.1.0 (10-08-2025)
+## 0.1.0 (XX-XX-2025)
 * 2-D raytracing functions are added
 * Examples deleted (It is too much work to keep consistancy btw tutorials and examples)
 * Tutorials added
