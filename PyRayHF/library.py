@@ -154,7 +154,7 @@ def find_Y(f, b):
 def find_mu_mup(X, Y, bpsi, mode,
                 *,
                 y_tol: float = 1e-12,) -> tuple[np.ndarray, np.ndarray]:
-    """Calculate the phase and group refractive indices (μ and μ′).
+    """Calculate the phase and group refractive indices (μ and μ').
 
     Parameters
     ----------
@@ -174,7 +174,7 @@ def find_mu_mup(X, Y, bpsi, mode,
     mu : array-like
         Phase refractive index μ.
     mup : array-like
-        Group refractive index μ′.
+        Group refractive index μ'.
 
     Notes
     -----
@@ -273,11 +273,11 @@ def find_vh(X, Y, bpsi, dh, alt_min, mode):
         Virtual height in km.
 
     """
-    # Find the phase refractive index μ and the group refractive index μ′ for
+    # Find the phase refractive index μ and the group refractive index μ' for
     # ordinary (O) and extraordinary (X) modes of signal propagation
     _, mup = find_mu_mup(X, Y, bpsi, mode)
 
-    # Find virtual height as vertical integral through μ′
+    # Find virtual height as vertical integral through μ'
     vh = np.nansum(mup * dh, axis=1) + alt_min
     return vh
 
@@ -1018,12 +1018,12 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     find_X, find_Y, and find_mu_mup to compute these
     refractive indices as functions of altitude. Thus,
     the plasma-modified Snell's law is applied: μ'sinθ=constant,
-    where μ′ is the transverse refractive index for the
+    where μ' is the transverse refractive index for the
     chosen wave mode.
 
     Specifics:
     Geometry (bending) uses phase index μ.
-    Group delay integrates group index μ′ (mup).
+    Group delay integrates group index μ' (mup).
     Down-leg is a perfect mirror of the up-leg about the apex.
 
     **Returns dictionary with keys:**
@@ -1160,8 +1160,8 @@ def trace_ray_cartesian_gradient(
         dr/ds = v,  ||v|| = 1
         dv/ds = (1/μ) [∇μ - (∇μ·v) v]
 
-    Group delay is integrated using μ′(x, z):
-        τ = ∫ (μ′/c) ds
+    Group delay is integrated using μ'(x, z):
+        τ = ∫ (μ'/c) ds
 
     Parameters
     ----------
@@ -1169,7 +1169,7 @@ def trace_ray_cartesian_gradient(
         (x, z) → (μ, ∂μ/∂x, ∂μ/∂z). Usually built with
         `build_refractive_index_interpolator(...)`.
     mup_func : callable
-        (x, z) → μ′(x, z). Must be built with `build_mup_function(...)`.
+        (x, z) → μ'(x, z). Must be built with `build_mup_function(...)`.
     x0_km, z0_km : float
         Launch point [km].
     elevation_deg : float
@@ -1194,7 +1194,7 @@ def trace_ray_cartesian_gradient(
     Notes
     -----
     • This model assumes a 2D Cartesian (flat-Earth) geometry.
-    • μ controls bending; μ′ controls group delay.
+    • μ controls bending; μ' controls group delay.
     • NaNs or invalid μ terminate integration.
 
     **Retrns dictionary with keys:**
@@ -1261,7 +1261,7 @@ def trace_ray_cartesian_gradient(
     ds = np.hypot(dx, dz)
     group_path_km = float(np.nansum(ds))
 
-    # --- Group delay (μ′ required)
+    # --- Group delay (μ' required)
     c_km_per_s = 299792.458
     x_mid = 0.5 * (x_path[:-1] + x_path[1:])
     z_mid = 0.5 * (z_path[:-1] + z_path[1:])
@@ -1357,8 +1357,8 @@ def trace_ray_spherical_snells(
 
     **Group delay:**
       The propagation delay is integrated along the ray using the group
-      refractive index μ′ (mup):
-          τ = ∫ (μ′ / c) ds
+      refractive index μ' (mup):
+          τ = ∫ (μ' / c) ds
       where c is the speed of light in vacuum.
 
     **Apex refinement:**
@@ -1779,7 +1779,7 @@ def build_mup_function(
     Parameters
     ----------
     mup_field : ndarray
-        Grid of μ′ (group refractive index) values.
+        Grid of μ' (group refractive index) values.
     x_grid : ndarray
         Horizontal coordinate grid:
           - For "cartesian": horizontal distance [km].
@@ -1798,7 +1798,7 @@ def build_mup_function(
     Returns
     -------
     mup_func : callable
-        Function mup_func(x, z) that evaluates μ′ at given coordinates.
+        Function mup_func(x, z) that evaluates μ' at given coordinates.
 
     Notes
     -----
@@ -1987,7 +1987,7 @@ def trace_ray_spherical_gradient(
     n_and_grad_rphi : callable
         (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ).
     mup_func : callable  (REQUIRED)
-        (x, z) → μ′(x, z). Build with `build_mup_function(...,
+        (x, z) → μ'(x, z). Build with `build_mup_function(...,
         geometry="spherical")`.
     x0_km, z0_km : float
         Launch point [km]; x0 is surface arc distance, z0 altitude.
@@ -2030,8 +2030,8 @@ def trace_ray_spherical_gradient(
     where ∇μ·v = (∂μ/∂r)v_r + (∂μ/∂φ)(v_φ / r).
 
     **Delay**
-    Group delay integrates μ′ along the path:
-        τ = ∫ ( μ′(x, z) / c ) ds
+    Group delay integrates μ' along the path:
+        τ = ∫ ( μ'(x, z) / c ) ds
     with x = R_E φ (surface arc) and z = r − R_E.
 
     """
