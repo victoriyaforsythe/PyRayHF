@@ -745,11 +745,11 @@ def n_and_grad(x: np.ndarray,
 
     out_shape = x_arr.shape
 
-    return (
-        n_val.reshape(out_shape),
-        dnx_val.reshape(out_shape),
-        dnz_val.reshape(out_shape),
-    )
+    n = n_val.reshape(out_shape)
+    dndx = dnx_val.reshape(out_shape)
+    dndz = dnz_val.reshape(out_shape)
+
+    return (n, dndx, dndz)
 
 
 def eval_refractive_index_and_grad(x: np.ndarray,
