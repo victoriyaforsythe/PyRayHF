@@ -37,8 +37,8 @@ from unittest.mock import patch
 
 def test_constants_output():
     """Test that constants function returns correct values."""
-    cp, g_p, R_E, c_km_s = constants()
-    assert np.isclose(cp, 8.97866275, rtol=1e-8)
+    pf_const, g_p, R_E, c_km_s = constants()
+    assert np.isclose(pf_const, 8.97866275, rtol=1e-8)
     assert np.isclose(g_p, 2.799249247e10, rtol=1e-8)
     assert np.isclose(R_E, 6371., rtol=1e-8)
     assert np.isclose(c_km_s, 299_792.458, rtol=1e-8)
@@ -636,14 +636,14 @@ def test_find_X_basic():
     """Validate plasma frequency parameter X = (f_p / f)^2."""
 
     # Get constants from the library
-    cp, _, _, _ = constants()
+    pf_const, _, _, _ = constants()
 
     # Set up test data
     f_Hz = 10e6  # 10 MHz
     Ne = np.array([1e11, 1e12])  # electron density [m^-3]
 
-    # Expected formula: X = (f_p / f)^2 = (cp * sqrt(Ne) / f)^2
-    expected = (cp * np.sqrt(Ne) / f_Hz) ** 2
+    # Expected formula: X = (f_p / f)^2 = (pf_const * sqrt(Ne) / f)^2
+    expected = (pf_const * np.sqrt(Ne) / f_Hz) ** 2
 
     # Compute using library
     result = find_X(Ne, f_Hz)
@@ -899,7 +899,7 @@ def test_trace_ray_spherical_gradient_basic():
 
     """
     # --- Basic setup ---
-    cp, gp, R_E, c_km_s = constants()
+    pf_const, gp, R_E, c_km_s = constants()
     f0_Hz = 10e6
     elevation_deg = 45.
     mode = "O"
