@@ -815,40 +815,7 @@ def make_n_and_grad(n_interp: RegularGridInterpolator,
                                   Tuple[np.ndarray,
                                         np.ndarray,
                                         np.ndarray]]:
-    """Construct a wrapper for evaluating refractive index and gradients.
-
-    This function packages three interpolators—one for n(z, x), and two for its
-    partial derivatives—into a single callable:
-    n_and_grad(x, z) -> (n, dndx, dndz)
-
-    Parameters
-    ----------
-    n_interp : RegularGridInterpolator
-        Interpolator for the refractive index field n(z, x).
-    dn_dx_interp : RegularGridInterpolator
-        Interpolator for ∂n/∂x(z, x).
-    dn_dz_interp : RegularGridInterpolator
-        Interpolator for ∂n/∂z(z, x).
-
-    Returns
-    -------
-    callable
-        Function (x, z) → (n, dndx, dndz), with the interpolators baked in.
-
-    Notes
-    -----
-    Inputs (x, z) can be scalars or arrays; they are broadcast to a common
-    shape. The returned function simply delegates to
-    eval_refractive_index_and_grad, keeping the interpolators “baked in” so you
-    don't need to pass them around separately.
-    Typical usage is inside build_refractive_index_interpolator_cartesian.
-
-    """
-    def n_and_grad(x: np.ndarray,
-                   z: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        return eval_refractive_index_and_grad(x, z,
-                                              n_interp,
-                                              dn_dx_interp, dn_dz_interp)
+    """Return a function (x, z) -> (n, dndx, dndz)."""
     return partial(eval_refractive_index_and_grad,
                    n_interp=n_interp,
                    dn_dx_interp=dn_dx_interp,
