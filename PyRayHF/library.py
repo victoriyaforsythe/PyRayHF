@@ -939,10 +939,20 @@ def find_turning_point(z: np.ndarray, mu: np.ndarray, p: float) -> float:
 
     Uses linear interpolation between bracketing nodes.
 
+    Parameters
+    ----------
+    z : np.ndarray
+        1D array of altitudes [km], monotonically increasing.
+    mu : np.ndarray
+        1D array of refractive index values corresponding to each altitude.
+    p : float
+        Snell invariant (μ sinθ), constant along the ray path.
+
     Returns
     -------
     z_turn : float
         Altitude of turning point [km].
+
     """
     for i in range(z.size - 1):
         if (mu[i] >= p) and (mu[i + 1] <= p):
