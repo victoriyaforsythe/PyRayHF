@@ -994,13 +994,6 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     Returns
     -------
     result : dict
-        {'x': ndarray,           # horizontal positions [km]
-        'z': ndarray,           # altitudes [km]
-        'group_path_km': float,
-        'group_delay_sec': float,
-        'x_midpoint': float,
-        'z_midpoint': float,
-        'ground_range_km': float}
 
     Notes
     -----
@@ -1032,6 +1025,15 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     Geometry (bending) uses phase index μ.
     Group delay integrates group index μ′ (mup).
     Down-leg is a perfect mirror of the up-leg about the apex.
+
+    **Returns dictionary with keys:**
+    'x': ndarray,           # horizontal positions [km]
+    'z': ndarray,           # altitudes [km]
+    'group_path_km': float,
+    'group_delay_sec': float,
+    'x_midpoint': float,
+    'z_midpoint': float,
+    'ground_range_km': float
 
     """
     # Use constants defined above
@@ -1194,6 +1196,10 @@ def trace_ray_cartesian_gradient(
     • This model assumes a 2D Cartesian (flat-Earth) geometry.
     • μ controls bending; μ′ controls group delay.
     • NaNs or invalid μ terminate integration.
+
+    **Retrns dictionary with keys:**
+    "sol", "t", "x", "z", "vx", "vz", "status", "group_path_km",
+    "group_delay_sec", "x_midpoint", "z_midpoint", "ground_range_km"
 
     """
     # Use constants defined above
