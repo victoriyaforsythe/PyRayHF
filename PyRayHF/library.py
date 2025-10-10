@@ -425,7 +425,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode, n_points=2000):
     alt : array-like
         Altitude profile in km.
     mode : str
-        "O" or "X" propagation mode.
+        'O' or 'X' propagation mode.
     n_points : int
         Number of vertical grid points.
 
