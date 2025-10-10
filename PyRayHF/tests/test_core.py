@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 """Tests for core PyRayHF library functions."""
 
-from copy import deepcopy
-from unittest.mock import patch
-
 import numpy as np
 import pytest
+
+from copy import deepcopy
 from lmfit import Parameters
 from numpy.testing import assert_allclose
-from scipy.interpolate import RegularGridInterpolator
 
 import PyRayHF.library as lib
 from lib import build_mup_function
@@ -35,6 +33,8 @@ from lib import trace_ray_spherical_gradient
 from lib import trace_ray_spherical_snells
 from lib import vertical_forward_operator
 from lib import vertical_to_magnetic_angle
+from scipy.interpolate import RegularGridInterpolator
+from unittest.mock import patch
 
 
 def test_constants_output():
