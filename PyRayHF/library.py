@@ -710,7 +710,6 @@ def n_and_grad(x: np.ndarray,
     ----------
     x : array_like
         Horizontal positions [km]; scalar or array.
-
     z : array_like
         Altitudes [km]; scalar or array.
 
