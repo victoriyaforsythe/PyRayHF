@@ -917,11 +917,21 @@ def tan_from_mu_scalar(mu_val: float, p: float) -> float:
     -------
     tanθ : float
         Tangent of propagation angle relative to vertical.
+
+    Notes
+    -----
+    This function finds tah_theta from μ * sin(θ) = p.
+    tan(θ) = sin(θ) / cos(θ)​, and cos(θ) = sqrt(1−sin^2(θ))
+    tan(θ) = ​(p/μ​) / sqrt(1−(p/μ)^2) = ​p​ / sqrt(μ^2 − p^2)
+
     """
     eps = 1e-10
     mu2 = float(mu_val) ** 2
-    root = np.sqrt(max(mu2 - p * p, eps))
-    return p / root
+    arg = mu2 - p * p
+    if arg < eps:
+        arg = eps
+    tan_theta = p / np.sqrt(arg)
+    return tan_theta
 
 
 def find_turning_point(z: np.ndarray, mu: np.ndarray, p: float) -> float:
