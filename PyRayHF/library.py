@@ -1857,6 +1857,38 @@ def rhs_spherical(
 ) -> np.ndarray:
     r"""Calculate the right-hand side of the spherical ray equations.
 
+    Parameters
+    ----------
+    s : float
+        Current arc length along the ray [km].
+    y : ndarray, shape (4,)
+        State vector [r, φ, v_r, v_φ]:
+        - r : radial coordinate [km]
+        - φ : azimuthal angle [rad]
+        - v_r : radial direction cosine
+        - v_φ : tangential direction cosine
+    n_and_grad_rphi : callable
+        Function (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ), typically constructed using
+        `build_refractive_index_interpolator_rphi`.
+    renormalize_every : int
+        Frequency (in RHS evaluations) to re-normalize the tangent vector
+        to ensure |v| = 1. Use 0 or None to disable.
+    eval_counter : dict
+        Dictionary used to track number of RHS evaluations:
+        e.g., `{'n': 0}` will be incremented in-place.
+
+    Returns
+    -------
+    dyds : ndarray
+        Derivatives with respect to arc length *s*:
+        [dr/ds, dφ/ds, dv_r/ds, dv_φ/ds].
+
+    Notes
+    -----
+    • Implements 2D spherical geometry (flat-Earth limit not assumed).
+    • The equations conserve |v| ≈ 1 under small step sizes.
+    • NaN or non-positive μ values return zero derivatives (halts ray).
+    
     Computes derivatives for the ODE system governing 2D spherical ray
     propagation (r, φ) in a refractive index field μ(r, φ). The equations
     describe the evolution of position and tangent components along the
@@ -1882,38 +1914,6 @@ def rhs_spherical(
     .. math::
 
         ∇μ · v = \\frac{∂μ}{∂r} v_r + \\frac{1}{r} \\frac{∂μ}{∂φ} v_φ
-
-    Parameters
-    ----------
-    s : float
-        Current arc length along the ray [km].
-    y : ndarray, shape (4,)
-        State vector [r, φ, v_r, v_φ]:
-        - r : radial coordinate [km]
-        - φ : azimuthal angle [rad]
-        - v_r : radial direction cosine
-        - v_φ : tangential direction cosine
-    n_and_grad_rphi : callable
-        Function (φ, r) → (μ, ∂μ/∂r, ∂μ/∂φ), typically constructed using
-        `build_refractive_index_interpolator_rphi`.
-    renormalize_every : int
-        Frequency (in RHS evaluations) to re-normalize the tangent vector
-        to ensure |v| = 1. Use 0 or None to disable.
-    eval_counter : dict
-        Dictionary used to track number of RHS evaluations:
-        e.g., `{'n': 0}` will be incremented in-place.
-
-    Returns
-    -------
-    dyds : ndarray, shape (4,)
-        Derivatives with respect to arc length *s*:
-        [dr/ds, dφ/ds, dv_r/ds, dv_φ/ds].
-
-    Notes
-    -----
-    • Implements 2D spherical geometry (flat-Earth limit not assumed).
-    • The equations conserve |v| ≈ 1 under small step sizes.
-    • NaN or non-positive μ values return zero derivatives (halts ray).
 
     References
     ----------
@@ -1952,7 +1952,8 @@ def rhs_spherical(
             v_r /= vmag
             v_phi /= vmag
 
-    return np.array([drds, dphids, dv_r, dv_phi], dtype=float)
+    dyds = np.array([drds, dphids, dv_r, dv_phi], dtype=float)
+    return dyds
 
 
 def trace_ray_spherical_gradient(
@@ -1975,21 +1976,6 @@ def trace_ray_spherical_gradient(
     renormalize_every: int = 50,
 ) -> Dict[str, Any]:
     """Raytrace in 2-D spherical using μ for geometry and μ' for delay.
-
-    Geometry
-    --------
-    Integrates in spherical coordinates (r, φ) with tangent v = (v_r, v_φ):
-        dr/ds   = v_r
-        dφ/ds   = v_φ / r
-        dv_r/ds = (1/μ)[∂μ/∂r - (∇μ·v)v_r] + (v_φ²)/r
-        dv_φ/ds = (1/μ)[(∂μ/∂φ)/r - (∇μ·v)v_φ] - (v_r v_φ)/r
-    where ∇μ·v = (∂μ/∂r)v_r + (∂μ/∂φ)(v_φ / r).
-
-    Delay
-    -----
-    Group delay integrates μ′ along the path:
-        τ = ∫ ( μ′(x, z) / c ) ds
-    with x = R_E φ (surface arc) and z = r − R_E.
 
     Parameters
     ----------
@@ -2022,9 +2008,26 @@ def trace_ray_spherical_gradient(
     Returns
     -------
     dict
-        {'t', 'r', 'phi', 'v_r', 'v_phi', 'x', 'z', 'status',
-        'group_path_km', 'group_delay_sec', 'x_midpoint', 'z_midpoint',
-        'ground_range_km'}
+
+    Notes
+    -----
+    The return is a dictionary with keys:
+    't', 'r', 'phi', 'v_r', 'v_phi', 'x', 'z', 'status',
+    'group_path_km', 'group_delay_sec', 'x_midpoint', 'z_midpoint',
+    'ground_range_km'
+
+    **Geometry**:
+    Integrates in spherical coordinates (r, φ) with tangent v = (v_r, v_φ):
+        dr/ds   = v_r
+        dφ/ds   = v_φ / r
+        dv_r/ds = (1/μ)[∂μ/∂r - (∇μ·v)v_r] + (v_φ²)/r
+        dv_φ/ds = (1/μ)[(∂μ/∂φ)/r - (∇μ·v)v_φ] - (v_r v_φ)/r
+    where ∇μ·v = (∂μ/∂r)v_r + (∂μ/∂φ)(v_φ / r).
+
+    **Delay**
+    Group delay integrates μ′ along the path:
+        τ = ∫ ( μ′(x, z) / c ) ds
+    with x = R_E φ (surface arc) and z = r − R_E.
 
     """
 
