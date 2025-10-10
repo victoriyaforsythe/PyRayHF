@@ -1910,7 +1910,6 @@ def rhs_spherical(
             - \\frac{v_r v_φ}{r}
 
     where the gradient projection is given by:
-
     .. math::
 
         ∇μ · v = \\frac{∂μ}{∂r} v_r + \\frac{1}{r} \\frac{∂μ}{∂φ} v_φ
