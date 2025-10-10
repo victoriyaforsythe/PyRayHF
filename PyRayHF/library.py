@@ -1188,11 +1188,6 @@ def trace_ray_cartesian_gradient(
     Returns
     -------
     result : dict
-        {
-          'x', 'z', 'vx', 'vz', 'status',
-          'group_path_km', 'group_delay_sec',
-          'x_midpoint', 'z_midpoint', 'ground_range_km'
-        }
 
     Notes
     -----
@@ -1342,15 +1337,6 @@ def trace_ray_spherical_snells(
     Returns
     -------
     result : dict
-        {
-          'x': ndarray,             # surface distance [km]
-          'z': ndarray,             # altitude along the ray [km]
-          'group_path_km': float,   # total geometric path length [km]
-          'group_delay_sec': float, # group delay [s]
-          'x_midpoint': float,      # midpoint horizontal coordinate [km]
-          'z_midpoint': float,      # midpoint altitude [km]
-          'ground_range_km': float  # surface distance to landing point [km]
-        }
 
     Notes
     -----
@@ -1381,6 +1367,15 @@ def trace_ray_spherical_snells(
       This function extends the flat-Earth Snell's law formulation
       (`trace_ray_cartesian_snells`) to spherical geometry. For large R_E,
       both solutions converge within numerical precision.
+
+    **Return dictionary has the following keys:**
+    'x': ndarray,             # surface distance [km]
+    'z': ndarray,             # altitude along the ray [km]
+    'group_path_km': float,   # total geometric path length [km]
+    'group_delay_sec': float, # group delay [s]
+    'x_midpoint': float,      # midpoint horizontal coordinate [km]
+    'z_midpoint': float,      # midpoint altitude [km]
+    'ground_range_km': float  # surface distance to landing point [km]
 
     """
     # Speed of light
@@ -1590,11 +1585,10 @@ def n_and_grad_rphi(
     nphi_val = dn_dphi_interp(pts)
 
     out_shape = phi_arr.shape
-    return (
-        n_val.reshape(out_shape),
-        nr_val.reshape(out_shape),
-        nphi_val.reshape(out_shape),
-    )
+    n = n_val.reshape(out_shape)
+    dn_dr = nr_val.reshape(out_shape)
+    dn_dphi = nphi_val.reshape(out_shape)
+    return (n, dn_dr, dn_dphi)
 
 
 def build_refractive_index_interpolator_cartesian(
