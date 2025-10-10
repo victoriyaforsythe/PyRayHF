@@ -802,10 +802,10 @@ def eval_refractive_index_and_grad(x: np.ndarray,
     dnz_val = dn_dz_interp(pts)
 
     shape = x_arr.shape
-
-    return (n_val.reshape(shape),
-            dnx_val.reshape(shape),
-            dnz_val.reshape(shape),)
+    n = n_val.reshape(shape)
+    dndx = dnx_val.reshape(shape)
+    dndz = dnz_val.reshape(shape)
+    return (n, dndx, dndz)
 
 
 def make_n_and_grad(n_interp: RegularGridInterpolator,
