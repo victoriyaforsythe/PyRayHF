@@ -718,10 +718,8 @@ def n_and_grad(x: np.ndarray,
     n : np.ndarray
         Refractive index at (x, z). Shape equals the broadcasted shape of
         inputs.
-
     dndx : np.ndarray
         Partial derivative ∂n/∂x [1/km] at (x, z). Same shape as n.
-
     dndz : np.ndarray
         Partial derivative ∂n/∂z [1/km] at (x, z). Same shape as n.
 
