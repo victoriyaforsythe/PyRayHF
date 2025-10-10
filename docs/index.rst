@@ -12,7 +12,6 @@ This documentation describes the PyRayHF module.
    overview.rst
    installation.rst
    citing.rst
-   examples.rst
    tutorials.rst
    develop_guide.rst
    history.rst
