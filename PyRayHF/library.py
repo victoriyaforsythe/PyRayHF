@@ -1888,7 +1888,7 @@ def rhs_spherical(
     • Implements 2D spherical geometry (flat-Earth limit not assumed).
     • The equations conserve |v| ≈ 1 under small step sizes.
     • NaN or non-positive μ values return zero derivatives (halts ray).
-    
+
     Computes derivatives for the ODE system governing 2D spherical ray
     propagation (r, φ) in a refractive index field μ(r, φ). The equations
     describe the evolution of position and tangent components along the
