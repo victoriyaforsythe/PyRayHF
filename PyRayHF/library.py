@@ -591,7 +591,7 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
     F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
 
     # Run forward model
-    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode=params['mode')
+    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode=params['mode'])
     residual = (vh_obs - vh_model).ravel()
     return residual
 
