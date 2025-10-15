@@ -545,9 +545,9 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O'):
     return vh_O, EDP
 
 
-def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
-                b_psi):
-    """Compute the residual between observed and modeled virtual heights.
+def residual_VH_O(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
+                  b_mag, b_psi):
+    """Compute the O-mode residuals between observed and modeled VHs.
 
     Parameters
     ----------
@@ -592,7 +592,61 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
 
     # Run forward model
     vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
-                           mode=params['mode'])
+                           mode='O')
+    # Find residuals
+    residual = (vh_obs - vh_model).ravel()
+    return residual
+
+
+def residual_VH_X(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
+                  b_mag, b_psi):
+    """Compute the X-mode residuals between observed and modeled VHs.
+
+    Parameters
+    ----------
+    params : lmfit.Parameters
+        Parameters to be optimized, containing:
+        - 'NmF2': peak electron density of F2 layer
+        - 'hmF2': peak height of F2 layer
+        - 'B_bot': thickness of F2 bottomside
+    F2_init : dict
+        Initial F2 layer parameters.
+    F1_init : dict
+        Initial F1 layer parameters.
+    E_init : dict
+        Initial E layer parameters.
+    f_in : float
+        Input frequency [MHz].
+    vh_obs : ndarray
+        Observed virtual heights [km].
+    alt : ndarray
+        Altitude array [km].
+    b_mag : ndarray
+        Magnetic field magnitude array [nT].
+    b_psi : ndarray
+        Magnetic field dip angle array [rad].
+
+    Returns
+    -------
+    residual : ndarray
+        Flattened array of residuals between observed and modeled virtual
+        heights [km].
+
+    """
+    # Work on deep copies to avoid mutating originals
+    F2 = deepcopy(F2_init)
+    F1 = deepcopy(F1_init)
+    E = deepcopy(E_init)
+
+    # Update F2 parameters from optimization values
+    F2['Nm'] = np.full_like(F2_init['Nm'], params['NmF2'].value)
+    F2['hm'] = np.full_like(F2_init['Nm'], params['hmF2'].value)
+    F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
+
+    # Run forward model
+    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
+                           mode='O')
+    # Find residuals
     residual = (vh_obs - vh_model).ravel()
     return residual
 
@@ -665,7 +719,6 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
 
     # Populate lmfit parameters for the minimization
     params = lmfit.Parameters()
-    params.add('mode', value=mode, vary=False)
     params.add('NmF2', value=NmF2_new, vary=False)
     params.add('hmF2', value=mean_hmF2,
                min=mean_hmF2 - sigma_hmF2,
@@ -678,10 +731,20 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
                brute_step=step)
 
     # Perform brute-force minimization
-    brute_result = lmfit.minimize(residual_VH, params,
-                                  args=(F2, F1, E, f_in, vh_obs,
-                                        alt, b_mag, b_psi),
-                                  method=method)
+    if mode == 'O':
+        brute_result = lmfit.minimize(
+            residual_VH_O, params, args=(F2, F1, E,
+                                         f_in, vh_obs,
+                                         alt,
+                                         b_mag, b_psi),
+            method=method)
+    if mode == 'X':
+        brute_result = lmfit.minimize(
+            residual_VH_X, params, args=(F2, F1, E,
+                                         f_in, vh_obs,
+                                         alt,
+                                         b_mag, b_psi),
+            method=method)
 
     # Extract optimal parameter values
     NmF2_opt = brute_result.params['NmF2'].value
