@@ -476,7 +476,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode, n_points=2000):
     return vh
 
 
-def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi):
+def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O'):
     """Compute vertical virtual height using a modeled EDP and raytrace.
 
     Parameters
@@ -500,6 +500,8 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi):
         1D array of magnetic field magnitudes [nT].
     b_psi : ndarray
         1D array of magnetic field dip angles [rad].
+    mode : str
+        'O' or 'X' mode. Default is 'O' mode.
 
     Returns
     -------
@@ -534,7 +536,6 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi):
     EDP = EDP[0, :, 0]
 
     # Set ray-tracing parameters
-    mode = "O"
     n_points = 200
 
     # Run vertical raytracing using PyRayHF
@@ -590,13 +591,13 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt, b_mag,
     F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
 
     # Run forward model
-    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi)
+    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode=params['mode')
     residual = (vh_obs - vh_model).ravel()
     return residual
 
 
 def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
-                        method='brute', percent_sigma=20., step=1.):
+                        method='brute', percent_sigma=20., step=1., mode='O'):
     """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed VH.
 
     Parameters
@@ -631,6 +632,8 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
     step : flt
         Step size in km for brute minimization.
         If the speed needs to be increase, increase this parameter.
+    mode : str
+        'O' or 'X' mode. The default is 'O'.
 
     Returns
     -------
@@ -661,6 +664,7 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
 
     # Populate lmfit parameters for the minimization
     params = lmfit.Parameters()
+    params.add('mode', value=mode, vary=False)
     params.add('NmF2', value=NmF2_new, vary=False)
     params.add('hmF2', value=mean_hmF2,
                min=mean_hmF2 - sigma_hmF2,
@@ -693,7 +697,7 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
 
     # Run forward model with optimized parameters
     vh_result, EDP_result = model_VH(F2_fit, F1_fit, E_fit,
-                                     f_in, alt, b_mag, b_psi)
+                                     f_in, alt, b_mag, b_psi, mode=mode)
     return vh_result, EDP_result
 
 
