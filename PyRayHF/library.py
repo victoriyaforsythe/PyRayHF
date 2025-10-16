@@ -409,7 +409,8 @@ def vertical_to_magnetic_angle(inclination_deg):
     return vertical_angle
 
 
-def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode, n_points=2000):
+def vertical_forward_operator(freq, den, bmag, bpsi, alt,
+                              mode='O', n_points=2000):
     """Calculate virtual height from ionosonde freq and ion profile.
 
     Parameters
@@ -425,9 +426,9 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode, n_points=2000):
     alt : array-like
         Altitude profile in km.
     mode : str
-        'O' or 'X' propagation mode.
+        'O' or 'X' propagation mode. Default 'O'.
     n_points : int
-        Number of vertical grid points.
+        Number of vertical grid points. Default is 200.
 
     Returns
     -------
@@ -476,7 +477,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt, mode, n_points=2000):
     return vh
 
 
-def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O'):
+def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
     """Compute vertical virtual height using a modeled EDP and raytrace.
 
     Parameters
@@ -502,6 +503,8 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O'):
         1D array of magnetic field dip angles [rad].
     mode : str
         'O' or 'X' mode. Default is 'O' mode.
+    n_points : int
+        Number of vertical grid points. Default is 200.
 
     Returns
     -------
@@ -535,19 +538,16 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O'):
                                                                       alt)
     EDP = EDP[0, :, 0]
 
-    # Set ray-tracing parameters
-    n_points = 200
-
     # Run vertical raytracing using PyRayHF
     vh_O = vertical_forward_operator(f_in, EDP,
                                      b_mag, b_psi,
-                                     alt, mode, n_points)
+                                     alt, mode=mode, n_points=n_points)
     return vh_O, EDP
 
 
-def residual_VH_O(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
-                  b_mag, b_psi):
-    """Compute the O-mode residuals between observed and modeled VHs.
+def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
+                  b_mag, b_psi, mode='O', n_points=200):
+    """Compute the residuals between observed and modeled VHs.
 
     Parameters
     ----------
@@ -572,6 +572,10 @@ def residual_VH_O(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
         Magnetic field magnitude array [nT].
     b_psi : ndarray
         Magnetic field dip angle array [rad].
+    mode : str
+        'O' or 'X' mode. Default is 'O' mode.
+    n_points : int
+        Number of vertical grid points. Default is 200.
 
     Returns
     -------
@@ -592,67 +596,15 @@ def residual_VH_O(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
 
     # Run forward model
     vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
-                           mode='O')
-    # Find residuals
-    residual = (vh_obs - vh_model).ravel()
-    return residual
-
-
-def residual_VH_X(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
-                  b_mag, b_psi):
-    """Compute the X-mode residuals between observed and modeled VHs.
-
-    Parameters
-    ----------
-    params : lmfit.Parameters
-        Parameters to be optimized, containing:
-        - 'NmF2': peak electron density of F2 layer
-        - 'hmF2': peak height of F2 layer
-        - 'B_bot': thickness of F2 bottomside
-    F2_init : dict
-        Initial F2 layer parameters.
-    F1_init : dict
-        Initial F1 layer parameters.
-    E_init : dict
-        Initial E layer parameters.
-    f_in : float
-        Input frequency [MHz].
-    vh_obs : ndarray
-        Observed virtual heights [km].
-    alt : ndarray
-        Altitude array [km].
-    b_mag : ndarray
-        Magnetic field magnitude array [nT].
-    b_psi : ndarray
-        Magnetic field dip angle array [rad].
-
-    Returns
-    -------
-    residual : ndarray
-        Flattened array of residuals between observed and modeled virtual
-        heights [km].
-
-    """
-    # Work on deep copies to avoid mutating originals
-    F2 = deepcopy(F2_init)
-    F1 = deepcopy(F1_init)
-    E = deepcopy(E_init)
-
-    # Update F2 parameters from optimization values
-    F2['Nm'] = np.full_like(F2_init['Nm'], params['NmF2'].value)
-    F2['hm'] = np.full_like(F2_init['Nm'], params['hmF2'].value)
-    F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
-
-    # Run forward model
-    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
-                           mode='O')
+                           mode=mode, n_points=n_points)
     # Find residuals
     residual = (vh_obs - vh_model).ravel()
     return residual
 
 
 def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
-                        method='brute', percent_sigma=20., step=1., mode='O'):
+                        method='brute', percent_sigma=20., step=1.,
+                        mode='O', n_points=200):
     """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed VH.
 
     Parameters
@@ -689,6 +641,8 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
         If the speed needs to be increase, increase this parameter.
     mode : str
         'O' or 'X' mode. The default is 'O'.
+    n_points : int
+        Number of desired vertical grid points. Default is 200.
 
     Returns
     -------
@@ -731,20 +685,12 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
                brute_step=step)
 
     # Perform brute-force minimization
-    if mode == 'O':
-        brute_result = lmfit.minimize(
-            residual_VH_O, params, args=(F2, F1, E,
-                                         f_in, vh_obs,
-                                         alt,
-                                         b_mag, b_psi),
-            method=method)
-    if mode == 'X':
-        brute_result = lmfit.minimize(
-            residual_VH_X, params, args=(F2, F1, E,
-                                         f_in, vh_obs,
-                                         alt,
-                                         b_mag, b_psi),
-            method=method)
+    brute_result = lmfit.minimize(
+        residual_VH_O, params, args=(F2, F1, E, f_in, vh_obs, alt,
+                                     b_mag, b_psi,
+                                     mode=mode, n_points=n_points),
+        method=method)
+
 
     # Extract optimal parameter values
     NmF2_opt = brute_result.params['NmF2'].value
@@ -761,7 +707,8 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
 
     # Run forward model with optimized parameters
     vh_result, EDP_result = model_VH(F2_fit, F1_fit, E_fit,
-                                     f_in, alt, b_mag, b_psi, mode=mode)
+                                     f_in, alt, b_mag, b_psi,
+                                     mode=mode, n_points=n_points)
     return vh_result, EDP_result
 
 

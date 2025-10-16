@@ -22,7 +22,7 @@ from PyRayHF.library import minimize_parameters
 from PyRayHF.library import model_VH
 from PyRayHF.library import n_and_grad
 from PyRayHF.library import regrid_to_nonuniform_grid
-from PyRayHF.library import residual_VH_O
+from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
 from PyRayHF.library import tan_from_mu_scalar
 from PyRayHF.library import trace_ray_cartesian_gradient
@@ -276,7 +276,7 @@ def test_model_VH_output():
 
 
 def test_zero_residual_when_parameters_match():
-    """Basic test for residual_VH_O with short arrays."""
+    """Basic test for residual_VH with short arrays."""
     # Input dictionaries
     F2 = {'Nm': np.array([[1.17848165e+12]]),
           'fo': np.array([[9.64625394]]),
@@ -313,8 +313,7 @@ def test_zero_residual_when_parameters_match():
     params.add('B_bot', value=41.26005561)
 
     # Compute residual
-    residual = residual_VH_O(params, F2, F1, E, freq, vh_obs, alt, bmag,
-                             bpsi)
+    residual = residual_VH(params, F2, F1, E, freq, vh_obs, alt, bmag, bpsi)
 
     # Expect near-zero residual
     assert_allclose(residual, np.zeros_like(vh_obs), rtol=1e-6, atol=1e-6)
@@ -340,10 +339,10 @@ def test_minimize_parameters_runs_and_returns_shapes():
     b_mag = np.full_like(alt, 50000.0)  # nT
     b_psi = np.full_like(alt, 45.0)  # degrees
 
-    # Patch freq2den, residual_VH_O, and model_VH so we don’t run heavy
+    # Patch freq2den, residual_VH, and model_VH so we don’t run heavy
     # physics
     with patch("PyRayHF.library.freq2den", return_value=1e11), \
-         patch("PyRayHF.library.residual_VH_O",
+         patch("PyRayHF.library.residual_VH",
                return_value=np.zeros_like(vh_obs)), \
          patch("PyRayHF.library.model_VH",
                return_value=(vh_obs, np.ones_like(alt))):
