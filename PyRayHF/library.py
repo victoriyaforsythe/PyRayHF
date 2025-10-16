@@ -546,7 +546,7 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
 
 
 def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
-                  b_mag, b_psi, mode='O', n_points=200):
+                b_mag, b_psi, mode='O', n_points=200):
     """Compute the residuals between observed and modeled VHs.
 
     Parameters
@@ -689,7 +689,6 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
         residual_VH, params, args=(F2, F1, E, f_in, vh_obs, alt,
                                      b_mag, b_psi, mode, n_points),
         method=method)
-
 
     # Extract optimal parameter values
     NmF2_opt = brute_result.params['NmF2'].value
