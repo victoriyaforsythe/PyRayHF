@@ -687,7 +687,7 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
     # Perform brute-force minimization
     brute_result = lmfit.minimize(
         residual_VH, params, args=(F2, F1, E, f_in, vh_obs, alt,
-                                     b_mag, b_psi, mode, n_points),
+                                   b_mag, b_psi, mode, n_points),
         method=method)
 
     # Extract optimal parameter values
