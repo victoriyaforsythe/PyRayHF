@@ -310,7 +310,7 @@ def smooth_nonuniform_grid(start, end, n_points, sharpness):
     return x
 
 
-def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
+def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O'):
     """Regrid profile to smooth non-uniform vertical grid.
 
     Parameters
@@ -327,6 +327,8 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
         Altitude profile in km.
     npoints : int
         Points in new vertical grid.
+    mode : str
+        'O' or 'X' propagation mode. Default 'O'.
 
     Returns
     -------
@@ -355,9 +357,19 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints):
     # How close to the reflection height do we want to get
     dh = 1e-20
 
-    # An array of critical height for the given ionosonde frequency
-    # We subtract dh so that the critical height is not exactly reached
+    # Find critical frequency
+    # We subtract dh so that the critical height is not exactly
+    # reached. The critical height is different for O and X modes
     critical_height = np.interp(f, den2freq(n_e), aalt) - dh
+    if mode == 'O':
+        f_crit = den2freq(n_e)
+    elif mode == 'X':
+        _, g_p, _, _ = constants()
+        f_c = g_p * b  # gyrofrequency (Hz)
+        f_crit = 0.5 * (np.sqrt(f_c**2 + 4 * den2freq(n_e)**2) - f_c)
+
+    # Find critical height
+    critical_height = np.interp(f, f_crit, aalt) - dh
 
     # Make arrays 2-D
     multiplier_2d = np.full((N_freq, N_grid), multiplier)
@@ -462,7 +474,8 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
                                           bmag,
                                           bpsi,
                                           alt,
-                                          n_points)
+                                          n_points,
+                                          mode=mode)
 
     # Find the ratio of the square of the plasma frequency f_N to the square of
     # the ionosonde frequency f.
