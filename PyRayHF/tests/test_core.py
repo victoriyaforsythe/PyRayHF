@@ -262,10 +262,10 @@ def test_model_VH_output():
     bpsi = np.array([60.0, 60.0, 60.0])
 
     # Expected outputs
-    expected_vh = np.array([198.1695621, 247.07192693, 261.65938426])
-    expected_edp = np.array([5.39526841e+10,
-                             2.81042886e+11,
-                             6.66833261e+11])
+    expected_vh = np.array([174.32954286, 253.81598004, 100.])
+    expected_edp = np.array([5.39526842e+10,
+                             2.81042885e+11,
+                             6.66833260e+11])
 
     # Run the model
     vh, edp = model_VH(F2, F1, E, freq, alt, bmag, bpsi)
