@@ -310,7 +310,8 @@ def smooth_nonuniform_grid(start, end, n_points, sharpness):
     return x
 
 
-def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O'):
+def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O',
+                              dh = 1e-6):
     """Regrid profile to smooth non-uniform vertical grid.
 
     Parameters
@@ -329,6 +330,9 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O'):
         Points in new vertical grid.
     mode : str
         'O' or 'X' propagation mode. Default 'O'.
+    dh : flt
+        How close to the reflection height do we want to get.
+        Default is 1e-6 km.
 
     Returns
     -------
@@ -336,6 +340,9 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O'):
         Dictionary with re-gridded arrays
 
     """
+    # Load constants
+    _, g_p, _, _ = constants()
+
     # Create non-regular grid that has low resolution near zero and hight
     # resolution near one
     start = 0
@@ -354,31 +361,43 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O'):
     bpsi = bpsi[0: ind_max]
     aalt = aalt[0: ind_max]
 
-    # How close to the reflection height do we want to get
-    dh = 1e-20
+    N_alt = aalt.size
+    n_e_2d = np.broadcast_to(n_e, (N_freq, N_alt))
+    b_2d = np.broadcast_to(b, (N_freq, N_alt))
+    f_2d = np.transpose(np.broadcast_to(f, (N_alt, N_freq)))
+    aX = find_X(n_e_2d, f_2d)
+    aY = find_Y(f_2d, b_2d)
 
-    # Find critical frequency
-    # We subtract dh so that the critical height is not exactly
-    # reached. The critical height is different for O and X modes
-    critical_height = np.interp(f, den2freq(n_e), aalt) - dh
+    # enforce monotonic increase with altitude for each frequency row
+    aX_mono = np.maximum.accumulate(aX, axis=1)
+    aX_aY_mono = np.maximum.accumulate(aX + aY, axis=1)
+
     if mode == 'O':
-        f_crit = den2freq(n_e)
+        fcrit = aX_mono
     elif mode == 'X':
-        _, g_p, _, _ = constants()
-        f_c = g_p * b  # gyrofrequency (Hz)
-        f_crit = 0.5 * (np.sqrt(f_c**2 + 4 * den2freq(n_e)**2) - f_c)
+        fcrit = aX_aY_mono
+    else:
+        raise ValueError("mode must be 'O' or 'X'")
 
-    # Find critical height
-    critical_height = np.interp(f, f_crit, aalt) - dh
+    # rows that actually reach the cutoff (since fcrit is monotone in altitude)
+    valid = fcrit[:, -1] >= 1.0
+
+    # row-wise interpolation: for each freq row, find z where fcrit == 1
+    # np.apply_along_axis calls np.interp in C; no Python for-loop over rows
+    critical_height = np.apply_along_axis(
+        lambda col: np.interp(1.0, col, aalt), axis=1, arr=fcrit)
+
+    # set rows that never reach the cutoff to NaN, and back off by dh
+    critical_height = np.where(valid, critical_height - dh, np.nan)
 
     # Make arrays 2-D
-    multiplier_2d = np.full((N_freq, N_grid), multiplier)
-    critical_height_2d = np.transpose(np.full((N_grid, N_freq),
-                                              critical_height))
+    multiplier_2d = np.broadcast_to(multiplier, (N_freq, N_grid))
+    critical_height_2d = np.transpose(np.broadcast_to(critical_height,
+                                                      (N_grid, N_freq)))
     new_alt_2d = multiplier_2d * (critical_height_2d - aalt[0]) + aalt[0]
 
-    dh_2d = np.concatenate((np.diff(new_alt_2d, axis=1), np.full((N_freq, 1),
-                                                                 dh)), axis=1)
+    dh_2d = np.concatenate((np.diff(new_alt_2d, axis=1),
+                            np.broadcast_to(dh, (N_freq, 1))), axis=1)
 
     new_ind_2d = np.full((N_freq, N_grid), ind_grid)
 
