@@ -310,8 +310,10 @@ def smooth_nonuniform_grid(start, end, n_points, sharpness):
     return x
 
 
-def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O',
-                              dh=1e-6):
+def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt,
+                              mode='O',
+                              n_points=200,
+                              dh = 1e-6):
     """Regrid profile to smooth non-uniform vertical grid.
 
     Parameters
@@ -326,10 +328,10 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O',
         Angle to magnetic field vector in degrees.
     aalt : array-like
         Altitude profile in km.
-    npoints : int
-        Points in new vertical grid.
     mode : str
         'O' or 'X' propagation mode. Default 'O'.
+    n_points : int
+        Points in new vertical grid.
     dh : flt
         How close to the reflection height do we want to get.
         Default is 1e-6 km.
@@ -348,7 +350,7 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O',
     start = 0
     end = 1
     sharpness = 10.
-    multiplier = smooth_nonuniform_grid(start, end, npoints, sharpness)
+    multiplier = smooth_nonuniform_grid(start, end, n_points, sharpness)
 
     N_grid = multiplier.size
     N_freq = f.size
@@ -360,6 +362,9 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints, mode='O',
     b = b[0: ind_max]
     bpsi = bpsi[0: ind_max]
     aalt = aalt[0: ind_max]
+
+    # How close to the reflection height do we want to get
+    dh = 1e-6
 
     N_alt = aalt.size
     n_e_2d = np.broadcast_to(n_e, (N_freq, N_alt))
@@ -441,7 +446,7 @@ def vertical_to_magnetic_angle(inclination_deg):
 
 
 def vertical_forward_operator(freq, den, bmag, bpsi, alt,
-                              mode='O', n_points=2000):
+                              mode='O', n_points=200):
     """Calculate virtual height from ionosonde freq and ion profile.
 
     Parameters
@@ -487,14 +492,14 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
 
     # Interpolate input arrays into a new stretched grid based on the
     # reflective height for each ionosonde frequency
-    # Frequency needs to be converted to MHz from Hz
+    # Frequency needs to be converted to Hz from MHz
     regridded = regrid_to_nonuniform_grid(freq_lim,
                                           den,
                                           bmag,
                                           bpsi,
                                           alt,
-                                          n_points,
-                                          mode=mode)
+                                          mode=mode,
+                                          n_points=n_points)
 
     # Find the ratio of the square of the plasma frequency f_N to the square of
     # the ionosonde frequency f.

@@ -195,9 +195,11 @@ def test_regrid_to_nonuniform_grid_basic():
     b = np.array([5.0e-5, 5.0e-5, 5.0e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
     aalt = np.array([100, 200, 300])
-    npoints = 10
+    n_points = 10
 
-    result = regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt, npoints)
+    result = regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt,
+                                       mode='O'
+                                       n_points=n_points)
 
     assert isinstance(result, dict)
     assert 'freq' in result and 'den' in result
