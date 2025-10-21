@@ -198,7 +198,7 @@ def test_regrid_to_nonuniform_grid_basic():
     n_points = 10
 
     result = regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt,
-                                       mode='O'
+                                       mode='O',
                                        n_points=n_points)
 
     assert isinstance(result, dict)

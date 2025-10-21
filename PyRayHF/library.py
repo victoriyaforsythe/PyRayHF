@@ -313,7 +313,7 @@ def smooth_nonuniform_grid(start, end, n_points, sharpness):
 def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt,
                               mode='O',
                               n_points=200,
-                              dh = 1e-6):
+                              dh=1e-6):
     """Regrid profile to smooth non-uniform vertical grid.
 
     Parameters
