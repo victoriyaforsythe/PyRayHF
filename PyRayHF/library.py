@@ -690,7 +690,6 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
     vh_obs, f_in = vh_obs[si], f_in[si]
 
     # Removes axes of length one from the initial values of all parameters
-    old_nmf2 = F2['Nm'].squeeze()
     old_hmf2 = F2['hm'].squeeze()
     old_B_bot = F2['B_bot'].squeeze()
 
