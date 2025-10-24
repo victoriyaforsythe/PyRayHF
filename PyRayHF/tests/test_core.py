@@ -233,7 +233,7 @@ def test_vertical_forward_operator_basic_O_mode():
 
     assert isinstance(vh, np.ndarray)
     assert vh.shape == freq.shape
-    assert np.isnan(vh[-1])  # 10 MHz > fof2, should be NaN
+    assert vh[-1] == 999  # 10 MHz > fof2, should be NaN -> 999
     assert np.all(np.isfinite(vh[:-1]))  # Lower freqs should be finite
 
 
