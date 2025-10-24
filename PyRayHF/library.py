@@ -480,7 +480,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
     if (den.shape != bmag.shape != bpsi.shape != alt.shape):
         logger.error("Error: freq, den, bmag, bpsi, alt should have same size")
 
-    #convert to Hz
+    # Convert to Hz
     freq_hz = freq * 1e6
 
     # Interpolate input arrays into a new stretched grid based on the
@@ -623,10 +623,12 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
     vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
                            mode=mode, n_points=n_points)
 
-    #when nmF2 is reduced, the modeled ray may pierce the ionosphere and result
-    #in vh_model = nan for frequencies where vh_obs is finite. to handle this,
-    # overwrite nans with the mean of the finite points or 10 km
-    vh_model[np.isnan(vh_model)] = np.maximum(np.nanmean(np.abs(vh_model)), 10.)
+    # When NmF2 is reduced, the modeled ray may pierce the ionosphere and
+    # result in vh_model = nan for frequencies where vh_obs is finite.
+    # To handle this, overwrite nans with the mean of the finite points or
+    # 10 km
+    vh_model[np.isnan(vh_model)] = np.maximum(np.nanmean(np.abs(vh_model)),
+                                              10.)
 
     # Find residuals
     residual = (vh_obs - vh_model).ravel()
