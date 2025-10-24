@@ -626,9 +626,8 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
     # When NmF2 is reduced, the modeled ray may pierce the ionosphere and
     # result in vh_model = nan for frequencies where vh_obs is finite.
     # To handle this, overwrite nans with the mean of the finite points or
-    # 999 km
-    vh_model[np.isnan(vh_model)] = np.maximum(np.nanmean(np.abs(vh_model)),
-                                              999.)
+    # 0 km
+    vh_model[np.isnan(vh_model)] = np.maximum(np.nanmean(np.abs(vh_model)), 0)
 
     # Find residuals
     residual = (vh_obs - vh_model).ravel()
