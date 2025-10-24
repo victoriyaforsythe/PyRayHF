@@ -497,7 +497,7 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
 
     # Find virtual height
     vh = find_vh(aX, aY, regridded['bpsi'], regridded['dist'],
-                      np.min(alt), mode)
+                 np.min(alt), mode)
 
     return vh
 
