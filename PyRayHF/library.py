@@ -278,7 +278,11 @@ def find_vh(X, Y, bpsi, dh, alt_min, mode):
     _, mup = find_mu_mup(X, Y, bpsi, mode)
 
     # Find virtual height as vertical integral through μ'
-    vh = np.nansum(mup * dh, axis=1) + alt_min
+    ionospheric_height = np.nansum(mup * dh, axis=1)
+    # cover the cases where the ray escapes
+    ionospheric_height[ionospheric_height == 0] = np.nan
+
+    vh = ionospheric_height + alt_min
     return vh
 
 
@@ -476,30 +480,13 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
     if (den.shape != bmag.shape != bpsi.shape != alt.shape):
         logger.error("Error: freq, den, bmag, bpsi, alt should have same size")
 
-    # Limit the ionosonde frequency array up tp the ionospheric critical
-    # frequency foF2 (result is in Hz).
-    foF2 = np.max(den2freq(den))
-
-    # Index where ionosonde frequency is less then foF2 value
-    ind = np.where((freq * 1e6) < foF2)
-
-    # Select ionosonde frequency with this criteria
-    freq_lim = freq[ind] * 1e6
-
-    # Make empty array to collect virtual height of the same size as input
-    # frequency array
-    vh = np.zeros((freq.size)) + np.nan
+    #convert to Hz
+    freq_hz = freq * 1e6
 
     # Interpolate input arrays into a new stretched grid based on the
     # reflective height for each ionosonde frequency
-    # Frequency needs to be converted to Hz from MHz
-    regridded = regrid_to_nonuniform_grid(freq_lim,
-                                          den,
-                                          bmag,
-                                          bpsi,
-                                          alt,
-                                          mode=mode,
-                                          n_points=n_points)
+    regridded = regrid_to_nonuniform_grid(freq_hz, den, bmag, bpsi, alt,
+                                          mode=mode, n_points=n_points)
 
     # Find the ratio of the square of the plasma frequency f_N to the square of
     # the ionosonde frequency f.
@@ -509,8 +496,9 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
     aY = find_Y(regridded['freq'], regridded['bmag'])
 
     # Find virtual height
-    vh[ind] = find_vh(aX, aY, regridded['bpsi'], regridded['dist'],
+    vh = find_vh(aX, aY, regridded['bpsi'], regridded['dist'],
                       np.min(alt), mode)
+
     return vh
 
 
@@ -634,12 +622,18 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
     # Run forward model
     vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
                            mode=mode, n_points=n_points)
+
+    #when nmF2 is reduced, the modeled ray may pierce the ionosphere and result
+    #in vh_model = nan for frequencies where vh_obs is finite. to handle this,
+    # overwrite nans with the mean of the finite points or 10 km
+    vh_model[np.isnan(vh_model)] = np.maximum(np.nanmean(np.abs(vh_model)), 10.)
+
     # Find residuals
     residual = (vh_obs - vh_model).ravel()
     return residual
 
 
-def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
+def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
                         method='brute', percent_sigma=20., step=1.,
                         mode='O', n_points=200):
     """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed VH.
@@ -652,9 +646,9 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
         Initial F1 layer parameters.
     E : dict
         Initial E layer parameters.
-    f_in : ndarray
+    f_in0 : ndarray
         Input frequencies [MHz].
-    vh_obs : ndarray
+    vh_obs0 : ndarray
         Observed virtual heights [km].
     alt : ndarray
         Altitude array [km].
@@ -689,43 +683,54 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
         Reconstructed electron density profile after fitting [m^-3].
 
     """
-    # Use the last valid (finite) value in vh_obs to estimate initial NmF2
-    ind_valid = np.where(np.isfinite(vh_obs))[0][-1]
-    # Convert plasma frequency to plasma density and increase it slightly
-    # (by 0.01%) to make sure that we can obtain the virtual height for the
-    # last data point
-    NmF2_new = freq2den(f_in[ind_valid] * 1e6) * 1.0001
+    # Find good indices and sort the input arrays
+    gi = np.nonzero(np.isfinite(f_in0 + vh_obs0))[0]
+    vh_obs, f_in = vh_obs0[gi], f_in0[gi]
+    si = np.argsort(f_in)
+    vh_obs, f_in = vh_obs[si], f_in[si]
 
-    # The input arrays in F2 have shape [1, 1, 1], let's use mean to make it
-    # just one number
-    mean_hmF2 = np.nanmean(F2['hm'])
-    mean_B_bot = np.nanmean(F2['B_bot'])
+    # Removes axes of length one from the initial values of all parameters
+    old_nmf2 = F2['Nm'].squeeze()
+    old_hmf2 = F2['hm'].squeeze()
+    old_B_bot = F2['B_bot'].squeeze()
 
-    # Brute minimization gives the best result
-    # The brute step controls the walk
-    # If you need to make the code faster, increase the brute_step and
-    # decrease the percent sigma
-    sigma_hmF2 = mean_hmF2 * (percent_sigma / 100.0)
-    sigma_B_bot = mean_B_bot * (percent_sigma / 100.0)
+    # And their sigmas
+    sigma_hmf2 = old_hmf2 * (percent_sigma / 100.0)
+    sigma_B_bot = old_B_bot * (percent_sigma / 100.0)
 
-    # Populate lmfit parameters for the minimization
+    # Max observed ionosonde frequency in Hz
+    f_max_Hz = f_in[-1] * 1e6
+
+    # The direct extraction of NmF2 depends on the mode
+    if mode == 'O':
+        # Convert plasma frequency to plasma density and increase it slightly
+        # (by 0.01%) to make sure that we can obtain the virtual height for the
+        # last data point
+        Nmf2_new = freq2den(f_max_Hz) * 1.0001
+
+    if mode == 'X':
+        # Using the initial value for hmF2 to determine the strength of the B
+        _, gp, _, _ = constants()
+        ind_hmF2 = np.argmin(np.abs(alt - old_hmf2))
+        f_c = b_mag[ind_hmF2] * gp
+
+        # Eqn derived from X + Y = 1 condition
+        foF2 = np.sqrt(f_max_Hz**2 - f_max_Hz * f_c)
+        Nmf2_new = freq2den(foF2) * 1.0001
+
+    # Initiate the parameters
     params = lmfit.Parameters()
-    params.add('NmF2', value=NmF2_new, vary=False)
-    params.add('hmF2', value=mean_hmF2,
-               min=mean_hmF2 - sigma_hmF2,
-               max=mean_hmF2 + sigma_hmF2,
-               brute_step=step)
-
-    params.add('B_bot', value=mean_B_bot,
-               min=mean_B_bot - sigma_B_bot,
-               max=mean_B_bot + sigma_B_bot,
-               brute_step=step)
+    params.add('NmF2', value=Nmf2_new, vary=False)
+    params.add('hmF2', value=old_hmf2, min=old_hmf2 - sigma_hmf2,
+               max=old_hmf2 + sigma_hmf2, brute_step=step)
+    params.add('B_bot', value=old_B_bot, min=old_B_bot - sigma_B_bot,
+               max=old_B_bot + sigma_B_bot, brute_step=step)
 
     # Perform brute-force minimization
-    brute_result = lmfit.minimize(
-        residual_VH, params, args=(F2, F1, E, f_in, vh_obs, alt,
-                                   b_mag, b_psi, mode, n_points),
-        method=method)
+    brute_result = lmfit.minimize(residual_VH, params,
+                                  args=(F2, F1, E, f_in, vh_obs, alt,
+                                        b_mag, b_psi, mode, n_points),
+                                  method=method)
 
     # Extract optimal parameter values
     NmF2_opt = brute_result.params['NmF2'].value
@@ -742,7 +747,7 @@ def minimize_parameters(F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
 
     # Run forward model with optimized parameters
     vh_result, EDP_result = model_VH(F2_fit, F1_fit, E_fit,
-                                     f_in, alt, b_mag, b_psi,
+                                     f_in0, alt, b_mag, b_psi,
                                      mode=mode, n_points=n_points)
     return vh_result, EDP_result
 
