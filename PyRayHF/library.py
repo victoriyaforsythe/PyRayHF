@@ -388,10 +388,10 @@ def regrid_to_nonuniform_grid(f, n_e, b, bpsi, aalt,
     else:
         raise ValueError("mode must be 'O' or 'X'")
 
-    # rows that actually reach the cutoff (since fcrit is monotone in altitude)
+    # Rows that actually reach the cutoff (since fcrit is monotone in altitude)
     valid = fcrit[:, -1] >= 1.0
 
-    # row-wise interpolation: for each freq row, find z where fcrit == 1
+    # Row-wise interpolation: for each freq row, find z where fcrit == 1
     # np.apply_along_axis calls np.interp in C; no Python for-loop over rows
     critical_height = np.apply_along_axis(
         lambda col: np.interp(1.0, col, aalt), axis=1, arr=fcrit)
@@ -626,8 +626,9 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
     # When NmF2 is reduced, the modeled ray may pierce the ionosphere and
     # result in vh_model = nan for frequencies where vh_obs is finite.
     # To handle this, overwrite nans with the mean of the finite points or
-    # 0 km
-    vh_model[np.isnan(vh_model)] = np.maximum(np.nanmean(np.abs(vh_model)), 0)
+    # 100 km
+    vh_model[np.isnan(vh_model)] = np.maximum(np.nanmean(np.abs(vh_model)),
+                                              100)
 
     # Find residuals
     residual = (vh_obs - vh_model).ravel()

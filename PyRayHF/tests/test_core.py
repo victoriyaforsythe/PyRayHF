@@ -224,16 +224,15 @@ def test_vertical_forward_operator_basic_O_mode():
     """Basic test for vertical_forward_operator in O mode with short arrays."""
     freq = np.array([1.0, 2.0, 10.0])  # MHz (10 MHz > fof2)
     alt = np.array([100, 200, 300])
-    den = np.array([1e11, 5e11, 1e12])
+    den = np.array([0, 0.5e12, 1e12])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
-
     vh = vertical_forward_operator(freq, den, bmag, bpsi, alt,
                                    mode='O', n_points=50)
 
     assert isinstance(vh, np.ndarray)
     assert vh.shape == freq.shape
-    assert vh[-1] == 999  # 10 MHz > fof2, should be NaN -> 999
+    assert np.isnan(vh[-1])  # 10 MHz > fof2, should be NaN
     assert np.all(np.isfinite(vh[:-1]))  # Lower freqs should be finite
 
 
@@ -264,7 +263,7 @@ def test_model_VH_output():
     bpsi = np.array([60.0, 60.0, 60.0])
 
     # Expected outputs
-    expected_vh = np.array([174.32954286, 253.81598004, 100.])
+    expected_vh = np.array([174.32954286, 253.81598004, 301.25975233])
     expected_edp = np.array([5.39526842e+10,
                              2.81042885e+11,
                              6.66833260e+11])
