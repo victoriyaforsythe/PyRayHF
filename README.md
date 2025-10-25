@@ -19,8 +19,6 @@
 
 - **trace_ray_spherical_gradient** — spherical `(r, phi)` tracer for **horizontally varying** media `n(r,phi)`, using `mu(r,phi)` for geometry (and `mup` for group delay). Returns **ground range**, **apex altitude**, **group delay**, and **landing elevation**. *Key advantage:* captures first-order horizontal gradients with only a modest cost increase over the stratified spherical case; well suited as a fast forward model for oblique-path DA.
 
-- **trace_ray_fermat** — solves the ray path by **minimizing optical path length** (Fermat’s principle) in spherical geometry, using `mu` for geometry (and `mup` for group delay). Integrates the Euler–Lagrange form, handling turning points robustly without discrete Snell shells. Returns **ground range**, **apex altitude**, **group delay**, and **path length**. *Key advantage:* high accuracy with coarser vertical sampling and improved stability in regions with sharp `mu` gradients compared to shell-based solvers.
-
 
 # Installation
 
@@ -90,7 +88,7 @@ To compute the virtual height, we integrate the group refractive index over the 
 
 - **Electron density** — used to compute the plasma frequency; this is the primary factor affecting wave propagation.  
 - **Magnetic-field strength** — needed to calculate the gyrofrequency, which affects how the wave interacts with the ionized medium.  
-- **Magnetic-field angle** — the angle between the wave vector and the magnetic-field line, which influences wave polarization and refraction.
+- **Magnetic-field angle** — the angle between the wave vector and the local vertical (same as wave vector for vertical case), which influences wave polarization and refraction.
 
 Using these parameters, we compute:
 
@@ -113,7 +111,7 @@ To solve this, we use a **stretched vertical grid**. This grid places more point
 
 # Grid Construction for Virtual Height Calculation
 
-For each ionosonde frequency, we interpolate the **electron-density profile (EDP)**—converted into **plasma frequency**—to determine the height at which the ionosonde frequency equals the local plasma frequency. This height is the **reflection height**, and it marks the upper boundary for the integration in the virtual-height calculation.
+For each ionosonde frequency, we interpolate the **electron-density profile (EDP)**—converted into **plasma frequency**—to determine the height at which the ionosonde frequency equals the local plasma frequency (for O-mode, and X + Y = 1 condition for X-mode). This height is the **reflection height**, and it marks the upper boundary for the integration in the virtual-height calculation.
 
 Once the reflection height is known, we construct a new vertical grid tailored to that specific frequency. This is achieved using a **stretched-grid function** that varies smoothly from 0 to 1. The function concentrates points near the top of the grid—close to the reflection height—where resolution is most critical.
 
