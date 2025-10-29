@@ -8,6 +8,7 @@ adheres to [Semantic Versioning](https://semver.org/).
 * Tutorials added
 * Unit tests added
 * README is extended to cover the 2-D raytracing
+* Functions added to generate 1D and 2D input data (density and magnetic field) using PyIRI
 
 ## 0.0.2 (06-12-2025)
 * Bug fix in vertical_forward_operator (typo in bpsi.shape)
