@@ -11,6 +11,8 @@
 # Standard library
 from copy import deepcopy
 from functools import partial
+from datetime import datetime
+import pickle
 
 # Third-party
 import lmfit
@@ -2197,3 +2199,343 @@ def trace_ray_spherical_gradient(
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
             "ground_range_km": ground_range_km}
+
+
+def great_circle_point(tlat,tlon,gcd,az):
+    """Get lat/lon of a great circle destiantion point from an origin point
+        
+    Parameters
+    ----------
+    tlat, tlon : float
+        Lattitude and longitude of origin [degrees]
+    gcd  : array-like
+        Great circle distance from origin to destination point [km]
+    az   : float
+        Azimuth (clockwise from north) from origin to destination point [degrees]
+
+    Returns
+    -------
+    rlat, rlon : array-like
+        Lattitude and longitude of destination point [degrees]
+
+    Notes
+    -----
+    Assumes spherical earth (not ellipsoid)
+    """
+    # Radius of the Earth
+    R = 6371 # km
+
+    # Angular distance
+    s = gcd/R
+
+    # Convert to radians
+    tlat_r = np.deg2rad(tlat)
+    tlon_r = np.deg2rad(tlon)
+    az_r = np.deg2rad(az)
+
+    # Compute lat and lon
+    rlat_r = np.asin(np.sin(tlat_r)*np.cos(s) + 
+                np.cos(tlat_r)*np.sin(s)*np.cos(az_r))
+    
+    rlon_r = tlon_r + np.atan2(np.sin(az_r)*np.sin(s)*np.cos(tlat_r), 
+                np.cos(s) - np.sin(tlat_r)*np.sin(rlat_r))
+
+    # Convert back to degrees
+    rlat = np.rad2deg(rlat_r)
+    rlon = np.rad2deg(rlon_r)
+
+    # Clamp longitude to [-180,180]
+    rlon = clamp_longitude(rlon)
+
+    return rlat, rlon
+
+
+def clamp_longitude(lon):
+    """Clamp a given longitude to [-180°,180°]
+
+    Parameters
+    ----------
+    lon : float
+        Longitude in degrees
+
+    Returns
+    -------
+    lon_clamped : float
+        Longitude clamped to [-180°,180°)
+    """
+    lon_clamped = ((lon + 180) % 360) - 180
+    return lon_clamped
+
+
+def calculate_magnetic_field(year, month, day, lat, lon, aalt):
+    """Get magnetic field strength and angle from vertical
+    
+    Parameters
+    ----------
+    year, month, day : int
+        Date at which to evaluate B field
+    lat : array-like
+        Latitude in degrees
+    lon : array-like
+        Longitude in degrees
+    aalt : array-like
+        Altitude array in km
+
+    Returns
+    -------
+    mag : array-like
+        Magnetic field strength at each altitude [nT]
+    psi : array-like
+        Magnetic field angle from vertical at each altitude [degrees]
+
+    Notes
+    -----
+    This returns the total field strength and angle from vertical
+
+    """
+    # Get Decimal Year
+    dt = datetime(year, month, day)
+    decimal_year = PyIRI.main_library.decimal_year(dt)
+
+    # Initialize Inclination and Field Strength Vectors
+    inc = np.zeros((len(aalt), len(lat)))
+    mag = np.zeros((len(aalt), len(lat)))
+
+    # Iterate for each altitude
+    for i in range(len(aalt)):
+        (inc[i,:], _, _, _, _, _,mag[i,:]) = PyIRI.igrf_library.inclination(PyIRI.coeff_dir,
+                                                                    decimal_year,
+                                                                    lon,
+                                                                    lat,
+                                                                    aalt[i],
+                                                                    only_inc=False)
+    # Convert Inclination to Angle from Vertical
+    psi = 90.0 - np.abs(inc)
+
+    # Convert Magnetic Field to Tesla
+    mag = mag/1E9
+
+    return mag, psi
+
+
+def save_to_file(output,file_path):
+    """Save dictionary to a pickle file
+    
+    Parameters
+    ----------
+    output : dict
+        Dictionary to save to pickle file
+    file_path : string
+        Full filepath (including .p extension) of output file
+
+    """    
+    # Save to pickle file
+    with open(file_path, 'wb') as f:
+        pickle.dump(output,f)
+
+
+def generate_input_2D(year, month, day, UT, tlat, tlon, dx, aalt, 
+                      gcd, az, F107, save_path=''):
+    """Compute 2D PyIRI/IGRF input data for raytracing in PyRayHF
+    
+    Parameters
+    ----------
+    year : int
+        Four digit year in C.E.
+    month : int
+        Integer month
+    day : int
+        Integer day of month 
+    UT : int
+        Universal time (UT) in hours 
+    tlat : float
+        Latitude of transmitter in degrees
+    tlon : float
+        Longitude of transmitter in degrees
+    dx : float
+        Horizontal resolution of output grid in km
+    aalt : array-like
+        Array of altitude grid points in km (max 1000 km)
+    gcd : float
+        Great circle distance in km from transmitter to end of domain
+        (The horizontal span of the output domain)
+    az : float
+        Azimuth from transmitter in degrees that defines the orientation of the
+        output domain (measured clockwise from geographic North).
+    F107 : float
+        User provided F10.7 solar flux index in SFU.
+    save_path : str
+        Full file path for saving output data (must include .p file extension)
+        If left blank, the output will not be saved toa  file.  (default='')
+
+    Returns
+    -------
+    out_data : dict
+        'xgrid' : x coordinate array of horizontal grid in km
+        'zgrid' : z coordinate array of vertical grid in km
+        'xlat' : Latitude in degrees of each point in xgrid
+        'xlon' : Longitude in degrees of each point in xgrid
+        'den' : 2D array of electron density in m^-3
+        'bmag' : 2D array of magnetic field strenth in T
+        'bpsi' : 2D array of magnetic field angle to vertical in degrees
+        'F2' : PyIRI output dictionary for F2 region at all (xlon, xlat)
+        'F1' : PyIRI output dictionary for F1 region at all (xlon, xlat)
+        'E' : PyIRI output dictionary for E region at all (xlon, xlat)
+        'Es' : PyIRI output dictionary for Es region at all (xlon, xlat)
+        'year' : Year used to run PyIRI for this data 
+        'month' : Month used to run PyIRI for this data 
+        'day' : Day of month used to run PyIRI for this data 
+        'UT' : Unniversal time used to run PyIRI for this data 
+        'F107' : F10.7 in SFU used to run PyIRI for this data
+        'tlat' : Latitude in degrees of transmitter
+        'tlon' : Longitude in degrees of transmitter
+        'az' : Azimuth from transmitter in degrees (measured clockwise from
+               geographic north) that defines the orientation of the output domain
+
+    Notes
+    -----
+    Given date/time, solar conditions, HF transmitter location, ray azimuth,
+    and desired grid parameters, this function uses PyIRI and IGRF to generate
+    electron density and magnetic field data in a 2D (horizontal VS vertical)
+    grid that can be used for oblique ray tracing input to PyRayHF.
+
+    """
+    # Determine lat and lon of domain boundary
+    rlat, rlon = great_circle_point(tlat,tlon,np.array([gcd]),az)
+
+    # Surface Grid (along great circle)
+    n_x = int(gcd/dx) # Number of x points
+    xgrid = np.linspace(0,gcd,n_x)
+
+    # Get lat and lon for each x
+    xlat, xlon = great_circle_point(tlat,tlon,xgrid,az)
+
+    # Get B field for all x
+    bmag, bpsi = calculate_magnetic_field(year, month, day, 
+                                                    xlat, xlon, aalt)
+    
+    # Get EDP for all x
+    (F2, F1, E, 
+     Es, _, _, den) = PyIRI.edp_update.IRI_density_1day(year, month, day, np.array([UT]), xlon, 
+                                                    xlat, aalt, F107, PyIRI.coeff_dir, 0)
+
+    # Remove extra dimension from den
+    den = np.squeeze(den)
+
+    # Format Output
+    out_data = {'xgrid': xgrid, 
+                'zgrid': aalt, 
+                'xlat' : xlat,  
+                'xlon' : xlon,
+                'den': den,    
+                'bmag': bmag, 
+                'bpsi': bpsi, 
+                'F2': F2, 
+                'F1': F1,
+                'E': E,
+                'Es': Es,
+                'year': year,
+                'month': month,
+                'day': day,
+                'UT': UT,
+                'F107': F107,
+                'tlat': tlat,
+                'tlon': tlon,
+                'az': az 
+                }
+
+    # Save to File
+    if save_path != '':
+        save_to_file(out_data,save_path)
+    
+    return out_data
+
+
+def generate_input_1D(year, month, day, UT, tlat, tlon, aalt, F107, save_path=''):
+    """Compute 1D PyIRI/IGRF input data for raytracing in PyRayHF
+    
+    Parameters
+    ----------
+    year : int
+        Four digit year in C.E.
+    month : int
+        Integer month
+    day : int
+        Integer day of month 
+    UT : int
+        Universal time (UT) in hours 
+    tlat : float
+        Latitude of transmitter in degrees
+    tlon : float
+        Longitude of transmitter in degrees
+    aalt : array-like
+        Array of altitude grid points in km (max 1000 km)
+    F107 : float
+        User provided F10.7 solar flux index in SFU.
+    save_path : str
+        Full file path for saving output data (must include .p file extension)
+        If left blank, the output will not be saved toa  file.  (default='')
+
+    Returns
+    -------
+    out_data : dict
+        'alt' : z coordinate array of vertical grid in km
+        'den' : Array of electron density in m^-3
+        'bmag' : Array of magnetic field strenth in T
+        'bpsi' : Array of magnetic field angle to vertical in degrees
+        'F2' : PyIRI output dictionary for F2 region at (tlon, xlat)
+        'F1' : PyIRI output dictionary for F1 region at (tlon, tlat)
+        'E' : PyIRI output dictionary for E region at (tlon, tlat)
+        'Es' : PyIRI output dictionary for Es region at (tlon, tlat)
+        'year' : Year used to run PyIRI for this data 
+        'month' : Month used to run PyIRI for this data 
+        'day' : Day of month used to run PyIRI for this data 
+        'UT' : Unniversal time used to run PyIRI for this data 
+        'F107' : F10.7 in SFU used to run PyIRI for this data
+        'tlat' : Latitude in degrees of transmitter
+        'tlon' : Longitude in degrees of transmitter
+
+    Notes
+    -----
+    Given date/time, solar conditions, HF transmitter location, and desired
+    grid parameters, this function uses PyIRI and IGRF to generate electron
+    density and magnetic field data in a 1D (vertical) grid that can be used
+    for vertical or 2D Snell's-law ray tracing input to PyRayHF.
+
+    """
+    # Get B field at transmitter location
+    bmag, bpsi = calculate_magnetic_field(year, month, day, 
+                                                    np.array([tlat]), np.array([tlon]), aalt)
+    
+    # Get EDP at transmitter location
+    (F2, F1, E, 
+     Es, _, _, den) = PyIRI.edp_update.IRI_density_1day(year, month, day, np.array([UT]), np.array([tlon]), 
+                                                    np.array([tlat]), aalt, F107, PyIRI.coeff_dir, 0)
+    # Remove extra dimensions
+    den = np.squeeze(den)
+    bmag = np.squeeze(bmag)
+    bpsi = np.squeeze(bpsi)
+
+    # Format Output
+    out_data = {'alt': aalt, 
+                'den': den,    
+                'bmag': bmag, 
+                'bpsi': bpsi, 
+                'F2': F2, 
+                'F1': F1,
+                'E': E,
+                'Es': Es,
+                'year': year,
+                'month': month,
+                'day': day,
+                'UT': UT,
+                'F107': F107,
+                'tlat': tlat,
+                'tlon': tlon,
+                }
+
+    # Save to File
+    if save_path != '':
+        save_to_file(out_data,save_path)
+    
+    return out_data
