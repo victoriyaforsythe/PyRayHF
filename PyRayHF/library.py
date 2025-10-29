@@ -10,8 +10,8 @@
 
 # Standard library
 from copy import deepcopy
-from functools import partial
 from datetime import datetime
+from functools import partial
 import pickle
 
 # Third-party
@@ -2202,7 +2202,7 @@ def trace_ray_spherical_gradient(
 
 
 def great_circle_point(tlat, tlon, gcd, az):
-    """Get lat/lon of a great circle destiantion point from an origin point
+    """Get lat/lon of a great circle destiantion point from an origin point.
 
     Parameters
     ----------
@@ -2252,7 +2252,7 @@ def great_circle_point(tlat, tlon, gcd, az):
 
 
 def clamp_longitude(lon):
-    """Clamp a given longitude to [-180°,180°]
+    """Clamp a given longitude to [-180°,180°].
 
     Parameters
     ----------
@@ -2269,7 +2269,7 @@ def clamp_longitude(lon):
 
 
 def calculate_magnetic_field(year, month, day, lat, lon, aalt):
-    """Get magnetic field strength and angle from vertical
+    """Get magnetic field strength and angle from vertical.
 
     Parameters
     ----------
@@ -2321,7 +2321,7 @@ def calculate_magnetic_field(year, month, day, lat, lon, aalt):
 
 
 def save_to_file(output, file_path):
-    """Save dictionary to a pickle file
+    """Save dictionary to a pickle file.
 
     Parameters
     ----------
@@ -2338,7 +2338,7 @@ def save_to_file(output, file_path):
 
 def generate_input_2D(year, month, day, UT, tlat, tlon, dx, aalt,
                       gcd, az, F107, save_path=''):
-    """Compute 2D PyIRI/IGRF input data for raytracing in PyRayHF
+    """Compute 2D PyIRI/IGRF input data for raytracing in PyRayHF.
 
     Parameters
     ----------
@@ -2464,7 +2464,7 @@ def generate_input_2D(year, month, day, UT, tlat, tlon, dx, aalt,
 
 def generate_input_1D(year, month, day, UT, tlat,
                       tlon, aalt, F107, save_path=''):
-    """Compute 1D PyIRI/IGRF input data for raytracing in PyRayHF
+    """Compute 1D PyIRI/IGRF input data for raytracing in PyRayHF.
 
     Parameters
     ----------
