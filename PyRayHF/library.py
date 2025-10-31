@@ -2246,26 +2246,9 @@ def great_circle_point(tlat, tlon, gcd, az):
     rlon = np.rad2deg(rlon_r)
 
     # Clamp longitude to [-180,180]
-    rlon = clamp_longitude(rlon)
+    rlon = PyIRI.main_library.adjust_longitude(rlon, 'to180')
 
     return rlat, rlon
-
-
-def clamp_longitude(lon):
-    """Clamp a given longitude to [-180°,180°].
-
-    Parameters
-    ----------
-    lon : float
-        Longitude in degrees
-
-    Returns
-    -------
-    lon_clamped : float
-        Longitude clamped to [-180°,180°)
-    """
-    lon_clamped = ((lon + 180) % 360) - 180
-    return lon_clamped
 
 
 def calculate_magnetic_field(year, month, day, lat, lon, aalt):
