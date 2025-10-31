@@ -224,10 +224,9 @@ def test_vertical_forward_operator_basic_O_mode():
     """Basic test for vertical_forward_operator in O mode with short arrays."""
     freq = np.array([1.0, 2.0, 10.0])  # MHz (10 MHz > fof2)
     alt = np.array([100, 200, 300])
-    den = np.array([1e11, 5e11, 1e12])
+    den = np.array([0, 0.5e12, 1e12])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
-
     vh = vertical_forward_operator(freq, den, bmag, bpsi, alt,
                                    mode='O', n_points=50)
 
@@ -258,13 +257,13 @@ def test_model_VH_output():
          'B_top': np.array([[7.]]),
          'solzen': np.array([[22.26668451]]),
          'solzen_eff': np.array([[22.26668451]])}
-    freq = np.array([3.0, 4.0, 5.0])
+    freq = np.array([3.0, 4.0, 4.5])
     alt = np.array([100, 200, 300])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
 
     # Expected outputs
-    expected_vh = np.array([174.32954286, 253.81598004, 100.])
+    expected_vh = np.array([174.32954286, 253.81598004, 301.25975233])
     expected_edp = np.array([5.39526842e+10,
                              2.81042885e+11,
                              6.66833260e+11])
@@ -299,7 +298,7 @@ def test_zero_residual_when_parameters_match():
          'solzen': np.array([[22.26668451]]),
          'solzen_eff': np.array([[22.26668451]])}
 
-    freq = np.array([3.0, 4.0, 5.0])
+    freq = np.array([3.0, 4.0, 4.5])
     alt = np.array([100, 200, 300])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
