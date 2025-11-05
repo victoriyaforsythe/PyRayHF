@@ -2526,6 +2526,9 @@ def generate_input_1D(year, month, day, UT, tlat,
     bmag = np.squeeze(bmag)
     bpsi = np.squeeze(bpsi)
 
+    # Generate array of frequencies used by a vertical ionosonde in MHz.
+    ionosonde_frequency = np.arange(1, 12, 0.1)
+
     # Format Output
     out_data = {'alt': aalt,
                 'den': den,
@@ -2542,6 +2545,7 @@ def generate_input_1D(year, month, day, UT, tlat,
                 'F107': F107,
                 'tlat': tlat,
                 'tlon': tlon,
+                'freq': ionosonde_frequency
                 }
 
     # Save to File
