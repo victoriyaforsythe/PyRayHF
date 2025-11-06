@@ -2230,7 +2230,7 @@ def great_circle_point(tlat, tlon, gcd, az):
     Assumes spherical earth (not ellipsoid)
     """
     # Radius of the Earth
-     _, _, R_E, _ = constants()
+    _, _, R_E, _ = constants()
 
     # Angular distance
     s = gcd / R_E
