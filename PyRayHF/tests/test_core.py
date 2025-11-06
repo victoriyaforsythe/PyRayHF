@@ -978,6 +978,7 @@ def test_oblique_to_vertical_identities():
     assert np.all((ratio >= 0) & (ratio <= 1)), "D/p must lie in [0, 1]"
 
     # Compute reference geometry
+    _, _, Re_val, _ = constants()
     Re_val = Re()
     theta = (D / 2.0) / Re_val
     dcurv = Re_val * (1.0 - np.cos(theta))
