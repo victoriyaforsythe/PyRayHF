@@ -989,7 +989,7 @@ def test_oblique_to_vertical_flat_earth_limit():
     D = 10.0  # km, nearly flat geometry
     p = np.array([20.0])
     f_o = np.array([10.0])
-    Re_val = Re()
+    _, _, Re_val, _ = constants()
 
     f_v, h_v = oblique_to_vertical(D, p, f_o)
 
