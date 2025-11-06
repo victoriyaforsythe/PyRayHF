@@ -2208,7 +2208,7 @@ def trace_ray_spherical_gradient(
 
 
 def great_circle_point(tlat, tlon, gcd, az):
-    """Get lat/lon of a great circle destiantion point from an origin point.
+    """Get lat/lon of a GCD point from an origin point.
 
     Parameters
     ----------
@@ -2230,10 +2230,10 @@ def great_circle_point(tlat, tlon, gcd, az):
     Assumes spherical earth (not ellipsoid)
     """
     # Radius of the Earth
-    R = 6371  # km
+     _, _, R_E, _ = constants()
 
     # Angular distance
-    s = gcd / R
+    s = gcd / R_E
 
     # Convert to radians
     tlat_r = np.deg2rad(tlat)
