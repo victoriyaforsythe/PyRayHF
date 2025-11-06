@@ -984,6 +984,7 @@ def test_oblique_to_vertical_basic():
     # (higher f -> lower reflection)
     assert np.all(np.diff(h_v) < 0), "Virtual height should decrease with f"
 
+
 def test_oblique_to_vertical_flat_earth_limit():
     """Check flat-Earth limit as D << Re (small curvature)."""
     D = 10.0  # km, nearly flat geometry
@@ -1001,6 +1002,7 @@ def test_oblique_to_vertical_flat_earth_limit():
     # Check vertical f roughly equals oblique frequency for near-vertical path
     assert np.isclose(f_v, f_o, atol=0.05)
 
+
 def test_oblique_to_vertical_horizontal_limit():
     """Ensure function handles near-horizontal propagation gracefully."""
     D = 1000.0  # km
@@ -1012,6 +1014,7 @@ def test_oblique_to_vertical_horizontal_limit():
     # Vertical frequency should approach zero
     assert f_v < 1.0, "Vertical f should be very small for near-hor path"
     assert np.isfinite(h_v), "Virtual height must remain finite"
+
 
 def test_oblique_to_vertical_array_shapes():
     """Confirm broadcasting and array length consistency."""
