@@ -2576,16 +2576,18 @@ def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
         Virtual height at midpoint [km]
 
     """
+    _, _, R_E, _ = constants()
+
     # Convert inputs to arrays
     p = np.asarray(group_path_km)
     f_o = np.asarray(freq_oblique_mhz)
     D = range_km
 
     # Step 1: Compute central angle between Tx and Rx
-    theta = (D / 2.0) / Re()  # radians
+    theta = (D / 2.0) / R_E  # radians
 
     # Step 2: Curvature correction due to Earth's shape
-    curvature_correction = Re() * (1.0 - np.cos(theta))  # km
+    curvature_correction = R_E * (1.0 - np.cos(theta))  # km
 
     # Step 3: Incidence angle at midpoint
     phi = np.arcsin(D / p)  # radians
