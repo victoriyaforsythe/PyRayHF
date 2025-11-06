@@ -979,7 +979,6 @@ def test_oblique_to_vertical_identities():
 
     # Compute reference geometry
     _, _, Re_val, _ = constants()
-    Re_val = Re()
     theta = (D / 2.0) / Re_val
     dcurv = Re_val * (1.0 - np.cos(theta))
     phi = np.arcsin(ratio)
