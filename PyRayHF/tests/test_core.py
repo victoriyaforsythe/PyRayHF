@@ -21,6 +21,7 @@ from PyRayHF.library import freq2den
 from PyRayHF.library import minimize_parameters
 from PyRayHF.library import model_VH
 from PyRayHF.library import n_and_grad
+from PyRayHF.library import oblique_to_vertical
 from PyRayHF.library import regrid_to_nonuniform_grid
 from PyRayHF.library import residual_VH
 from PyRayHF.library import smooth_nonuniform_grid
@@ -962,3 +963,62 @@ def test_trace_ray_spherical_gradient_basic():
     rel_err = abs(result["group_delay_sec"]
                   * c_km_s / result["group_path_km"] - 1)
     assert rel_err < 0.2, f"Delay-path consistency off by {rel_err * 100:.2f}%"
+
+
+def test_oblique_to_vertical_basic():
+    """Test midpoint conversion for typical oblique geometry."""
+    D = 600.0  # km ground range
+    p = np.array([1000.0, 1200.0, 1500.0])  # km group paths
+    f_o = np.array([5.0, 10.0, 15.0])  # MHz frequencies
+
+    f_v, h_v = oblique_to_vertical(D, p, f_o)
+
+    # --- Basic sanity checks ---
+    assert np.all(f_v < f_o), "Vertical f must be smaller than oblique f"
+    assert np.all(h_v > 0), "Virtual height must be positive"
+    assert f_v.shape == f_o.shape
+    assert h_v.shape == f_o.shape
+
+    # --- Physical plausibility checks ---
+    # The midpoint height should decrease with increasing frequency
+    # (higher f -> lower reflection)
+    assert np.all(np.diff(h_v) < 0), "Virtual height should decrease with f"
+
+def test_oblique_to_vertical_flat_earth_limit():
+    """Check flat-Earth limit as D << Re (small curvature)."""
+    D = 10.0  # km, nearly flat geometry
+    p = np.array([20.0])
+    f_o = np.array([10.0])
+    Re_val = Re()
+
+    f_v, h_v = oblique_to_vertical(D, p, f_o)
+
+    # Curvature correction should be negligible
+    theta = (D / 2.0) / Re_val
+    curvature = Re_val * (1 - np.cos(theta))
+    assert curvature < 0.001, "Curvature correction should be tiny for small D"
+
+    # Check vertical f roughly equals oblique frequency for near-vertical path
+    assert np.isclose(f_v, f_o, atol=0.05)
+
+def test_oblique_to_vertical_horizontal_limit():
+    """Ensure function handles near-horizontal propagation gracefully."""
+    D = 1000.0  # km
+    p = np.array([1010.0])  # barely larger, nearly horizontal
+    f_o = np.array([10.0])
+
+    f_v, h_v = oblique_to_vertical(D, p, f_o)
+
+    # Vertical frequency should approach zero
+    assert f_v < 1.0, "Vertical f should be very small for near-hor path"
+    assert np.isfinite(h_v), "Virtual height must remain finite"
+
+def test_oblique_to_vertical_array_shapes():
+    """Confirm broadcasting and array length consistency."""
+    D = 500.0
+    p = np.linspace(800, 1600, 5)
+    f_o = np.full_like(p, 10.0)
+
+    f_v, h_v = oblique_to_vertical(D, p, f_o)
+    assert f_v.shape == h_v.shape == p.shape
+    assert np.all(np.isfinite(f_v)) and np.all(np.isfinite(h_v))

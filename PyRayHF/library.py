@@ -2553,3 +2553,47 @@ def generate_input_1D(year, month, day, UT, tlat,
         save_to_file(out_data, save_path)
 
     return out_data
+
+
+def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
+    """
+    Convert oblique ionogram data to vertical equivalent using spherical Earth.
+
+    Parameters
+    ----------
+    range_km : float
+        Ground distance between transmitter and receiver [km]
+    group_path_km : array-like
+        Oblique group path (total propagation distance) [km]
+    freq_oblique_mhz : array-like
+        Oblique frequency [MHz]
+
+    Returns
+    -------
+    freq_vertical_mhz : array-like
+        Equivalent vertical frequency [MHz]
+    height_virtual_km : array-like
+        Virtual height at midpoint [km]
+
+    """
+    # Convert inputs to arrays
+    p = np.asarray(group_path_km)
+    f_o = np.asarray(freq_oblique_mhz)
+    D = range_km
+
+    # Step 1: Compute central angle between Tx and Rx
+    theta = (D / 2.0) / Re()  # radians
+
+    # Step 2: Curvature correction due to Earth's shape
+    curvature_correction = Re() * (1.0 - np.cos(theta))  # km
+
+    # Step 3: Incidence angle at midpoint
+    phi = np.arcsin(D / p)  # radians
+
+    # Step 4: Virtual height using mid-point geometry
+    height_virtual_km = 0.5 * p * np.cos(phi) - curvature_correction
+
+    # Step 5: Vertical frequency by projection
+    freq_vertical_mhz = f_o * np.cos(phi)
+
+    return freq_vertical_mhz, height_virtual_km
