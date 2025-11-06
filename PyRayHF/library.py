@@ -2556,8 +2556,7 @@ def generate_input_1D(year, month, day, UT, tlat,
 
 
 def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
-    """
-    Convert oblique ionogram data to vertical equivalent using spherical Earth.
+    """Convert oblique ionogram to vertical equivalent using spherical Earth.
 
     Parameters
     ----------
