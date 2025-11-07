@@ -504,7 +504,8 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
     return vh
 
 
-def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
+def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200,
+             bottom_type='B_bot'):
     """Compute vertical virtual height using a modeled EDP and raytrace.
 
     Parameters
@@ -532,6 +533,10 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
         'O' or 'X' mode. Default is 'O' mode.
     n_points : int
         Number of vertical grid points. Default is 200.
+    bottom_type : str
+        Type of the F2 bottom formalizm. Default is 'B_bot', which
+        construncts bottom side of F2 using a single thickness parameter.
+        Other option is 'B0_B1' which uses an IRI formalizm.
 
     Returns
     -------
@@ -543,26 +548,47 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
     """
     # Using PyIRI formalizm update the F1 layer parameters, in case F2
     # parameters have changed
-    (NmF1,
-     foF1,
-     hmF1,
-     B_F1_bot) = PyIRI.edp_update.derive_dependent_F1_parameters(F1['P'],
-                                                                 F2['Nm'],
-                                                                 F2['hm'],
-                                                                 F2['B_bot'],
-                                                                 E['hm'])
+    if bottom_type == 'B_bot':
+        (NmF1, foF1,
+         hmF1, B_F1_bot) = PyIRI.edp_update.derive_dependent_F1_parameters(
+             F1['P'],
+             F2['Nm'],
+             F2['hm'],
+             F2['B_bot'],
+             E['hm'])
 
-    # Update F1 with derived values
-    F1['Nm'] = NmF1
-    F1['hm'] = hmF1
-    F1['fo'] = foF1
-    F1['B_bot'] = B_F1_bot
+        # Update F1 with derived values
+        F1['Nm'] = NmF1
+        F1['hm'] = hmF1
+        F1['fo'] = foF1
+        F1['B_bot'] = B_F1_bot
 
-    # Reconstruct electron density profile
-    EDP = PyIRI.edp_update.reconstruct_density_from_parameters_1level(F2,
-                                                                      F1,
-                                                                      E,
-                                                                      alt)
+        # Reconstruct electron density profile
+        EDP = PyIRI.edp_update.reconstruct_density_from_parameters_1level(F2,
+                                                                        F1,
+                                                                        E,
+                                                                        alt)
+
+    if bottom_type == 'B0_B1':
+        (NmF1, foF1,
+         hmF1, B_F1_bot) = PyIRI.sh_library.derive_dependent_F1_parameters(
+             F1['P'],
+             F2['Nm'],
+             F2['hm'],
+             F2['B0'],
+             F2['B1'],
+             E['hm'])
+
+        # Update F1 with derived values
+        F1['Nm'] = NmF1
+        F1['hm'] = hmF1
+        F1['fo'] = foF1
+        F1['B_bot'] = B_F1_bot
+
+        # Reconstruct electron density profile
+        EDP = PyIRI.sh_library.EDP_builder_continuous(F2, F1, E, alt)
+
+    # Ignore N_T and N_G because we don't have any
     EDP = EDP[0, :, 0]
 
     # Run vertical raytracing using PyRayHF
@@ -573,7 +599,7 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
 
 
 def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
-                b_mag, b_psi, mode='O', n_points=200):
+                b_mag, b_psi, mode='O', n_points=200, bottom_type='B_bot'):
     """Compute the residuals between observed and modeled VHs.
 
     Parameters
@@ -603,6 +629,10 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
         'O' or 'X' mode. Default is 'O' mode.
     n_points : int
         Number of vertical grid points. Default is 200.
+    bottom_type : str
+        Type of the F2 bottom formalizm. Default is 'B_bot', which
+        construncts bottom side of F2 using a single thickness parameter.
+        Other option is 'B0_B1' which uses an IRI formalizm.
 
     Returns
     -------
@@ -619,11 +649,19 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
     # Update F2 parameters from optimization values
     F2['Nm'] = np.full_like(F2_init['Nm'], params['NmF2'].value)
     F2['hm'] = np.full_like(F2_init['Nm'], params['hmF2'].value)
-    F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
 
-    # Run forward model
-    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
-                           mode=mode, n_points=n_points)
+    # Run forward model based on the type of F2 bottom formalizm
+    if bottom_type == 'B_bot':
+        F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
+        vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
+                               mode=mode, n_points=n_points,
+                               bottom_type='B_bot')
+    if bottom_type == 'B0_B1':
+        F2['B0'] = np.full_like(F2_init['Nm'], params['B0'].value)
+        F2['B1'] = np.full_like(F2_init['Nm'], params['B1'].value)
+        vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
+                               mode=mode, n_points=n_points,
+                               bottom_type='B0_B1')
 
     # When NmF2 is reduced, the modeled ray may pierce the ionosphere and
     # result in vh_model = nan for frequencies where vh_obs is finite.
@@ -639,7 +677,7 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
 
 def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
                         method='brute', percent_sigma=20., step=1.,
-                        mode='O', n_points=200):
+                        mode='O', n_points=200, bottom_type='B_bot'):
     """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed VH.
 
     Parameters
@@ -678,6 +716,10 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
         'O' or 'X' mode. The default is 'O'.
     n_points : int
         Number of desired vertical grid points. Default is 200.
+    bottom_type : str
+        Type of the F2 bottom formalizm. Default is 'B_bot', which
+        construncts bottom side of F2 using a single thickness parameter.
+        Other option is 'B0_B1' which uses an IRI formalizm.
 
     Returns
     -------
@@ -687,6 +729,19 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
         Reconstructed electron density profile after fitting [m^-3].
 
     """
+    # Check that the correct F2 bot formalizm is chosen:
+    B0_check = F2.get('B0')
+    B1_check = F2.get('B1')
+    B_bot_check = F2.get('B_bot')
+
+    if (bottom_type == 'B_bot') & (B_bot_check is None):
+        string = 'B_bot is not provided in F, but bottom_type is B_bot'
+        raise ValueError(string)
+
+    if (bottom_type == 'B0_B1') & ((B0_check is None) | (B1_check is None)):
+        string = 'B0 and B1 are not provided in F, but bottom_type is B0_B1'
+        raise ValueError(string)
+
     # Find good indices and sort the input arrays
     gi = np.nonzero(np.isfinite(f_in0 + vh_obs0))[0]
     vh_obs, f_in = vh_obs0[gi], f_in0[gi]
@@ -695,11 +750,16 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
 
     # Removes axes of length one from the initial values of all parameters
     old_hmf2 = F2['hm'].squeeze()
-    old_B_bot = F2['B_bot'].squeeze()
-
-    # And their sigmas
     sigma_hmf2 = old_hmf2 * (percent_sigma / 100.0)
-    sigma_B_bot = old_B_bot * (percent_sigma / 100.0)
+
+    if bottom_type == 'B_bot':
+        old_B_bot = F2['B_bot'].squeeze()
+        sigma_B_bot = old_B_bot * (percent_sigma / 100.0)
+
+    if bottom_type == 'B0_B1':
+        old_B0 = F2['B0'].squeeze()
+        old_B1 = F2['B1'].squeeze()
+        sigma_B0 = old_B0 * (percent_sigma / 100.0)
 
     # Max observed ionosonde frequency in Hz
     f_max_Hz = f_in[-1] * 1e6
@@ -726,19 +786,29 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
     params.add('NmF2', value=Nmf2_new, vary=False)
     params.add('hmF2', value=old_hmf2, min=old_hmf2 - sigma_hmf2,
                max=old_hmf2 + sigma_hmf2, brute_step=step)
-    params.add('B_bot', value=old_B_bot, min=old_B_bot - sigma_B_bot,
-               max=old_B_bot + sigma_B_bot, brute_step=step)
+    if bottom_type == 'B_bot':
+        params.add('B_bot', value=old_B_bot, min=old_B_bot - sigma_B_bot,
+                   max=old_B_bot + sigma_B_bot, brute_step=step)
+    if bottom_type == 'B0_B1':
+        params.add('B0', value=old_B0, min=old_B0 - sigma_B0,
+                   max=old_B0 + sigma_B0, brute_step=step)
+        params.add('B1', value=old_B1, vary=False)
 
     # Perform brute-force minimization
     brute_result = lmfit.minimize(residual_VH, params,
                                   args=(F2, F1, E, f_in, vh_obs, alt,
-                                        b_mag, b_psi, mode, n_points),
+                                        b_mag, b_psi, mode, n_points,
+                                        bottom_type),
                                   method=method)
 
     # Extract optimal parameter values
     NmF2_opt = brute_result.params['NmF2'].value
     hmF2_opt = brute_result.params['hmF2'].value
-    B_bot_opt = brute_result.params['B_bot'].value
+
+    if bottom_type == 'B_bot':
+        B_bot_opt = brute_result.params['B_bot'].value
+    if bottom_type == 'B0_B1':
+        B0_opt = brute_result.params['B0'].value
 
     # Update F2 dictionary with optimized parameters
     F2_fit = deepcopy(F2)
@@ -746,12 +816,16 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
     E_fit = deepcopy(E)
     F2_fit['Nm'] = np.full_like(F2['Nm'], NmF2_opt)
     F2_fit['hm'] = np.full_like(F2['Nm'], hmF2_opt)
-    F2_fit['B_bot'] = np.full_like(F2['Nm'], B_bot_opt)
+    if bottom_type == 'B_bot':
+        F2_fit['B_bot'] = np.full_like(F2['Nm'], B_bot_opt)
+    if bottom_type == 'B0_B1':
+        F2_fit['B0'] = np.full_like(F2['Nm'], B0_opt)
 
     # Run forward model with optimized parameters
     vh_result, EDP_result = model_VH(F2_fit, F1_fit, E_fit,
                                      f_in0, alt, b_mag, b_psi,
-                                     mode=mode, n_points=n_points)
+                                     mode=mode, n_points=n_points,
+                                     bottom_type=bottom_type)
     return vh_result, EDP_result
 
 
