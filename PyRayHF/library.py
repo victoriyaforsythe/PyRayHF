@@ -551,11 +551,7 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200,
     if bottom_type == 'B_bot':
         (NmF1, foF1,
          hmF1, B_F1_bot) = PyIRI.edp_update.derive_dependent_F1_parameters(
-             F1['P'],
-             F2['Nm'],
-             F2['hm'],
-             F2['B_bot'],
-             E['hm'])
+             F1['P'], F2['Nm'], F2['hm'], F2['B_bot'], E['hm'])
 
         # Update F1 with derived values
         F1['Nm'] = NmF1
@@ -564,20 +560,13 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200,
         F1['B_bot'] = B_F1_bot
 
         # Reconstruct electron density profile
-        EDP = PyIRI.edp_update.reconstruct_density_from_parameters_1level(F2,
-                                                                        F1,
-                                                                        E,
-                                                                        alt)
+        EDP = PyIRI.edp_update.reconstruct_density_from_parameters_1level(
+            F2, F1, E, alt)
 
     if bottom_type == 'B0_B1':
         (NmF1, foF1,
          hmF1, B_F1_bot) = PyIRI.sh_library.derive_dependent_F1_parameters(
-             F1['P'],
-             F2['Nm'],
-             F2['hm'],
-             F2['B0'],
-             F2['B1'],
-             E['hm'])
+             F1['P'], F2['Nm'], F2['hm'], F2['B0'], F2['B1'], E['hm'])
 
         # Update F1 with derived values
         F1['Nm'] = NmF1
