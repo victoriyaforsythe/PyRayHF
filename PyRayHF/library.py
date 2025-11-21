@@ -1187,7 +1187,8 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     if not np.isfinite(mu0) or not np.isfinite(s0):
         return {k: np.nan for k in ["x", "z", "group_path_km",
                                     "group_delay_sec", "x_midpoint",
-                                    "z_midpoint", "ground_range_km"]}
+                                    "z_midpoint", "ground_range_km",
+                                    "x_apex_km", "z_apex_km"]}
     # Snell invariant
     p = mu0 * s0
 
@@ -1197,12 +1198,14 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     if zv.size < 2:
         return {k: np.nan for k in ["x", "z", "group_path_km",
                                     "group_delay_sec", "x_midpoint",
-                                    "z_midpoint", "ground_range_km"]}
+                                    "z_midpoint", "ground_range_km",
+                                    "x_apex_km", "z_apex_km"]}
     z_turn = find_turning_point(zv, muv, p)
     if not np.isfinite(z_turn):
         return {k: np.nan for k in ["x", "z", "group_path_km",
                                     "group_delay_sec", "x_midpoint",
-                                    "z_midpoint", "ground_range_km"]}
+                                    "z_midpoint", "ground_range_km",
+                                    "x_apex_km", "z_apex_km"]}
 
     # Up-leg nodes (include apex)
     i_turn = np.searchsorted(zv, z_turn)
@@ -1253,8 +1256,8 @@ def trace_ray_cartesian_snells(f0_Hz: float,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
             "ground_range_km": ground_range_km,
-            "apex_x_km": x_midpoint,
-            "apex_z_km": z_midpoint}
+            "x_apex_km": x_midpoint,
+            "z_apex_km": z_midpoint}
 
 
 def trace_ray_cartesian_gradient(
@@ -1385,12 +1388,12 @@ def trace_ray_cartesian_gradient(
     # --- Apex of the ray (maximum altitude)
     if z_path.size > 0:
         apex_idx = int(np.nanargmax(z_path))
-        apex_x_km = float(x_path[apex_idx])
-        apex_z_km = float(z_path[apex_idx])
+        x_apex_km = float(x_path[apex_idx])
+        z_apex_km = float(z_path[apex_idx])
     else:
         apex_idx = None
-        apex_x_km = np.nan
-        apex_z_km = np.nan
+        x_apex_km = np.nan
+        z_apex_km = np.nan
 
     dx, dz = np.diff(x_path), np.diff(z_path)
     ds = np.hypot(dx, dz)
@@ -1430,8 +1433,8 @@ def trace_ray_cartesian_gradient(
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
             "ground_range_km": ground_range_km,
-            "apex_x_km": apex_x_km,
-            "apex_z_km": apex_z_km}
+            "x_apex_km": x_apex_km,
+            "z_apex_km": z_apex_km}
 
 
 def trace_ray_spherical_snells(
@@ -1519,6 +1522,8 @@ def trace_ray_spherical_snells(
     'x_midpoint': float,      # midpoint horizontal coordinate [km]
     'z_midpoint': float,      # midpoint altitude [km]
     'ground_range_km': float  # surface distance to landing point [km]
+    'x_apex': float,          # apex hor coordinate [km] (same as x_midpoint)
+    'z_apex': float,          # apex altitude [km] (same as z_midpoint)
 
     """
     # Speed of light
@@ -1683,6 +1688,8 @@ def trace_ray_spherical_snells(
         "x_midpoint": x_midpoint,
         "z_midpoint": z_midpoint,
         "ground_range_km": ground_range_km,
+        "x_apex_km": x_midpoint,
+        "z_apex_km": z_midpoint,
     }
 
 
@@ -2241,12 +2248,12 @@ def trace_ray_spherical_gradient(
     # --- Apex of the ray (maximum altitude)
     if z_path.size > 0:
         apex_idx = int(np.nanargmax(z_path))
-        apex_x_km = float(x_path[apex_idx])
-        apex_z_km = float(z_path[apex_idx])
+        x_apex_km = float(x_path[apex_idx])
+        z_apex_km = float(z_path[apex_idx])
     else:
         apex_idx = None
-        apex_x_km = np.nan
-        apex_z_km = np.nan
+        x_apex_km = np.nan
+        z_apex_km = np.nan
 
     # --- Path length (spherical metric): ds^2 = dr^2 + (r · dφ)^2
     dr = np.diff(r_path)
@@ -2294,8 +2301,8 @@ def trace_ray_spherical_gradient(
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
             "ground_range_km": ground_range_km,
-            "apex_x_km": apex_x_km,
-            "apex_z_km": apex_z_km}
+            "x_apex_km": x_apex_km,
+            "z_apex_km": z_apex_km}
 
 
 def great_circle_point(tlat, tlon, gcd, az):
