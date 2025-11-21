@@ -1155,6 +1155,8 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     'x_midpoint': float,
     'z_midpoint': float,
     'ground_range_km': float
+    'apex_x_km': float (same as x_midpoint),
+    'apex_z_km': float (same as z_midpoint)
 
     """
     # Use constants defined above
@@ -1250,7 +1252,9 @@ def trace_ray_cartesian_snells(f0_Hz: float,
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km}
+            "ground_range_km": ground_range_km,
+            "apex_x_km": x_midpoint,
+            "apex_z_km": z_midpoint}
 
 
 def trace_ray_cartesian_gradient(
@@ -1378,6 +1382,16 @@ def trace_ray_cartesian_gradient(
     y = sol.y
     x_path, z_path = y[0, :], y[1, :]
 
+    # --- Apex of the ray (maximum altitude)
+    if z_path.size > 0:
+        apex_idx = int(np.nanargmax(z_path))
+        apex_x_km = float(x_path[apex_idx])
+        apex_z_km = float(z_path[apex_idx])
+    else:
+        apex_idx = None
+        apex_x_km = np.nan
+        apex_z_km = np.nan
+
     dx, dz = np.diff(x_path), np.diff(z_path)
     ds = np.hypot(dx, dz)
     group_path_km = float(np.nansum(ds))
@@ -1415,7 +1429,9 @@ def trace_ray_cartesian_gradient(
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km}
+            "ground_range_km": ground_range_km,
+            "apex_x_km": apex_x_km,
+            "apex_z_km": apex_z_km}
 
 
 def trace_ray_spherical_snells(
@@ -2222,6 +2238,16 @@ def trace_ray_spherical_gradient(
     x_path = R_E * phi_path
     z_path = r_path - R_E
 
+    # --- Apex of the ray (maximum altitude)
+    if z_path.size > 0:
+        apex_idx = int(np.nanargmax(z_path))
+        apex_x_km = float(x_path[apex_idx])
+        apex_z_km = float(z_path[apex_idx])
+    else:
+        apex_idx = None
+        apex_x_km = np.nan
+        apex_z_km = np.nan
+
     # --- Path length (spherical metric): ds^2 = dr^2 + (r · dφ)^2
     dr = np.diff(r_path)
     dphi = np.diff(phi_path)
@@ -2267,7 +2293,9 @@ def trace_ray_spherical_gradient(
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km}
+            "ground_range_km": ground_range_km,
+            "apex_x_km": apex_x_km,
+            "apex_z_km": apex_z_km}
 
 
 def great_circle_point(tlat, tlon, gcd, az):
@@ -2567,23 +2595,33 @@ def generate_input_1D(year, month, day, UT, tlat,
     for vertical or 2D Snell's-law ray tracing input to PyRayHF.
 
     """
+    import PyIRI.sh_library as sh
+
     # Get B field at transmitter location
     bmag, bpsi = calculate_magnetic_field(year, month, day,
                                           np.array([tlat]),
                                           np.array([tlon]), aalt)
 
     # Get EDP at transmitter location
-    (F2, F1, E,
-     Es, _, _, den) = PyIRI.edp_update.IRI_density_1day(year,
-                                                        month,
-                                                        day,
-                                                        np.array([UT]),
-                                                        np.array([tlon]),
-                                                        np.array([tlat]),
-                                                        aalt,
-                                                        F107,
-                                                        PyIRI.coeff_dir,
-                                                        0)
+    # Coefficient sources and model options
+    foF2_coeff = 'CCIR'       # Options: 'CCIR' or 'URSI'
+    hmF2_model = 'SHU2015'    # Options: 'SHU2015', 'AMTB2013', 'BSE1979'
+    coord = 'GEO'             # Coordinate system: 'GEO', 'QD', or 'MLT'
+    coeff_dir = None          # Use default coefficient path
+    (F2, F1, E, _, _, den) = sh.IRI_density_1day(
+        year,
+        month,
+        day,
+        UT,
+        tlon,
+        tlat,
+        aalt,
+        F107,
+        coeff_dir=coeff_dir,
+        foF2_coeff=foF2_coeff,
+        hmF2_model=hmF2_model,
+        coord=coord)
+
     # Remove extra dimensions
     den = np.squeeze(den)
     bmag = np.squeeze(bmag)
@@ -2600,7 +2638,6 @@ def generate_input_1D(year, month, day, UT, tlat,
                 'F2': F2,
                 'F1': F1,
                 'E': E,
-                'Es': Es,
                 'year': year,
                 'month': month,
                 'day': day,
