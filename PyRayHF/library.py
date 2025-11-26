@@ -18,6 +18,7 @@ import pickle
 import lmfit
 import numpy as np
 import PyIRI
+from PyIRI import sh_library as sh
 from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator
 
@@ -2550,7 +2551,8 @@ def generate_input_2D(year, month, day, UT, tlat, tlon, dx, aalt,
 
 
 def generate_input_1D(year, month, day, UT, tlat,
-                      tlon, aalt, F107, save_path=''):
+                      tlon, aalt, F107, save_path='',
+                      f_min=1, f_max=17.5, df=0.1):
     """Compute 1D PyIRI/IGRF input data for raytracing in PyRayHF.
 
     Parameters
@@ -2574,6 +2576,12 @@ def generate_input_1D(year, month, day, UT, tlat,
     save_path : str
         Full file path for saving output data (must include .p file extension)
         If left blank, the output will not be saved toa  file.  (default='')
+    f_min : flt
+        Min ionosonde frequency in MHz. Default is 1 MHz.
+    f_max : flt
+        Max ionosonde frequency in MHz. Default is 20 MHz.
+    df : flt
+        Ionosonde frequency resolution in MHz. Default is 0.1 MHz.
 
     Returns
     -------
@@ -2635,7 +2643,7 @@ def generate_input_1D(year, month, day, UT, tlat,
     bpsi = np.squeeze(bpsi)
 
     # Generate array of frequencies used by a vertical ionosonde in MHz.
-    ionosonde_frequency = np.arange(1, 12, 0.1)
+    ionosonde_frequency = np.arange(f_min, f_max, df)
 
     # Format Output
     out_data = {'alt': aalt,
@@ -2662,7 +2670,8 @@ def generate_input_1D(year, month, day, UT, tlat,
     return out_data
 
 
-def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
+def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz,
+                        R_E=6371.):
     """Convert oblique ionogram to vertical equivalent using spherical Earth.
 
     Parameters
@@ -2673,6 +2682,9 @@ def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
         Oblique group path (total propagation distance) [km]
     freq_oblique_mhz : array-like
         Oblique frequency [MHz]
+    R_E : flt
+        Earth's radius in [km].
+        Default is 6371 km.
 
     Returns
     -------
@@ -2682,7 +2694,6 @@ def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
         Virtual height at midpoint [km]
 
     """
-    _, _, R_E, _ = constants()
 
     # Convert inputs to arrays
     p = np.asarray(group_path_km)
@@ -2705,3 +2716,33 @@ def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
     freq_vertical_mhz = f_o * np.cos(phi)
 
     return freq_vertical_mhz, height_virtual_km
+
+
+def earth_radius_at_latitude(latitude):
+    """Calculate the radius of the Earth (in kilometers) for a given latitude.
+
+    Parameters
+    ----------
+    latitude : float
+        Geo Latitude in degrees.
+
+    Returns
+    -------
+    radius : float
+        Radius of the Earth in km.
+
+    """
+    # Convert latitude to radians for trigonometric functions
+    lat_rad = np.deg2rad(latitude)
+    
+    # Semimajor axis (equatorial radius) in km
+    a = 6378.137
+    # Semiminor axis (polar radius) in km
+    b = 6356.7523142
+    
+    # Calculate radius using the formula for an oblate spheroid
+    numerator = (a**2 * np.cos(lat_rad))**2 + (b**2 * np.sin(lat_rad))**2
+    denominator = (a * np.cos(lat_rad))**2 + (b * np.sin(lat_rad))**2
+    radius = np.sqrt(numerator / denominator)
+
+    return radius
