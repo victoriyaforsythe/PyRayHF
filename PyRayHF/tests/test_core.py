@@ -241,33 +241,33 @@ def test_model_VH_output():
     """Basic test for model_VH in O mode with short arrays."""
     # Input parameters
     F2 = {'Nm': np.array([[1.17848165e+12]]),
-          'fo': np.array([[9.64625394]]),
-          'M3000': np.array([[2.64168819]]),
-          'hm': np.array([[365.13828931]]),
-          'B_top': np.array([[32.52487907]]),
-          'B_bot': np.array([[41.26005561]])}
+            'fo': np.array([[9.64625394]]),
+            'M3000': np.array([[2.64168819]]),
+            'hm': np.array([[365.13828931]]),
+            'B_top': np.array([[32.52487907]]),
+            'B_bot': np.array([[41.26005561]])}
     F1 = {'Nm': np.array([[7.80902301e+11]]),
-          'fo': np.array([[7.93574143]]),
-          'P': np.array([[0.91422852]]),
-          'hm': np.array([[219.26637887]]),
-          'B_bot': np.array([[54.63318944]])}
+            'fo': np.array([[7.93574143]]),
+            'P': np.array([[0.91422852]]),
+            'hm': np.array([[219.26637887]]),
+            'B_bot': np.array([[54.63318944]])}
     E = {'Nm': np.array([[1.2846662e+11]]),
-         'fo': np.array([[3.2096443]]),
-         'hm': np.array([[110.]]),
-         'B_bot': np.array([[5.]]),
-         'B_top': np.array([[7.]]),
-         'solzen': np.array([[22.26668451]]),
-         'solzen_eff': np.array([[22.26668451]])}
-    freq = np.array([3.0, 4.0, 4.5])
+            'fo': np.array([[3.2096443]]),
+            'hm': np.array([[110.]]),
+            'B_bot': np.array([[5.]]),
+            'B_top': np.array([[7.]]),
+            'solzen': np.array([[22.26668451]]),
+            'solzen_eff': np.array([[22.26668451]])}
+    freq = np.array([3.0, 3.5, 3.7])
     alt = np.array([100, 200, 300])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
 
     # Expected outputs
-    expected_vh = np.array([174.32954286, 253.81598004, 301.25975233])
+    expected_vh = np.array([236.22215658, 304.53151596, 334.34853791])
     expected_edp = np.array([5.39526842e+10,
-                             2.81042885e+11,
-                             6.66833260e+11])
+                            1.77861786e+11,
+                            6.66833260e+11])
 
     # Run the model
     vh, edp = model_VH(F2, F1, E, freq, alt, bmag, bpsi)
