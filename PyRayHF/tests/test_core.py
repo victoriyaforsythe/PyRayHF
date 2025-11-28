@@ -266,8 +266,8 @@ def test_model_VH_output():
     # Expected outputs
     expected_vh = np.array([236.22215658, 304.53151596, 334.34853791])
     expected_edp = np.array([5.39526842e+10,
-                            1.77861786e+11,
-                            6.66833260e+11])
+                             1.77861786e+11,
+                             6.66833260e+11])
 
     # Run the model
     vh, edp = model_VH(F2, F1, E, freq, alt, bmag, bpsi)
