@@ -2610,8 +2610,6 @@ def generate_input_1D(year, month, day, UT, tlat,
     for vertical or 2D Snell's-law ray tracing input to PyRayHF.
 
     """
-    import PyIRI.sh_library as sh
-
     # Get B field at transmitter location
     bmag, bpsi = calculate_magnetic_field(year, month, day,
                                           np.array([tlat]),
