@@ -2732,12 +2732,12 @@ def earth_radius_at_latitude(latitude):
     """
     # Convert latitude to radians for trigonometric functions
     lat_rad = np.deg2rad(latitude)
-    
+
     # Semimajor axis (equatorial radius) in km
     a = 6378.137
     # Semiminor axis (polar radius) in km
     b = 6356.7523142
-    
+
     # Calculate radius using the formula for an oblate spheroid
     numerator = (a**2 * np.cos(lat_rad))**2 + (b**2 * np.sin(lat_rad))**2
     denominator = (a * np.cos(lat_rad))**2 + (b * np.sin(lat_rad))**2
