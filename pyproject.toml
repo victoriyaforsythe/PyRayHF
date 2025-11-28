@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyRayHF"
-version = "0.0.2"
+version = "0.1.0"
 description = "Python HF Raytracing for Ionosphere"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -40,7 +40,7 @@ keywords = [
 dependencies = [
     "lmfit",
     "numpy",
-    "PyIRI >= 0.1.3",
+    "PyIRI >= 0.1.5",
     "pytest"
 ]
 
