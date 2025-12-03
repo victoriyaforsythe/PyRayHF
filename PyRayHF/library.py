@@ -2576,8 +2576,7 @@ def generate_input_2D(year, month, day, UT, tlat, tlon, dx, aalt,
 
 
 def generate_input_1D(year, month, day, UT, tlat,
-                      tlon, aalt, F107, save_path='',
-                      f_min=1, f_max=17.5, df=0.1):
+                      tlon, aalt, F107, save_path=''):
     """Compute 1D PyIRI/IGRF input data for raytracing in PyRayHF.
 
     Parameters
@@ -2601,12 +2600,6 @@ def generate_input_1D(year, month, day, UT, tlat,
     save_path : str
         Full file path for saving output data (must include .p file extension)
         If left blank, the output will not be saved toa  file.  (default='')
-    f_min : flt
-        Min ionosonde frequency in MHz. Default is 1 MHz.
-    f_max : flt
-        Max ionosonde frequency in MHz. Default is 20 MHz.
-    df : flt
-        Ionosonde frequency resolution in MHz. Default is 0.1 MHz.
 
     Returns
     -------
@@ -2665,9 +2658,6 @@ def generate_input_1D(year, month, day, UT, tlat,
     bmag = np.squeeze(bmag)
     bpsi = np.squeeze(bpsi)
 
-    # Generate array of frequencies used by a vertical ionosonde in MHz.
-    ionosonde_frequency = np.arange(f_min, f_max, df)
-
     # Format Output
     out_data = {'alt': aalt,
                 'den': den,
@@ -2682,8 +2672,7 @@ def generate_input_1D(year, month, day, UT, tlat,
                 'UT': UT,
                 'F107': F107,
                 'tlat': tlat,
-                'tlon': tlon,
-                'freq': ionosonde_frequency
+                'tlon': tlon
                 }
 
     # Save to File
