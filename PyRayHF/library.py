@@ -1148,16 +1148,17 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     Group delay integrates group index μ' (mup).
     Down-leg is a perfect mirror of the up-leg about the apex.
 
-    **Returns dictionary with keys:**
-    'x': ndarray,           # horizontal positions [km]
-    'z': ndarray,           # altitudes [km]
-    'group_path_km': float,
-    'group_delay_sec': float,
-    'x_midpoint': float,
-    'z_midpoint': float,
-    'ground_range_km': float
-    'apex_x_km': float (same as x_midpoint),
-    'apex_z_km': float (same as z_midpoint)
+    **Return dictionary has the following keys:**
+    
+    'x'              : ndarray   # surface distance along the ray [km]
+    'z'              : ndarray   # altitude along the ray [km]
+    'group_path_km'  : float     # total geometric path length [km]
+    'group_delay_sec': float     # group delay [s]
+    'x_midpoint'     : float     # midpoint horizontal coordinate [km]
+    'z_midpoint'     : float     # midpoint altitude [km]
+    'ground_range_km': float     # surface distance to landing point [km]
+    'x_apex_km'      : float     # apex horizontal coordinate [km]
+    'z_apex_km'      : float     # apex altitude [km]
 
     """
     # Use constants defined above
@@ -1326,10 +1327,21 @@ def trace_ray_cartesian_gradient(
     • μ controls bending; μ' controls group delay.
     • NaNs or invalid μ terminate integration.
 
-    **Retrns dictionary with keys:**
-    "sol", "t", "x", "z", "vx", "vz", "status", "group_path_km",
-    "group_delay_sec", "x_midpoint", "z_midpoint", "ground_range_km",
-    "x_apex_km", "z_apex_km"
+    **Return dictionary keys:**
+    'sol'             : OdeResult,  # full solve_ivp solution object
+    't'               : ndarray,    # integration parameter (path length) [km]
+    'x'               : ndarray,    # horizontal coordinate [km]
+    'z'               : ndarray,    # altitude [km]
+    'vx'              : ndarray,    # horizontal unit-velocity component
+    'vz'              : ndarray,    # vertical unit-velocity component
+    'status'          : str,        # 'ground', 'domain', 'length', etc.
+    'group_path_km'   : float,      # geometric path length [km]
+    'group_delay_sec' : float,      # group delay τ = ∫ μ'/c ds [s]
+    'x_midpoint'      : float,      # midpoint x-coordinate [km]
+    'z_midpoint'      : float,      # midpoint altitude [km]
+    'ground_range_km' : float,      # landing x-coordinate or NaN [km]
+    'x_apex_km'       : float,      # apex horizontal coordinate [km]
+    'z_apex_km'       : float       # apex altitude [km]
 
     """
     # Use constants defined above
@@ -1517,15 +1529,15 @@ def trace_ray_spherical_snells(
       both solutions converge within numerical precision.
 
     **Return dictionary has the following keys:**
-    'x': ndarray,             # surface distance [km]
-    'z': ndarray,             # altitude along the ray [km]
-    'group_path_km': float,   # total geometric path length [km]
-    'group_delay_sec': float, # group delay [s]
-    'x_midpoint': float,      # midpoint horizontal coordinate [km]
-    'z_midpoint': float,      # midpoint altitude [km]
-    'ground_range_km': float  # surface distance to landing point [km]
-    'x_apex': float,          # apex hor coordinate [km] (same as x_midpoint)
-    'z_apex': float,          # apex altitude [km] (same as z_midpoint)
+    'x'               : ndarray,   # horizontal coordinate [km]
+    'z'               : ndarray,   # altitude along the ray [km]
+    'group_path_km'   : float,     # total geometric path length [km]
+    'group_delay_sec' : float,     # group delay [s]
+    'x_midpoint'      : float,     # midpoint horizontal coordinate [km]
+    'z_midpoint'      : float,     # midpoint altitude [km]
+    'ground_range_km' : float,     # landing surface distance [km]
+    'x_apex_km'       : float,     # apex horizontal coordinate [km]
+    'z_apex_km'       : float      # apex altitude [km]
 
     """
     # Speed of light
@@ -2162,10 +2174,22 @@ def trace_ray_spherical_gradient(
 
     Notes
     -----
-    The return is a dictionary with keys:
-    't', 'r', 'phi', 'v_r', 'v_phi', 'x', 'z', 'status',
-    'group_path_km', 'group_delay_sec', 'x_midpoint', 'z_midpoint',
-    'ground_range_km'
+    **Return dictionary has the following keys:**
+    't'               : ndarray,   # integration parameter (path length) [km]
+    'r'               : ndarray,   # radial coordinate [km]
+    'phi'             : ndarray,   # angular coordinate [rad]
+    'v_r'             : ndarray,   # radial component of unit tangent vector
+    'v_phi'           : ndarray,   # angular component of unit tangent vector
+    'x'               : ndarray,   # surface distance [km]
+    'z'               : ndarray,   # altitude above Earth’s surface [km]
+    'status'          : str,       # termination condition (ground, domain, etc.)
+    'group_path_km'   : float,     # geometric path length [km]
+    'group_delay_sec' : float,     # group delay [s]
+    'x_midpoint'      : float,     # midpoint horizontal coordinate [km]
+    'z_midpoint'      : float,     # midpoint altitude [km]
+    'ground_range_km' : float,     # landing surface distance [km]
+    'x_apex_km'       : float,     # apex horizontal coordinate [km]
+    'z_apex_km'       : float      # apex altitude [km]
 
     **Geometry**:
     Integrates in spherical coordinates (r, φ) with tangent v = (v_r, v_φ):
