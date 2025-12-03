@@ -18,6 +18,7 @@ import pickle
 import lmfit
 import numpy as np
 import PyIRI
+from PyIRI import sh_library as sh
 from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator
 
@@ -504,7 +505,8 @@ def vertical_forward_operator(freq, den, bmag, bpsi, alt,
     return vh
 
 
-def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
+def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200,
+             bottom_type='B_bot'):
     """Compute vertical virtual height using a modeled EDP and raytrace.
 
     Parameters
@@ -532,6 +534,10 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
         'O' or 'X' mode. Default is 'O' mode.
     n_points : int
         Number of vertical grid points. Default is 200.
+    bottom_type : str
+        Type of the F2 bottom formalizm. Default is 'B_bot', which
+        construncts bottom side of F2 using a single thickness parameter.
+        Other option is 'B0_B1' which uses an IRI formalizm.
 
     Returns
     -------
@@ -543,26 +549,36 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
     """
     # Using PyIRI formalizm update the F1 layer parameters, in case F2
     # parameters have changed
-    (NmF1,
-     foF1,
-     hmF1,
-     B_F1_bot) = PyIRI.edp_update.derive_dependent_F1_parameters(F1['P'],
-                                                                 F2['Nm'],
-                                                                 F2['hm'],
-                                                                 F2['B_bot'],
-                                                                 E['hm'])
+    if bottom_type == 'B_bot':
+        (NmF1, foF1,
+         hmF1, B_F1_bot) = PyIRI.edp_update.derive_dependent_F1_parameters(
+             F1['P'], F2['Nm'], F2['hm'], F2['B_bot'], E['hm'])
 
-    # Update F1 with derived values
-    F1['Nm'] = NmF1
-    F1['hm'] = hmF1
-    F1['fo'] = foF1
-    F1['B_bot'] = B_F1_bot
+        # Update F1 with derived values
+        F1['Nm'] = NmF1
+        F1['hm'] = hmF1
+        F1['fo'] = foF1
+        F1['B_bot'] = B_F1_bot
 
-    # Reconstruct electron density profile
-    EDP = PyIRI.edp_update.reconstruct_density_from_parameters_1level(F2,
-                                                                      F1,
-                                                                      E,
-                                                                      alt)
+        # Reconstruct electron density profile
+        EDP = PyIRI.edp_update.reconstruct_density_from_parameters_1level(
+            F2, F1, E, alt)
+
+    if bottom_type == 'B0_B1':
+        (NmF1, foF1,
+         hmF1, B_F1_bot) = PyIRI.sh_library.derive_dependent_F1_parameters(
+             F1['P'], F2['Nm'], F2['hm'], F2['B0'], F2['B1'], E['hm'])
+
+        # Update F1 with derived values
+        F1['Nm'] = NmF1
+        F1['hm'] = hmF1
+        F1['fo'] = foF1
+        F1['B_bot'] = B_F1_bot
+
+        # Reconstruct electron density profile
+        EDP = PyIRI.sh_library.EDP_builder_continuous(F2, F1, E, alt)
+
+    # Ignore N_T and N_G because we don't have any
     EDP = EDP[0, :, 0]
 
     # Run vertical raytracing using PyRayHF
@@ -573,7 +589,7 @@ def model_VH(F2, F1, E, f_in, alt, b_mag, b_psi, mode='O', n_points=200):
 
 
 def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
-                b_mag, b_psi, mode='O', n_points=200):
+                b_mag, b_psi, mode='O', n_points=200, bottom_type='B_bot'):
     """Compute the residuals between observed and modeled VHs.
 
     Parameters
@@ -603,6 +619,10 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
         'O' or 'X' mode. Default is 'O' mode.
     n_points : int
         Number of vertical grid points. Default is 200.
+    bottom_type : str
+        Type of the F2 bottom formalizm. Default is 'B_bot', which
+        construncts bottom side of F2 using a single thickness parameter.
+        Other option is 'B0_B1' which uses an IRI formalizm.
 
     Returns
     -------
@@ -619,11 +639,19 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
     # Update F2 parameters from optimization values
     F2['Nm'] = np.full_like(F2_init['Nm'], params['NmF2'].value)
     F2['hm'] = np.full_like(F2_init['Nm'], params['hmF2'].value)
-    F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
 
-    # Run forward model
-    vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
-                           mode=mode, n_points=n_points)
+    # Run forward model based on the type of F2 bottom formalizm
+    if bottom_type == 'B_bot':
+        F2['B_bot'] = np.full_like(F2_init['Nm'], params['B_bot'].value)
+        vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
+                               mode=mode, n_points=n_points,
+                               bottom_type='B_bot')
+    if bottom_type == 'B0_B1':
+        F2['B0'] = np.full_like(F2_init['Nm'], params['B0'].value)
+        F2['B1'] = np.full_like(F2_init['Nm'], params['B1'].value)
+        vh_model, _ = model_VH(F2, F1, E, f_in, alt, b_mag, b_psi,
+                               mode=mode, n_points=n_points,
+                               bottom_type='B0_B1')
 
     # When NmF2 is reduced, the modeled ray may pierce the ionosphere and
     # result in vh_model = nan for frequencies where vh_obs is finite.
@@ -639,7 +667,7 @@ def residual_VH(params, F2_init, F1_init, E_init, f_in, vh_obs, alt,
 
 def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
                         method='brute', percent_sigma=20., step=1.,
-                        mode='O', n_points=200):
+                        mode='O', n_points=200, bottom_type='B_bot'):
     """Minimize F2 layer parameters (hmF2 and B_bot) to fit observed VH.
 
     Parameters
@@ -678,6 +706,10 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
         'O' or 'X' mode. The default is 'O'.
     n_points : int
         Number of desired vertical grid points. Default is 200.
+    bottom_type : str
+        Type of the F2 bottom formalizm. Default is 'B_bot', which
+        construncts bottom side of F2 using a single thickness parameter.
+        Other option is 'B0_B1' which uses an IRI formalizm.
 
     Returns
     -------
@@ -687,6 +719,19 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
         Reconstructed electron density profile after fitting [m^-3].
 
     """
+    # Check that the correct F2 bot formalizm is chosen:
+    B0_check = F2.get('B0')
+    B1_check = F2.get('B1')
+    B_bot_check = F2.get('B_bot')
+
+    if (bottom_type == 'B_bot') & (B_bot_check is None):
+        string = 'B_bot is not provided in F, but bottom_type is B_bot'
+        raise ValueError(string)
+
+    if (bottom_type == 'B0_B1') & ((B0_check is None) | (B1_check is None)):
+        string = 'B0 and B1 are not provided in F, but bottom_type is B0_B1'
+        raise ValueError(string)
+
     # Find good indices and sort the input arrays
     gi = np.nonzero(np.isfinite(f_in0 + vh_obs0))[0]
     vh_obs, f_in = vh_obs0[gi], f_in0[gi]
@@ -695,11 +740,16 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
 
     # Removes axes of length one from the initial values of all parameters
     old_hmf2 = F2['hm'].squeeze()
-    old_B_bot = F2['B_bot'].squeeze()
-
-    # And their sigmas
     sigma_hmf2 = old_hmf2 * (percent_sigma / 100.0)
-    sigma_B_bot = old_B_bot * (percent_sigma / 100.0)
+
+    if bottom_type == 'B_bot':
+        old_B_bot = F2['B_bot'].squeeze()
+        sigma_B_bot = old_B_bot * (percent_sigma / 100.0)
+
+    if bottom_type == 'B0_B1':
+        old_B0 = F2['B0'].squeeze()
+        old_B1 = F2['B1'].squeeze()
+        sigma_B0 = old_B0 * (percent_sigma / 100.0)
 
     # Max observed ionosonde frequency in Hz
     f_max_Hz = f_in[-1] * 1e6
@@ -726,19 +776,29 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
     params.add('NmF2', value=Nmf2_new, vary=False)
     params.add('hmF2', value=old_hmf2, min=old_hmf2 - sigma_hmf2,
                max=old_hmf2 + sigma_hmf2, brute_step=step)
-    params.add('B_bot', value=old_B_bot, min=old_B_bot - sigma_B_bot,
-               max=old_B_bot + sigma_B_bot, brute_step=step)
+    if bottom_type == 'B_bot':
+        params.add('B_bot', value=old_B_bot, min=old_B_bot - sigma_B_bot,
+                   max=old_B_bot + sigma_B_bot, brute_step=step)
+    if bottom_type == 'B0_B1':
+        params.add('B0', value=old_B0, min=old_B0 - sigma_B0,
+                   max=old_B0 + sigma_B0, brute_step=step)
+        params.add('B1', value=old_B1, vary=False)
 
     # Perform brute-force minimization
     brute_result = lmfit.minimize(residual_VH, params,
                                   args=(F2, F1, E, f_in, vh_obs, alt,
-                                        b_mag, b_psi, mode, n_points),
+                                        b_mag, b_psi, mode, n_points,
+                                        bottom_type),
                                   method=method)
 
     # Extract optimal parameter values
     NmF2_opt = brute_result.params['NmF2'].value
     hmF2_opt = brute_result.params['hmF2'].value
-    B_bot_opt = brute_result.params['B_bot'].value
+
+    if bottom_type == 'B_bot':
+        B_bot_opt = brute_result.params['B_bot'].value
+    if bottom_type == 'B0_B1':
+        B0_opt = brute_result.params['B0'].value
 
     # Update F2 dictionary with optimized parameters
     F2_fit = deepcopy(F2)
@@ -746,12 +806,16 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
     E_fit = deepcopy(E)
     F2_fit['Nm'] = np.full_like(F2['Nm'], NmF2_opt)
     F2_fit['hm'] = np.full_like(F2['Nm'], hmF2_opt)
-    F2_fit['B_bot'] = np.full_like(F2['Nm'], B_bot_opt)
+    if bottom_type == 'B_bot':
+        F2_fit['B_bot'] = np.full_like(F2['Nm'], B_bot_opt)
+    if bottom_type == 'B0_B1':
+        F2_fit['B0'] = np.full_like(F2['Nm'], B0_opt)
 
     # Run forward model with optimized parameters
     vh_result, EDP_result = model_VH(F2_fit, F1_fit, E_fit,
                                      f_in0, alt, b_mag, b_psi,
-                                     mode=mode, n_points=n_points)
+                                     mode=mode, n_points=n_points,
+                                     bottom_type=bottom_type)
     return vh_result, EDP_result
 
 
@@ -1084,14 +1148,17 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     Group delay integrates group index μ' (mup).
     Down-leg is a perfect mirror of the up-leg about the apex.
 
-    **Returns dictionary with keys:**
-    'x': ndarray,           # horizontal positions [km]
-    'z': ndarray,           # altitudes [km]
-    'group_path_km': float,
-    'group_delay_sec': float,
-    'x_midpoint': float,
-    'z_midpoint': float,
-    'ground_range_km': float
+    **Return dictionary has the following keys:**
+
+    'x'              : ndarray   # surface distance along the ray [km]
+    'z'              : ndarray   # altitude along the ray [km]
+    'group_path_km'  : float     # total geometric path length [km]
+    'group_delay_sec': float     # group delay [s]
+    'x_midpoint'     : float     # midpoint horizontal coordinate [km]
+    'z_midpoint'     : float     # midpoint altitude [km]
+    'ground_range_km': float     # surface distance to landing point [km]
+    'x_apex_km'      : float     # apex horizontal coordinate [km]
+    'z_apex_km'      : float     # apex altitude [km]
 
     """
     # Use constants defined above
@@ -1122,7 +1189,8 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     if not np.isfinite(mu0) or not np.isfinite(s0):
         return {k: np.nan for k in ["x", "z", "group_path_km",
                                     "group_delay_sec", "x_midpoint",
-                                    "z_midpoint", "ground_range_km"]}
+                                    "z_midpoint", "ground_range_km",
+                                    "x_apex_km", "z_apex_km"]}
     # Snell invariant
     p = mu0 * s0
 
@@ -1132,12 +1200,14 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     if zv.size < 2:
         return {k: np.nan for k in ["x", "z", "group_path_km",
                                     "group_delay_sec", "x_midpoint",
-                                    "z_midpoint", "ground_range_km"]}
+                                    "z_midpoint", "ground_range_km",
+                                    "x_apex_km", "z_apex_km"]}
     z_turn = find_turning_point(zv, muv, p)
     if not np.isfinite(z_turn):
         return {k: np.nan for k in ["x", "z", "group_path_km",
                                     "group_delay_sec", "x_midpoint",
-                                    "z_midpoint", "ground_range_km"]}
+                                    "z_midpoint", "ground_range_km",
+                                    "x_apex_km", "z_apex_km"]}
 
     # Up-leg nodes (include apex)
     i_turn = np.searchsorted(zv, z_turn)
@@ -1187,7 +1257,9 @@ def trace_ray_cartesian_snells(f0_Hz: float,
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km}
+            "ground_range_km": ground_range_km,
+            "x_apex_km": x_midpoint,
+            "z_apex_km": z_midpoint}
 
 
 def trace_ray_cartesian_gradient(
@@ -1255,9 +1327,21 @@ def trace_ray_cartesian_gradient(
     • μ controls bending; μ' controls group delay.
     • NaNs or invalid μ terminate integration.
 
-    **Retrns dictionary with keys:**
-    "sol", "t", "x", "z", "vx", "vz", "status", "group_path_km",
-    "group_delay_sec", "x_midpoint", "z_midpoint", "ground_range_km"
+    **Return dictionary keys:**
+    'sol'             : OdeResult,  # full solve_ivp solution object
+    't'               : ndarray,    # integration parameter (path length) [km]
+    'x'               : ndarray,    # horizontal coordinate [km]
+    'z'               : ndarray,    # altitude [km]
+    'vx'              : ndarray,    # horizontal unit-velocity component
+    'vz'              : ndarray,    # vertical unit-velocity component
+    'status'          : str,        # 'ground', 'domain', 'length', etc.
+    'group_path_km'   : float,      # geometric path length [km]
+    'group_delay_sec' : float,      # group delay τ = ∫ μ'/c ds [s]
+    'x_midpoint'      : float,      # midpoint x-coordinate [km]
+    'z_midpoint'      : float,      # midpoint altitude [km]
+    'ground_range_km' : float,      # landing x-coordinate or NaN [km]
+    'x_apex_km'       : float,      # apex horizontal coordinate [km]
+    'z_apex_km'       : float       # apex altitude [km]
 
     """
     # Use constants defined above
@@ -1315,6 +1399,16 @@ def trace_ray_cartesian_gradient(
     y = sol.y
     x_path, z_path = y[0, :], y[1, :]
 
+    # --- Apex of the ray (maximum altitude)
+    if z_path.size > 0:
+        apex_idx = int(np.nanargmax(z_path))
+        x_apex_km = float(x_path[apex_idx])
+        z_apex_km = float(z_path[apex_idx])
+    else:
+        apex_idx = None
+        x_apex_km = np.nan
+        z_apex_km = np.nan
+
     dx, dz = np.diff(x_path), np.diff(z_path)
     ds = np.hypot(dx, dz)
     group_path_km = float(np.nansum(ds))
@@ -1352,7 +1446,9 @@ def trace_ray_cartesian_gradient(
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km}
+            "ground_range_km": ground_range_km,
+            "x_apex_km": x_apex_km,
+            "z_apex_km": z_apex_km}
 
 
 def trace_ray_spherical_snells(
@@ -1433,13 +1529,15 @@ def trace_ray_spherical_snells(
       both solutions converge within numerical precision.
 
     **Return dictionary has the following keys:**
-    'x': ndarray,             # surface distance [km]
-    'z': ndarray,             # altitude along the ray [km]
-    'group_path_km': float,   # total geometric path length [km]
-    'group_delay_sec': float, # group delay [s]
-    'x_midpoint': float,      # midpoint horizontal coordinate [km]
-    'z_midpoint': float,      # midpoint altitude [km]
-    'ground_range_km': float  # surface distance to landing point [km]
+    'x'               : ndarray,   # horizontal coordinate [km]
+    'z'               : ndarray,   # altitude along the ray [km]
+    'group_path_km'   : float,     # total geometric path length [km]
+    'group_delay_sec' : float,     # group delay [s]
+    'x_midpoint'      : float,     # midpoint horizontal coordinate [km]
+    'z_midpoint'      : float,     # midpoint altitude [km]
+    'ground_range_km' : float,     # landing surface distance [km]
+    'x_apex_km'       : float,     # apex horizontal coordinate [km]
+    'z_apex_km'       : float      # apex altitude [km]
 
     """
     # Speed of light
@@ -1604,6 +1702,8 @@ def trace_ray_spherical_snells(
         "x_midpoint": x_midpoint,
         "z_midpoint": z_midpoint,
         "ground_range_km": ground_range_km,
+        "x_apex_km": x_midpoint,
+        "z_apex_km": z_midpoint,
     }
 
 
@@ -2074,10 +2174,22 @@ def trace_ray_spherical_gradient(
 
     Notes
     -----
-    The return is a dictionary with keys:
-    't', 'r', 'phi', 'v_r', 'v_phi', 'x', 'z', 'status',
-    'group_path_km', 'group_delay_sec', 'x_midpoint', 'z_midpoint',
-    'ground_range_km'
+    **Return dictionary has the following keys:**
+    't'               : ndarray,   # integration parameter (path length) [km]
+    'r'               : ndarray,   # radial coordinate [km]
+    'phi'             : ndarray,   # angular coordinate [rad]
+    'v_r'             : ndarray,   # radial component of unit tangent vector
+    'v_phi'           : ndarray,   # angular component of unit tangent vector
+    'x'               : ndarray,   # surface distance [km]
+    'z'               : ndarray,   # altitude above Earth’s surface [km]
+    'status'          : str,       # termination condition (ground, domain, ..)
+    'group_path_km'   : float,     # geometric path length [km]
+    'group_delay_sec' : float,     # group delay [s]
+    'x_midpoint'      : float,     # midpoint horizontal coordinate [km]
+    'z_midpoint'      : float,     # midpoint altitude [km]
+    'ground_range_km' : float,     # landing surface distance [km]
+    'x_apex_km'       : float,     # apex horizontal coordinate [km]
+    'z_apex_km'       : float      # apex altitude [km]
 
     **Geometry**:
     Integrates in spherical coordinates (r, φ) with tangent v = (v_r, v_φ):
@@ -2159,6 +2271,16 @@ def trace_ray_spherical_gradient(
     x_path = R_E * phi_path
     z_path = r_path - R_E
 
+    # --- Apex of the ray (maximum altitude)
+    if z_path.size > 0:
+        apex_idx = int(np.nanargmax(z_path))
+        x_apex_km = float(x_path[apex_idx])
+        z_apex_km = float(z_path[apex_idx])
+    else:
+        apex_idx = None
+        x_apex_km = np.nan
+        z_apex_km = np.nan
+
     # --- Path length (spherical metric): ds^2 = dr^2 + (r · dφ)^2
     dr = np.diff(r_path)
     dphi = np.diff(phi_path)
@@ -2204,7 +2326,9 @@ def trace_ray_spherical_gradient(
             "group_delay_sec": group_delay_sec,
             "x_midpoint": x_midpoint,
             "z_midpoint": z_midpoint,
-            "ground_range_km": ground_range_km}
+            "ground_range_km": ground_range_km,
+            "x_apex_km": x_apex_km,
+            "z_apex_km": z_apex_km}
 
 
 def great_circle_point(tlat, tlon, gcd, az):
@@ -2510,24 +2634,29 @@ def generate_input_1D(year, month, day, UT, tlat,
                                           np.array([tlon]), aalt)
 
     # Get EDP at transmitter location
-    (F2, F1, E,
-     Es, _, _, den) = PyIRI.edp_update.IRI_density_1day(year,
-                                                        month,
-                                                        day,
-                                                        np.array([UT]),
-                                                        np.array([tlon]),
-                                                        np.array([tlat]),
-                                                        aalt,
-                                                        F107,
-                                                        PyIRI.coeff_dir,
-                                                        0)
+    # Coefficient sources and model options
+    foF2_coeff = 'CCIR'       # Options: 'CCIR' or 'URSI'
+    hmF2_model = 'SHU2015'    # Options: 'SHU2015', 'AMTB2013', 'BSE1979'
+    coord = 'GEO'             # Coordinate system: 'GEO', 'QD', or 'MLT'
+    coeff_dir = None          # Use default coefficient path
+    (F2, F1, E, _, _, den) = sh.IRI_density_1day(
+        year,
+        month,
+        day,
+        UT,
+        tlon,
+        tlat,
+        aalt,
+        F107,
+        coeff_dir=coeff_dir,
+        foF2_coeff=foF2_coeff,
+        hmF2_model=hmF2_model,
+        coord=coord)
+
     # Remove extra dimensions
     den = np.squeeze(den)
     bmag = np.squeeze(bmag)
     bpsi = np.squeeze(bpsi)
-
-    # Generate array of frequencies used by a vertical ionosonde in MHz.
-    ionosonde_frequency = np.arange(1, 12, 0.1)
 
     # Format Output
     out_data = {'alt': aalt,
@@ -2537,15 +2666,13 @@ def generate_input_1D(year, month, day, UT, tlat,
                 'F2': F2,
                 'F1': F1,
                 'E': E,
-                'Es': Es,
                 'year': year,
                 'month': month,
                 'day': day,
                 'UT': UT,
                 'F107': F107,
                 'tlat': tlat,
-                'tlon': tlon,
-                'freq': ionosonde_frequency
+                'tlon': tlon
                 }
 
     # Save to File
@@ -2555,7 +2682,8 @@ def generate_input_1D(year, month, day, UT, tlat,
     return out_data
 
 
-def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
+def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz,
+                        R_E=6371.):
     """Convert oblique ionogram to vertical equivalent using spherical Earth.
 
     Parameters
@@ -2566,6 +2694,9 @@ def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
         Oblique group path (total propagation distance) [km]
     freq_oblique_mhz : array-like
         Oblique frequency [MHz]
+    R_E : flt
+        Earth's radius in [km].
+        Default is 6371 km.
 
     Returns
     -------
@@ -2575,7 +2706,6 @@ def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
         Virtual height at midpoint [km]
 
     """
-    _, _, R_E, _ = constants()
 
     # Convert inputs to arrays
     p = np.asarray(group_path_km)
@@ -2598,3 +2728,33 @@ def oblique_to_vertical(range_km, group_path_km, freq_oblique_mhz):
     freq_vertical_mhz = f_o * np.cos(phi)
 
     return freq_vertical_mhz, height_virtual_km
+
+
+def earth_radius_at_latitude(latitude):
+    """Calculate the radius of the Earth (in kilometers) for a given latitude.
+
+    Parameters
+    ----------
+    latitude : float
+        Geo Latitude in degrees.
+
+    Returns
+    -------
+    radius : float
+        Radius of the Earth in km.
+
+    """
+    # Convert latitude to radians for trigonometric functions
+    lat_rad = np.deg2rad(latitude)
+
+    # Semimajor axis (equatorial radius) in km
+    a = 6378.137
+    # Semiminor axis (polar radius) in km
+    b = 6356.7523142
+
+    # Calculate radius using the formula for an oblate spheroid
+    numerator = (a**2 * np.cos(lat_rad))**2 + (b**2 * np.sin(lat_rad))**2
+    denominator = (a * np.cos(lat_rad))**2 + (b * np.sin(lat_rad))**2
+    radius = np.sqrt(numerator / denominator)
+
+    return radius

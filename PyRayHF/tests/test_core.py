@@ -258,15 +258,15 @@ def test_model_VH_output():
          'B_top': np.array([[7.]]),
          'solzen': np.array([[22.26668451]]),
          'solzen_eff': np.array([[22.26668451]])}
-    freq = np.array([3.0, 4.0, 4.5])
+    freq = np.array([3.0, 3.5, 3.7])
     alt = np.array([100, 200, 300])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
 
     # Expected outputs
-    expected_vh = np.array([174.32954286, 253.81598004, 301.25975233])
+    expected_vh = np.array([236.22215658, 304.53151596, 334.34853791])
     expected_edp = np.array([5.39526842e+10,
-                             2.81042885e+11,
+                             1.77861786e+11,
                              6.66833260e+11])
 
     # Run the model
@@ -299,7 +299,7 @@ def test_zero_residual_when_parameters_match():
          'solzen': np.array([[22.26668451]]),
          'solzen_eff': np.array([[22.26668451]])}
 
-    freq = np.array([3.0, 4.0, 4.5])
+    freq = np.array([3.0, 3.5, 3.7])
     alt = np.array([100, 200, 300])
     bmag = np.array([5e-5, 5e-5, 5e-5])
     bpsi = np.array([60.0, 60.0, 60.0])
