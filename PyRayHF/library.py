@@ -1149,7 +1149,7 @@ def trace_ray_cartesian_snells(f0_Hz: float,
     Down-leg is a perfect mirror of the up-leg about the apex.
 
     **Return dictionary has the following keys:**
-    
+
     'x'              : ndarray   # surface distance along the ray [km]
     'z'              : ndarray   # altitude along the ray [km]
     'group_path_km'  : float     # total geometric path length [km]
@@ -2182,7 +2182,7 @@ def trace_ray_spherical_gradient(
     'v_phi'           : ndarray,   # angular component of unit tangent vector
     'x'               : ndarray,   # surface distance [km]
     'z'               : ndarray,   # altitude above Earth’s surface [km]
-    'status'          : str,       # termination condition (ground, domain, etc.)
+    'status'          : str,       # termination condition (ground, domain, ..)
     'group_path_km'   : float,     # geometric path length [km]
     'group_delay_sec' : float,     # group delay [s]
     'x_midpoint'      : float,     # midpoint horizontal coordinate [km]
