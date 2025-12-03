@@ -1328,7 +1328,8 @@ def trace_ray_cartesian_gradient(
 
     **Retrns dictionary with keys:**
     "sol", "t", "x", "z", "vx", "vz", "status", "group_path_km",
-    "group_delay_sec", "x_midpoint", "z_midpoint", "ground_range_km"
+    "group_delay_sec", "x_midpoint", "z_midpoint", "ground_range_km",
+    "x_apex_km", "z_apex_km"
 
     """
     # Use constants defined above
