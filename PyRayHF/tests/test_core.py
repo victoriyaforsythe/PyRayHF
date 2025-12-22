@@ -348,7 +348,7 @@ def test_minimize_parameters_runs_and_returns_shapes():
          patch("PyRayHF.library.model_VH",
                return_value=(vh_obs, np.ones_like(alt))):
 
-        vh_result, EDP_result = minimize_parameters(
+        vh_result, EDP_result, F2_fit = minimize_parameters(
             F2, F1, E, f_in, vh_obs, alt, b_mag, b_psi,
             method="brute", percent_sigma=10., step=1.0)
 
