@@ -717,6 +717,8 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
         Virtual height after parameter fitting [km].
     EDP_result : ndarray
         Reconstructed electron density profile after fitting [m^-3].
+    F2_fit : dict
+        F2 dictionary with updated parameters.
 
     """
     # Check that the correct F2 bot formalizm is chosen:
@@ -816,7 +818,7 @@ def minimize_parameters(F2, F1, E, f_in0, vh_obs0, alt, b_mag, b_psi,
                                      f_in0, alt, b_mag, b_psi,
                                      mode=mode, n_points=n_points,
                                      bottom_type=bottom_type)
-    return vh_result, EDP_result
+    return vh_result, EDP_result, F2_fit
 
 
 def n_and_grad(x: np.ndarray,
