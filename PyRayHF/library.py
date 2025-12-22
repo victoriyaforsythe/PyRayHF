@@ -2758,3 +2758,61 @@ def earth_radius_at_latitude(latitude):
     radius = np.sqrt(numerator / denominator)
 
     return radius
+
+
+def calculate_gcd(lon0, lat0, lon1, lat1):
+    """Calculate great circle distance.
+
+    Parameters
+    ----------
+    lon0 : array-like
+        value or np.array of longitudes of first position in degrees.
+    lat0 : array-like
+        value or np.array of latitudes of first position in degrees.
+    lon1 : array-like
+        value or np.array of longitudes of second position in degrees.
+    lat1 : array-like
+        value or np.array of latitudes of second position in degrees.
+
+    Returns
+    -------
+    gcd : array-like
+        Great circle distance in degrees.
+
+    Notes
+    -----
+    This function calculates great circle distance in degrees.
+
+    """
+    # Check that the length of the arrays are correct:
+    if (np.size(lon0) != np.size(lat0)):
+        raise ValueError('Error: In gcd length of lon0 != lat0!')
+
+    if (np.size(lon1) != np.size(lat1)):
+        raise ValueError('Error: In gcd length of lon1 != lat1!')
+
+    # Find cos and sin for positions
+    coslt1 = np.cos(np.deg2rad(lat1))
+    sinlt1 = np.sin(np.deg2rad(lat1))
+    coslt0 = np.cos(np.deg2rad(lat0))
+    sinlt0 = np.sin(np.deg2rad(lat0))
+    cosl0l1 = np.cos(np.deg2rad(lon1 - lon0))
+
+    # Cosine of angle between points
+    cosc = sinlt0 * sinlt1 + coslt0 * coslt1 * cosl0l1
+
+    # If input is array use where, if not use if statement
+    if (isinstance(lon0, np.ndarray)) | (isinstance(lon1, np.ndarray)):
+        a = np.where(cosc < -1.)
+        cosc[a] = -1.
+        a = np.where(cosc > 1.)
+        cosc[a] = 1.
+    else:
+        if cosc < -1:
+            cosc = -1.
+        if cosc > 1:
+            cosc = 1.
+
+    # Great Circle Distance
+    gcd = np.rad2deg(np.arccos(cosc))
+    return gcd
