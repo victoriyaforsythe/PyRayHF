@@ -2531,17 +2531,24 @@ def generate_input_2D(year, month, day, UT, tlat, tlon, dx, aalt,
                                           xlat, xlon, aalt)
 
     # Get EDP for all x
-    (F2, F1, E,
-     Es, _, _, den) = PyIRI.edp_update.IRI_density_1day(year,
-                                                        month,
-                                                        day,
-                                                        np.array([UT]),
-                                                        xlon,
-                                                        xlat,
-                                                        aalt,
-                                                        F107,
-                                                        PyIRI.coeff_dir,
-                                                        0)
+    # Coefficient sources and model options
+    foF2_coeff = 'CCIR'       # Options: 'CCIR' or 'URSI'
+    hmF2_model = 'SHU2015'    # Options: 'SHU2015', 'AMTB2013', 'BSE1979'
+    coord = 'GEO'             # Coordinate system: 'GEO', 'QD', or 'MLT'
+    coeff_dir = None          # Use default coefficient path
+    (F2, F1, E, _, _, den) = sh.IRI_density_1day(
+        year,
+        month,
+        day,
+        np.array([UT]),
+        xlon,
+        xlat,
+        aalt,
+        F107,
+        coeff_dir=coeff_dir,
+        foF2_coeff=foF2_coeff,
+        hmF2_model=hmF2_model,
+        coord=coord)
 
     # Remove extra dimension from den
     den = np.squeeze(den)
@@ -2557,7 +2564,6 @@ def generate_input_2D(year, month, day, UT, tlat, tlon, dx, aalt,
                 'F2': F2,
                 'F1': F1,
                 'E': E,
-                'Es': Es,
                 'year': year,
                 'month': month,
                 'day': day,
