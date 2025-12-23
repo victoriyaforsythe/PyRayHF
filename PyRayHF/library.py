@@ -2902,12 +2902,12 @@ def find_mean_gradient_error(atlon, atlat, arlon, arlat,
     returns the mean percent deviation. The midpoint foF2 is treated
     as the reference, consistent with the midpoint-assumption framework.
 
-    • Sampling is performed uniformly along the great-circle distance
-      between each transmitter and receiver.
-    • foF2 (rather than NmF2) is used to quantify horizontal gradients,
-      avoiding logarithmic scaling effects.
-    • The result provides a compact scalar metric describing how strongly
-      horizontal structure violates the midpoint assumption for each link.
+    Sampling is performed uniformly along the great-circle distance
+    between each transmitter and receiver.
+    foF2 (rather than NmF2) is used to quantify horizontal gradients,
+    avoiding logarithmic scaling effects.
+    The result provides a compact scalar metric describing how strongly
+    horizontal structure violates the midpoint assumption for each link.
 
     """
     # Coerce scalar or array inputs to 1D arrays
