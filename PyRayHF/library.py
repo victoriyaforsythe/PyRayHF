@@ -2826,15 +2826,15 @@ def calculate_gcd(lon0, lat0, lon1, lat1):
     return gcd
 
 
-def azimuth_between_points(lat1_deg, lon1_deg, lat2_deg, lon2_deg):
+def azimuth_between_points(lon1_deg, lat1_deg, lon2_deg, lat2_deg):
     """Compute forward azimuth from point 1 to point 2.
 
     Parameters
     ----------
-    lat1_deg, lon1_deg : float or array-like
-        Latitude and longitude of the starting point [degrees].
-    lat2_deg, lon2_deg : float or array-like
-        Latitude and longitude of the destination point [degrees].
+    lon1_deg, lat1_deg : float or array-like
+        Longitude and latitude and  of the starting point [degrees].
+    lon2_deg, lat2_deg : float or array-like
+        Longitude and Latitude of the destination point [degrees].
 
     Returns
     -------
