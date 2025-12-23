@@ -2,15 +2,16 @@
 All notable changes to this project are documented in this file. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
-## 0.1.0 (XX-XX-2025)
+## 0.1.0 (12-23-2025)
 * 2-D raytracing functions are added
-* Examples deleted (It is too much work to keep consistancy btw tutorials and examples)
 * Tutorials added
 * Unit tests added
 * README is extended to cover the 2-D raytracing
 * Functions added to generate 1D and 2D input data (density and magnetic field) using PyIRI
 * Critical freqeuncy for X-mode is added for vertical propagation
 * X-mode condition for max height is changed to X+Y=1
+* Minimization routine in added
+* Gradient in relation to midpoint is added
 
 ## 0.0.2 (06-12-2025)
 * Bug fix in vertical_forward_operator (typo in bpsi.shape)
