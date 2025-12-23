@@ -2824,3 +2824,179 @@ def calculate_gcd(lon0, lat0, lon1, lat1):
     # Great Circle Distance
     gcd = np.rad2deg(np.arccos(cosc))
     return gcd
+
+
+def azimuth_between_points(lon1_deg, lat1_deg, lon2_deg, lat2_deg):
+    """Compute forward azimuth from point 1 to point 2.
+
+    Parameters
+    ----------
+    lon1_deg, lat1_deg : float or array-like
+        Longitude and latitude and  of the starting point [degrees].
+    lon2_deg, lat2_deg : float or array-like
+        Longitude and Latitude of the destination point [degrees].
+
+    Returns
+    -------
+    azimuth_deg : float or ndarray
+        Azimuth measured clockwise from geographic North [degrees],
+        in the range [0, 360).
+
+    """
+    # Convert to radians
+    lat1 = np.deg2rad(lat1_deg)
+    lon1 = np.deg2rad(lon1_deg)
+    lat2 = np.deg2rad(lat2_deg)
+    lon2 = np.deg2rad(lon2_deg)
+
+    dlon = lon2 - lon1
+    x = np.sin(dlon) * np.cos(lat2)
+    y = (np.cos(lat1) * np.sin(lat2)
+         - np.sin(lat1) * np.cos(lat2) * np.cos(dlon))
+
+    azimuth_rad = np.arctan2(x, y)
+    azimuth_deg = (np.rad2deg(azimuth_rad) + 360.0) % 360.0
+    return azimuth_deg
+
+
+def find_mean_gradient_error(atlon, atlat, arlon, arlat,
+                             year, month, day, UT, F107):
+    """Estimate the mean horiz-gradient-induced foF2 error along T and R GCD.
+
+    Parameters
+    ----------
+    atlon : ndarray
+        Transmitter longitudes [deg].
+    atlat : ndarray
+        Transmitter latitudes [deg].
+    arlon : ndarray
+        Receiver longitudes [deg].
+    arlat : ndarray
+        Receiver latitudes [deg].
+    year : int
+        Year of the PyIRI specification.
+    month : int
+        Month of the PyIRI specification.
+    day : int
+        Day of the PyIRI specification.
+    UT : float
+        Universal Time [hours].
+    F107 : float
+        F10.7 solar flux index [sfu].
+
+    Returns
+    -------
+    a_mean_error : ndarray
+        Mean percent foF2 deviation along each T-R path relative to the
+        midpoint value [%]. Positive values indicate higher foF2 away
+        from the midpoint.
+    F2_mid : dict
+        PyIRI F2-region output at the midpoint locations, including foF2
+        and associated parameters.
+
+    Notes
+    -----
+    For each transmitter-receiver (T-R) pair, this function samples the
+    ionosphere along the great-circle path between the two locations,
+    computes the foF2 variation relative to the midpoint value, and
+    returns the mean percent deviation. The midpoint foF2 is treated
+    as the reference, consistent with the midpoint-assumption framework.
+
+    Sampling is performed uniformly along the great-circle distance
+    between each transmitter and receiver.
+    foF2 (rather than NmF2) is used to quantify horizontal gradients,
+    avoiding logarithmic scaling effects.
+    The result provides a compact scalar metric describing how strongly
+    horizontal structure violates the midpoint assumption for each link.
+
+    """
+    # Coerce scalar or array inputs to 1D arrays
+    atlon = np.atleast_1d(atlon).astype(float)
+    atlat = np.atleast_1d(atlat).astype(float)
+    arlon = np.atleast_1d(arlon).astype(float)
+    arlat = np.atleast_1d(arlat).astype(float)
+
+    # Number of points between T and R used to sample the field for gradient
+    # calculation
+    nelem = 50
+
+    # Number of observations (T–R pairs)
+    number_obs = atlon.size
+
+    # Compute the great-circle distance between T and R
+    GCD_deg = calculate_gcd(atlon, atlat, arlon, arlat)
+
+    # Compute the Earth radius at the transmitter locations
+    R_E = earth_radius_at_latitude(atlat)
+
+    # Convert the great-circle distance to kilometers
+    R_loc = np.deg2rad(GCD_deg) * R_E
+
+    # Compute the azimuth between T and R
+    aAZ = azimuth_between_points(atlon, atlat, arlon, arlat)
+
+    # For each T–R pair, create an array of distances from 0 to the full T–R
+    # distance
+    aGCD = np.zeros((number_obs, nelem))
+    for i in range(0, number_obs):
+        aGCD[i, :] = np.linspace(0, R_loc[i], nelem)
+
+    # Distance to the midpoint between T and R
+    aGCD_mid = R_loc / 2.
+
+    # Allocate arrays to store sampled points and midpoint locations
+    aalat = np.zeros((number_obs, nelem)) + np.nan
+    aalon = np.zeros((number_obs, nelem)) + np.nan
+    alat_mid = np.zeros((number_obs)) + np.nan
+    alon_mid = np.zeros((number_obs)) + np.nan
+
+    # Compute geographic locations of the sampled points and midpoints
+    for i in range(0, number_obs):
+        aalat[i, :], aalon[i, :] = great_circle_point(
+            atlat[i], atlon[i], aGCD[i, :], aAZ[i])
+        alat_mid[i], alon_mid[i] = great_circle_point(
+            atlat[i], atlon[i], aGCD_mid[i], aAZ[i])
+
+    # Flatten sampled latitude and longitude arrays
+    aalat_1d = np.reshape(aalat, aalat.size)
+    aalon_1d = np.reshape(aalon, aalon.size)
+
+    # Retrieve ionospheric parameters from PyIRI
+    # Coefficient sources and model options
+    foF2_coeff = 'CCIR'       # Options: 'CCIR' or 'URSI'
+    hmF2_model = 'SHU2015'    # Options: 'SHU2015', 'AMTB2013', 'BSE1979'
+    coord = 'GEO'             # Coordinate system: 'GEO', 'QD', or 'MLT'
+    coeff_dir = None          # Use default coefficient path
+
+    (F2, _, _, _, _, _) = sh.IRI_density_1day(
+        year, month, day, UT,
+        aalon_1d, aalat_1d,
+        np.array([0]), F107,
+        coeff_dir=coeff_dir,
+        foF2_coeff=foF2_coeff,
+        hmF2_model=hmF2_model,
+        coord=coord)
+
+    (F2_mid, _, _, _, _, _) = sh.IRI_density_1day(
+        year, month, day, UT,
+        alon_mid, alat_mid,
+        np.array([0]), F107,
+        coeff_dir=coeff_dir,
+        foF2_coeff=foF2_coeff,
+        hmF2_model=hmF2_model,
+        coord=coord)
+
+    # Extract foF2 to compute horizontal gradients
+    # (NmF2 is not used here; alternatively, NmF2 could be used in log space)
+    aafoF2 = np.reshape(F2['fo'][0, :], aalat.shape)
+    afoF2_mid = np.reshape(F2_mid['fo'][0, :], alat_mid.shape)
+
+    # Compute percent differences between foF2 along the path and at the
+    # midpoint and calculate the mean percent error for each T–R pair
+    aper_error = np.zeros(aafoF2.shape)
+    a_mean_error = np.zeros((atlat.size)) + np.nan
+    for i in range(0, atlat.size):
+        aper_error[i, :] = (aafoF2[i, :] - afoF2_mid[i]) / afoF2_mid[i] * 100.
+        a_mean_error[i] = np.mean(aper_error[i, :])
+
+    return a_mean_error, F2_mid
