@@ -2863,12 +2863,6 @@ def find_mean_gradient_error(atlon, atlat, arlon, arlat,
                              year, month, day, UT, F107):
     """Estimate the mean horiz-gradient-induced foF2 error along T and R GCD
 
-    For each transmitter-receiver (T-R) pair, this function samples the
-    ionosphere along the great-circle path between the two locations,
-    computes the foF2 variation relative to the midpoint value, and
-    returns the mean percent deviation. The midpoint foF2 is treated
-    as the reference, consistent with the midpoint-assumption framework.
-
     Parameters
     ----------
     atlon : ndarray
@@ -2902,6 +2896,12 @@ def find_mean_gradient_error(atlon, atlat, arlon, arlat,
 
     Notes
     -----
+    For each transmitter-receiver (T-R) pair, this function samples the
+    ionosphere along the great-circle path between the two locations,
+    computes the foF2 variation relative to the midpoint value, and
+    returns the mean percent deviation. The midpoint foF2 is treated
+    as the reference, consistent with the midpoint-assumption framework.
+
     • Sampling is performed uniformly along the great-circle distance
       between each transmitter and receiver.
     • foF2 (rather than NmF2) is used to quantify horizontal gradients,
