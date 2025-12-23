@@ -2824,3 +2824,36 @@ def calculate_gcd(lon0, lat0, lon1, lat1):
     # Great Circle Distance
     gcd = np.rad2deg(np.arccos(cosc))
     return gcd
+
+
+def azimuth_between_points(lat1_deg, lon1_deg, lat2_deg, lon2_deg):
+    """Compute forward azimuth from point 1 to point 2.
+
+    Parameters
+    ----------
+    lat1_deg, lon1_deg : float or array-like
+        Latitude and longitude of the starting point [degrees].
+    lat2_deg, lon2_deg : float or array-like
+        Latitude and longitude of the destination point [degrees].
+
+    Returns
+    -------
+    azimuth_deg : float or ndarray
+        Azimuth measured clockwise from geographic North [degrees],
+        in the range [0, 360).
+
+    """
+    # Convert to radians
+    lat1 = np.deg2rad(lat1_deg)
+    lon1 = np.deg2rad(lon1_deg)
+    lat2 = np.deg2rad(lat2_deg)
+    lon2 = np.deg2rad(lon2_deg)
+
+    dlon = lon2 - lon1
+    x = np.sin(dlon) * np.cos(lat2)
+    y = (np.cos(lat1) * np.sin(lat2) -
+         np.sin(lat1) * np.cos(lat2) * np.cos(dlon))
+
+    azimuth_rad = np.arctan2(x, y)
+    azimuth_deg = (np.rad2deg(azimuth_rad) + 360.0) % 360.0
+    return azimuth_deg
