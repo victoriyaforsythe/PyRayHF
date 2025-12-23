@@ -147,7 +147,7 @@ The **group refractive index (`mu_prime`)** is multiplied by a matrix containing
   <img src="docs/figures/Run_Vertical_PyRayHF.png" width="40%">
 </div>
 
-See the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder for more detailed examples.
+See the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials/Example_Vertical_Forward_Operator.ipynb) folder for more detailed examples.
 
 # Example: Compute and Fit Virtual Heights Using PyRayHF
 
@@ -165,7 +165,7 @@ This example demonstrates how to compute ionospheric virtual heights using the P
   <img src="docs/figures/Minimization.png" width="70%">
 </div>
 
-The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials/Example_Minimization.ipynb) folder.
 
 
 # Example: 2-D Cartesian Snell's Law Raytracer
@@ -180,7 +180,7 @@ In a uniform dielectric, Snell’s law states that `nsinθ=constant`, where `n` 
   <img src="docs/figures/Cartesian_Snells.png" width="100%">
 </div>
 
-The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/blob/main/docs/tutorials/Example_PyRayHF_Cartesian_Snells.ipynb) folder.
 
 # Example: 2-D Spherical Snell's Law Raytracer
 
@@ -197,7 +197,7 @@ The function numerically integrates the ray’s trajectory through successive al
   <img src="docs/figures/Spherical_Snells.png" width="100%">
 </div>
 
-The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/blob/main/docs/tutorials/Example_PyRayHF_Spherical_Snells.ipynb) folder.
 
 # Example: 2-D Cartesian Gradient Raytracer
 
@@ -213,7 +213,7 @@ The function calculates the refractive index profile from plasma parameters usin
   <img src="docs/figures/Cartesian_Gradient.png" width="100%">
 </div>
 
-The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials) folder.
+The notebook for this example can be found in the [tutorials](https://github.com/victoriyaforsythe/PyRayHF/blob/main/docs/tutorials/Example_PyRayHF_Cartesian_Gradient.ipynb) folder.
 
 # Example: 2-D Spherical Gradient Raytracer
 
@@ -230,4 +230,4 @@ The function computes the refractive index profile at each altitude using `find_
 </div>
 
 
-The notebook for this example can be found at [tutorials](https://github.com/victoriyaforsythe/PyRayHF/tree/main/docs/tutorials).
+The notebook for this example can be found at [tutorials](https://github.com/victoriyaforsythe/PyRayHF/blob/main/docs/tutorials/Example_PyRayHF_Spherical_Gradient.ipynb).
