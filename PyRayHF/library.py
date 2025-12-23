@@ -3,11 +3,10 @@
 # Distribution statement A. Approved for public release.
 # Distribution is unlimited.
 # This work was supported by the Office of Naval Research.
-
+# --------------------------------------------------------
 # This work is submitted to Radio Science Journal:
-----------------------------------------------------------
-Forsythe et al. (2026), PyRayHF: A Fully Pythonic Community
-Ray-Tracer. Radio Science.
+# Forsythe et al. (2026), PyRayHF: A Fully Pythonic
+# Community Ray-Tracer. Radio Science.
 # --------------------------------------------------------
 """This library contains components for PyRayHF software.
 
