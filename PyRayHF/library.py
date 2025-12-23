@@ -2861,7 +2861,7 @@ def azimuth_between_points(lon1_deg, lat1_deg, lon2_deg, lat2_deg):
 
 def find_mean_gradient_error(atlon, atlat, arlon, arlat,
                              year, month, day, UT, F107):
-    """Estimate the mean horiz-gradient-induced foF2 error along T and R GCD
+    """Estimate the mean horiz-gradient-induced foF2 error along T and R GCD.
 
     Parameters
     ----------
