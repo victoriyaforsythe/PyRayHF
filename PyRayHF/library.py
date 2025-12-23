@@ -2910,6 +2910,12 @@ def find_mean_gradient_error(atlon, atlat, arlon, arlat,
       horizontal structure violates the midpoint assumption for each link.
 
     """
+    # Coerce scalar or array inputs to 1D arrays
+    atlon = np.atleast_1d(atlon).astype(float)
+    atlat = np.atleast_1d(atlat).astype(float)
+    arlon = np.atleast_1d(arlon).astype(float)
+    arlat = np.atleast_1d(arlat).astype(float)
+
     # Number of points between T and R used to sample the field for gradient
     # calculation
     nelem = 50
