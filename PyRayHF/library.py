@@ -2851,8 +2851,8 @@ def azimuth_between_points(lat1_deg, lon1_deg, lat2_deg, lon2_deg):
 
     dlon = lon2 - lon1
     x = np.sin(dlon) * np.cos(lat2)
-    y = (np.cos(lat1) * np.sin(lat2) -
-         np.sin(lat1) * np.cos(lat2) * np.cos(dlon))
+    y = (np.cos(lat1) * np.sin(lat2)
+         - np.sin(lat1) * np.cos(lat2) * np.cos(dlon))
 
     azimuth_rad = np.arctan2(x, y)
     azimuth_deg = (np.rad2deg(azimuth_rad) + 360.0) % 360.0
